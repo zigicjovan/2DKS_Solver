@@ -44,7 +44,7 @@ u_n: solution vector for each time step in Physical space
     kvecl4 = KK(:);
     
     switch method
-        case 'imexrk4vec'
+        case 'imexrk4vec2a'
             % Linear Operator in Fourier Space
             Lin = (-1) * ( 1i^2 * (kvecl2) + 1i^4 * (kvecl4) ); 
         
@@ -70,8 +70,6 @@ u_n: solution vector for each time step in Physical space
         case 'gauss'
             u_0 = exp(-0.1*( (x1 - 0.5*L1).^2 + (x2 - 0.5*L2).^2));
     end
-    u_0(end,:) = u_0(1,:); % periodic boundary conditions
-    u_0(:,end) = u_0(:,1); % periodic boundary conditions
     v_0 = fft2(u_0); 
 
 %%% (2) solve time-dependent problem %%%
@@ -86,8 +84,9 @@ u_n: solution vector for each time step in Physical space
         Ntime_save = ceil(Ntime/save_each);
         Ntime = save_each*Ntime_save;
     else
-        Ntime_save = time1;
+        Ntime_save = 1;
         Ntime = time1;
+        save_each = time1;
     end
 
     % solution vectors in fourier and physical spectrum
@@ -109,11 +108,10 @@ u_n: solution vector for each time step in Physical space
 
     switch method % 'imexrk4vec' is the only one guaranteed to work - all others are under construction
 
-        case 'imexrk4vec' % Solve vectorized equation by IMEXRK4 method
+        case 'imexrk4vec2a' % Solve vectorized equation by IMEXRK4 method
             v_0step = v_n(:,1);
             for i = 2:Ntime
 
-                %
                 % nonlinear terms and solution substeps
                 v_0step2 = reshape( v_0step, [ N_x1 , N_x2 ] );
                 w1 = multiply2D( v_0step2 , v_0step2 , 'fourier' );
@@ -146,26 +144,10 @@ u_n: solution vector for each time step in Physical space
                     ( ( 1 + (dt * beta_I(4) * Lin) ) .* v_s3 + ...
                     (dt * alpha_E(4) * Nonlin_v3) + ...
                     (dt * beta_E(4) * Nonlin_v2) ); 
-                %}
 
                 v_12 = reshape( v_1, [ N_x1 , N_x2 ] );
-                %{
-                figure(1);
-                surfc(x1,x2,real(ifft2(v_0step2)))
-                figure(2);
-                surfc(x1,x2,real(ifft2(v_s12)))
-                figure(3);
-                surfc(x1,x2,real(ifft2(v_s22)))
-                figure(4);
-                surfc(x1,x2,real(ifft2(v_s32)))
-                figure(5);
-                surfc(x1,x2,real(ifft2(v_12)))
-                %}
                 u_1 = real(ifft2(v_12));  
-                u_1(end,:) = u_1(1,:); % boundary conditions
-                u_1(:,end) = u_1(:,1); % boundary conditions
-                v_0step2 = fft2(u_1);
-                v_0step = v_0step2(:);
+                v_0step = v_1;
 
                 if save_each == 1
                     v_n(:,i) = v_12(:);
