@@ -2,10 +2,21 @@ function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2)
 
 Ntime = size(u_n,2);
 
+% length-scale parameters
+L_x1 = (1/L_s1);
+L_x2 = (1/L_s2);
+L1 = 2*pi/L_x1;
+L2 = 2*pi/L_x2;
+
 % unit physical space domain
-x1_pts = linspace( 0 , 1 - 1/N , N ); 
-x2_pts = linspace( 0 , 1 - 1/N , N ); 
+x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
+x2_pts = L2*linspace( 0 , 1 - 1/N , N ); 
 [ x1 , x2 ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
+
+% unit physical space domain
+X1_pts = linspace( 0 , 5 - 1/N , 5*N ); 
+X2_pts = linspace( 0 , 5 - 1/N , 5*N ); 
+[ X1 , X2 ] = meshgrid(X1_pts,X2_pts); % 2-dimensional grid
 
 % fourier space domain for nonlinear term
 k1_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
@@ -27,6 +38,8 @@ switch solplot
             surfc(x1,x2,u_i);
             xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
             shading interp
+            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
+            view(3);
             drawnow
 
             % Save image
@@ -36,7 +49,7 @@ switch solplot
 
             % Write to GIF File
             if i == 1
-                imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+                imwrite(imind,cm,filename,'gif', 'DelayTime',0.02, 'Loopcount',inf);
             else
                 imwrite(imind,cm,filename,'gif','WriteMode','append');
             end
@@ -54,9 +67,11 @@ switch solplot
             % Draw contour plot
             u_i = reshape( u_n(:,i) , [ N , N ] );
             surfc(x1,x2,u_i);
-            view(90,90);
+            % view(90,90);
             xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
             shading interp
+            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
+            view(2);
             drawnow
 
             % Save image
@@ -66,31 +81,87 @@ switch solplot
 
             % Write to GIF File
             if i == 1
-                imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+                imwrite(imind,cm,filename,'gif','DelayTime',0.02, 'Loopcount',inf);
             else
                 imwrite(imind,cm,filename,'gif','WriteMode','append');
             end
         end
 
-    case 'time2D'
 
-        C = Ntime;
-        figure(1);
-        set(gcf, 'Position', get(0, 'Screensize'));
-        % do 1 loop
-        for loop = 1:1
-            for i = 1 : ceil(Ntime/100) : C
-                u_i = reshape( u_n(:,i) , [ N , N ] );
-                surfc(x1,x2,u_i)
-                shading interp
-                % axis([ 0 1 0 1 -max(u_n(:,1)) max(u_n(:,1))]);
-                % axis([ 0 1 0 1 -1 1]);
-                % view(90,90);
-                drawnow
-                % pause(.001)
+    case 'largegif'
+
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        mkdir([pwd  '/data/media/movies' ]);
+        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '.gif'];
+
+        for i = 1 : ceil(Ntime/Ntime) : Ntime
+            % Draw surface plot
+            u_i = reshape( u_n(:,i) , [ N , N ] );
+            U_i = [ u_i u_i u_i u_i u_i ; 
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i 
+                ];
+            surfc(X1,X2,U_i);
+            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
+            shading interp
+            pbaspect( [ max(max(X1)), max(max(X2)), max(max(U_i)) ] );
+            view(3);
+            drawnow
+
+            % Save image
+            frame = getframe(h);
+            im = frame2im(frame);
+            [imind,cm] = rgb2ind(im,256);
+
+            % Write to GIF File
+            if i == 1
+                imwrite(imind,cm,filename,'gif', 'DelayTime',0.02, 'Loopcount',inf);
+            else
+                imwrite(imind,cm,filename,'gif','WriteMode','append');
             end
         end
 
+    case 'largegif_contour'
+
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        mkdir([pwd  '/data/media/movies' ]);
+        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_contour.gif'];
+
+        for i = 1 : ceil(Ntime/Ntime) : Ntime
+            % Draw contour plot
+            u_i = reshape( u_n(:,i) , [ N , N ] );
+            U_i = [ u_i u_i u_i u_i u_i ; 
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i ;
+                u_i u_i u_i u_i u_i 
+                ];
+            surfc(X1,X2,U_i);
+            % view(90,90);
+            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
+            shading interp
+            pbaspect( [ max(max(X1)), max(max(X2)), max(max(U_i)) ] );
+            view(2);
+            drawnow
+
+            % Save image
+            frame = getframe(h);
+            im = frame2im(frame);
+            [imind,cm] = rgb2ind(im,256);
+
+            % Write to GIF File
+            if i == 1
+                imwrite(imind,cm,filename,'gif','DelayTime',0.02, 'Loopcount',inf);
+            else
+                imwrite(imind,cm,filename,'gif','WriteMode','append');
+            end
+        end
     case 'timestrip'
         
         % Plot strip of solution over time
@@ -132,6 +203,8 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
         shading interp
+        pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        view(3);
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -140,7 +213,7 @@ switch solplot
         imwrite(im,filename,'png');
 
         % contour plot
-        view(90,90);
+        view(2);
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -172,6 +245,8 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
         shading interp
+        pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        view(3);
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -180,7 +255,7 @@ switch solplot
         imwrite(im,filename,'png');
 
         % contour plot
-        view(90,90);
+        view(2);
         % Save image
         frame = getframe(h);
         im = frame2im(frame);

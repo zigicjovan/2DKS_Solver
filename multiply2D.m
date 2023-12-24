@@ -3,7 +3,7 @@ function result = multiply2D(u,v,space)
 % Multiply two 2D vector u,v using DEALIASING
 % 'space' refers to the space on which the vectors are defined:
 % space = 'fourier' or space = 'real'
-    
+
     Nx = size(u,1);
     Ny = size(u,2);
     Nx2 = floor(Nx/2);
