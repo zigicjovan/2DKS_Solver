@@ -42,6 +42,13 @@ switch solplot
             view(3);
             drawnow
 
+            if i == 1
+                gif(filename)
+            else
+                gif
+            end
+
+            %{
             % Save image
             frame = getframe(h);
             im = frame2im(frame);
@@ -53,6 +60,7 @@ switch solplot
             else
                 imwrite(imind,cm,filename,'gif','WriteMode','append');
             end
+            %}
         end
 
     case 'gif_contour'
