@@ -40,7 +40,6 @@ switch solplot
         
             currentT = (i-1)/(Ntime-1)*T;
 
-
             subplot(2,2,1);
             % Draw surface plot
             u_i = reshape( u_n(:,i) , [ N , N ] );
@@ -97,32 +96,96 @@ switch solplot
         
         end
 
-    case 'timestrip'
+    case 'diagnostics'
         
-        % Plot strip of solution over time
-        line = 1; 
-        strips = 1;
-        N_xs = N*strips;
-        u_l = NaN( N_xs , Ntime );
-        x1s = size( x1 , size(x1,2) * strips );
-        x2s = size( x2 , size(x2,2) * strips );
-        x1s( x1 , 1:size(x1,2) ) = x1;
-        x2s( x2 , 1:size(x2,2) ) = x2;
-        for i = 2:strips
-            col_start_x1 = (i-1) * size(x1,2) + 1;
-            col_end_x1 = (i) * size(x1,2);
-            col_start_x2 = (i-1) * size(x2,2) + 1;
-            col_end_x2 = (i) * size(x2,2);
-            x1s( x1 , col_start_x1:col_end_x1 ) = [ x1s ; x1 ];
-            x2s( x2 , col_start_x2:col_end_x2 ) = [ x2s ; x2 ];
-        end
+        % compute L2 norm and Fourier mode evolution
+        Ntime = size(u_n,2);
+        normL2 = NaN(Ntime,1);
+        v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
+        v_meancount = v_mean;
         for i = 1:Ntime
-            u_l1 = reshape( u_n( line*N + 1 : (strips+1)*N , i ) , [ N_xs , 1 ] );
-            u_l( : , i ) = u_l1;
+            u_i = reshape( u_n(:,i) , [ N , N ] );
+            normL2(i,1) = norm(u_i)/N;
+            v = fftshift(real(abs(fft2(u_i))));
+            for j = 1:N
+                for k = 1:N
+                    index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
+                    v_mean(index,i) = v_mean(index,i) + v(j,k);
+                    v_meancount(index,i) = v_meancount(index,i) + 1;
+                end
+            end
+            for m = 1:size(v_meancount,1)
+                v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
+            end
         end
-        figure(2);
-        surf( x1s , x2s , u_l )
-        shading interp
+        v_mean = v_mean(2:end,:);
+
+        % L2 norm time derivative computation
+        normL2_t = NaN(Ntime-1,1);
+        dt_save = T/(Ntime-1);
+        for i = 2:length(normL2)
+            normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
+        end
+
+        % Wavenumber evolution plot
+        Ntime = size(u_n,2);
+        timewindow = linspace(0,T,Ntime);
+        wavenumberevol_file = [pwd '/data/wavenumberevol_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        h = figure;
+        semilogy(timewindow,v_mean(1,:),'LineWidth',2)
+        hold on;
+        for i = 2:size(v_mean,1)
+            semilogy(timewindow,v_mean(i,:),'LineWidth',2)
+        end
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Time $t$','Interpreter','latex'); 
+        xlim([0 T])
+        ylim([1e-15 max(v_mean(1,:))+1e5 ])
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Evolution of Fourier spectrum")
+        legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
+        frame = getframe(h);
+        im = frame2im(frame);
+        imwrite(im,wavenumberevol_file,'png');
+
+        % L2 norm plot
+        normL2_file = [pwd '/data/normL2_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        h = figure;
+        semilogy(timewindow,normL2,'LineWidth',2)
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Time $t$','Interpreter','latex'); 
+        xlim([0 T])
+        ylabel('$||{\phi(t)}||_{L^2}$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Evolution of L2 norm")
+        frame = getframe(h);
+        im = frame2im(frame);
+        imwrite(im,normL2_file,'png');
+
+
+        % L2 norm time derivative plot
+        normL2_t_file = [pwd '/data/normL2_deriv_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        h = figure;
+        plot(timewindow(2:end),normL2_t,'LineWidth',2)
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Time $t$','Interpreter','latex'); 
+        xlim([0 T])
+        ylabel('$\frac{d}{dt} ||{\phi(t)}||_{L^2}$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Evolution of L2 norm time derivative")
+        frame = getframe(h);
+        im = frame2im(frame);
+        imwrite(im,normL2_t_file,'png');
 
     case 'initial'
 
