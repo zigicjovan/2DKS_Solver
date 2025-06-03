@@ -1,6 +1,7 @@
-function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2)
+function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2, normL2, v_mean)
 
 Ntime = size(u_n,2);
+timewindow = linspace(0,T,Ntime);
 
 % length-scale parameters
 L_x1 = (1/L_s1);
@@ -13,10 +14,10 @@ x1_pts = L1*linspace( 0 , 1 - 1/N , N );
 x2_pts = L2*linspace( 0 , 1 - 1/N , N ); 
 [ x1 , x2 ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
 
-% unit physical space domain
-X1_pts = linspace( 0 , 5 - 1/N , 5*N ); 
-X2_pts = linspace( 0 , 5 - 1/N , 5*N ); 
-[ X1 , X2 ] = meshgrid(X1_pts,X2_pts); % 2-dimensional grid
+% repeated physical space domain
+x12_pts = 2*L1*linspace( 0 , 1 - 1/N , 2*N ); 
+x22_pts = 2*L2*linspace( 0 , 1 - 1/N , 2*N ); 
+[ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
 
 % fourier space domain for nonlinear term
 k1_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
@@ -26,150 +27,76 @@ k2_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1];
 switch solplot
     case 'gif'
 
-        h = figure;
+        figure;
+        set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
         mkdir([pwd  '/data/media/movies' ]);
         filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '.gif'];
-
+        set(gcf,'color','white')
+        set(gca,'color','white')
+        
         for i = 1 : ceil(Ntime/Ntime) : Ntime
+        
+            currentT = (i-1)/(Ntime-1)*T;
+
+
+            subplot(2,2,1);
             % Draw surface plot
             u_i = reshape( u_n(:,i) , [ N , N ] );
             surfc(x1,x2,u_i);
-            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
-            shading interp
-            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
-            view(3);
+            xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_i))) ] );
+            view([37.5,30]);
             drawnow
 
+            subplot(2,2,2);
+            % Draw surface plot
+            u_i2x = [ u_i , u_i ; u_i, u_i];
+            surfc(x12x,x22x,u_i2x);
+            xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
+            xline(L1,'--');
+            yline(L2,'--');
+            view(2);
+            drawnow
+
+            subplot(2,2,3);
+            semilogy(timewindow,normL2,'b','LineWidth',1)
+            hold on
+            xline(currentT,'-','LineWidth',1);
+            hold off
+            xlabel('$t$','Interpreter','latex');
+            ylabel('$|| \phi(t) ||$','Interpreter','latex');
+            xlim([0 T])
+            ylim([min(normL2) max(normL2)+1e-1])
+            title("Evolution of $L^2$ norm",'Interpreter','latex')
+            legend('L^{2} norm','Location','southeast')
+            set(gca,'fontsize', 12) 
+        
+            subplot(2,2,4);
+            semilogy(v_mean(:,i),".",'LineWidth',1)
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            title("Energy spectrum")
+            xlim([1 size(v_mean,1)])
+            ylim([1e-15 max(v_mean(1,:))])
+            set(gca,'fontsize', 12) 
+        
+            sgtitle(['2DKS, x_1 = 2\pi(' num2str(L_s1) '), x_2 = 2\pi(' num2str(L_s2) '), T = ' num2str(currentT,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) ''])
+        
             if i == 1
                 gif(filename)
             else
                 gif
             end
-
-            %{
-            % Save image
-            frame = getframe(h);
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-
-            % Write to GIF File
-            if i == 1
-                imwrite(imind,cm,filename,'gif', 'DelayTime',0.02, 'Loopcount',inf);
-            else
-                imwrite(imind,cm,filename,'gif','WriteMode','append');
-            end
-            %}
+        
         end
 
-    case 'gif_contour'
-
-        h = figure;
-        axis tight manual % this ensures that getframe() returns a consistent size
-        mkdir([pwd  '/data/media/movies' ]);
-        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_contour.gif'];
-
-        for i = 1 : ceil(Ntime/Ntime) : Ntime
-            % Draw contour plot
-            u_i = reshape( u_n(:,i) , [ N , N ] );
-            surfc(x1,x2,u_i);
-            % view(90,90);
-            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
-            shading interp
-            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
-            view(2);
-            drawnow
-
-            % Save image
-            frame = getframe(h);
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-
-            % Write to GIF File
-            if i == 1
-                imwrite(imind,cm,filename,'gif','DelayTime',0.02, 'Loopcount',inf);
-            else
-                imwrite(imind,cm,filename,'gif','WriteMode','append');
-            end
-        end
-
-
-    case 'largegif'
-
-        h = figure;
-        axis tight manual % this ensures that getframe() returns a consistent size
-        mkdir([pwd  '/data/media/movies' ]);
-        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '.gif'];
-
-        for i = 1 : ceil(Ntime/Ntime) : Ntime
-            % Draw surface plot
-            u_i = reshape( u_n(:,i) , [ N , N ] );
-            U_i = [ u_i u_i u_i u_i u_i ; 
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i 
-                ];
-            surfc(X1,X2,U_i);
-            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
-            shading interp
-            pbaspect( [ max(max(X1)), max(max(X2)), max(max(U_i)) ] );
-            view(3);
-            drawnow
-
-            % Save image
-            frame = getframe(h);
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-
-            % Write to GIF File
-            if i == 1
-                imwrite(imind,cm,filename,'gif', 'DelayTime',0.02, 'Loopcount',inf);
-            else
-                imwrite(imind,cm,filename,'gif','WriteMode','append');
-            end
-        end
-
-    case 'largegif_contour'
-
-        h = figure;
-        axis tight manual % this ensures that getframe() returns a consistent size
-        mkdir([pwd  '/data/media/movies' ]);
-        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_contour.gif'];
-
-        for i = 1 : ceil(Ntime/Ntime) : Ntime
-            % Draw contour plot
-            u_i = reshape( u_n(:,i) , [ N , N ] );
-            U_i = [ u_i u_i u_i u_i u_i ; 
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i ;
-                u_i u_i u_i u_i u_i 
-                ];
-            surfc(X1,X2,U_i);
-            % view(90,90);
-            xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
-            shading interp
-            pbaspect( [ max(max(X1)), max(max(X2)), max(max(U_i)) ] );
-            view(2);
-            drawnow
-
-            % Save image
-            frame = getframe(h);
-            im = frame2im(frame);
-            [imind,cm] = rgb2ind(im,256);
-
-            % Write to GIF File
-            if i == 1
-                imwrite(imind,cm,filename,'gif','DelayTime',0.02, 'Loopcount',inf);
-            else
-                imwrite(imind,cm,filename,'gif','WriteMode','append');
-            end
-        end
     case 'timestrip'
         
         % Plot strip of solution over time
@@ -212,6 +139,9 @@ switch solplot
         xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
         shading interp
         pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        set(gcf,'color','white')
+        set(gca,'color','white')
+        colormap(redblue)
         view(3);
         % Save image
         frame = getframe(h);
@@ -232,6 +162,9 @@ switch solplot
         % fourier plot
         surfc(k1_0,k2_0,abs(v_T)); set(gca,'xscale','log','yscale','log','zscale','log');
         xlabel('k_1'); ylabel('k_2'); zlabel('|v(k_1,k_2)|');
+        set(gcf,'color','white')
+        set(gca,'color','white')
+        colormap(redblue)
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -253,8 +186,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
         shading interp
-        pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
         view(3);
+        set(gcf,'color','white')
+        set(gca,'color','white')
+        colormap(redblue)
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -274,6 +210,9 @@ switch solplot
         % fourier plot
         surfc(k1_0,k2_0,real(abs(v_T))); set(gca,'xscale','log','yscale','log','zscale','log');
         xlabel('k_1'); ylabel('k_2'); zlabel('|v(k_1,k_2)|');
+        set(gcf,'color','white')
+        set(gca,'color','white')
+        colormap(redblue)
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
