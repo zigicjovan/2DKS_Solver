@@ -1,4 +1,4 @@
-function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2, normL2, v_mean)
+function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2)
 
 Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
@@ -23,6 +23,35 @@ x22_pts = 2*L2*linspace( 0 , 1 - 1/N , 2*N );
 k1_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
 k2_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
 [ k1_0 , k2_0 ] = meshgrid(k1_0_pts,k2_0_pts); % 2-dimensional grid
+
+% compute L2 norm and Fourier mode evolution
+Ntime = size(u_n,2);
+normL2 = NaN(Ntime,1);
+v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
+v_meancount = v_mean;
+for i = 1:Ntime
+    u_i = reshape( u_n(:,i) , [ N , N ] );
+    normL2(i,1) = norm(u_i)/N;
+    v = fftshift(real(abs(fft2(u_i))));
+    for j = 1:N
+        for k = 1:N
+            index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
+            v_mean(index,i) = v_mean(index,i) + v(j,k);
+            v_meancount(index,i) = v_meancount(index,i) + 1;
+        end
+    end
+    for m = 1:size(v_meancount,1)
+        v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
+    end
+end
+v_mean = v_mean(2:end,:);
+
+% L2 norm time derivative computation
+normL2_t = NaN(Ntime-1,1);
+dt_save = T/(Ntime-1);
+for i = 2:length(normL2)
+    normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
+end
 
 switch solplot
     case 'gif'
@@ -65,9 +94,9 @@ switch solplot
             drawnow
 
             subplot(2,2,3);
-            semilogy(timewindow,normL2,'b','LineWidth',1)
+            semilogy(timewindow,normL2,'b')
             hold on
-            xline(currentT,'-','LineWidth',1);
+            xline(currentT,'-');
             hold off
             xlabel('$t$','Interpreter','latex');
             ylabel('$|| \phi(t) ||$','Interpreter','latex');
@@ -78,7 +107,7 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
-            semilogy(v_mean(:,i),".",'LineWidth',1)
+            semilogy(v_mean(:,i),".")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             title("Energy spectrum")
@@ -97,45 +126,16 @@ switch solplot
         end
 
     case 'diagnostics'
-        
-        % compute L2 norm and Fourier mode evolution
-        Ntime = size(u_n,2);
-        normL2 = NaN(Ntime,1);
-        v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
-        v_meancount = v_mean;
-        for i = 1:Ntime
-            u_i = reshape( u_n(:,i) , [ N , N ] );
-            normL2(i,1) = norm(u_i)/N;
-            v = fftshift(real(abs(fft2(u_i))));
-            for j = 1:N
-                for k = 1:N
-                    index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
-                    v_mean(index,i) = v_mean(index,i) + v(j,k);
-                    v_meancount(index,i) = v_meancount(index,i) + 1;
-                end
-            end
-            for m = 1:size(v_meancount,1)
-                v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
-            end
-        end
-        v_mean = v_mean(2:end,:);
-
-        % L2 norm time derivative computation
-        normL2_t = NaN(Ntime-1,1);
-        dt_save = T/(Ntime-1);
-        for i = 2:length(normL2)
-            normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
-        end
 
         % Wavenumber evolution plot
         Ntime = size(u_n,2);
         timewindow = linspace(0,T,Ntime);
         wavenumberevol_file = [pwd '/data/wavenumberevol_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
-        semilogy(timewindow,v_mean(1,:),'LineWidth',2)
+        semilogy(timewindow,v_mean(1,:))
         hold on;
         for i = 2:size(v_mean,1)
-            semilogy(timewindow,v_mean(i,:),'LineWidth',2)
+            semilogy(timewindow,v_mean(i,:))
         end
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
@@ -155,7 +155,7 @@ switch solplot
         % L2 norm plot
         normL2_file = [pwd '/data/normL2_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
-        semilogy(timewindow,normL2,'LineWidth',2)
+        semilogy(timewindow,normL2)
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
@@ -173,7 +173,7 @@ switch solplot
         % L2 norm time derivative plot
         normL2_t_file = [pwd '/data/normL2_deriv_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
-        plot(timewindow(2:end),normL2_t,'LineWidth',2)
+        plot(timewindow(2:end),normL2_t)
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
