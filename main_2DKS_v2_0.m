@@ -13,7 +13,7 @@ timewindow = linspace(0,60,7); % for time-stepping analysis
 timewindow(1) = 1;
 %L_scale = linspace(11,19,9)/10; % for dynamical behavior analysis
 %L_scale = [ 1.1 , 1.4 , 1.5 , 1.9 , 3.2 , 5.2 , 10.2]; % for dynamical behavior analysis
-L_scale = 1.00:0.01:2.00;
+L_scale = 1.90:0.01:2.00;
 timestep = 10.^(-linspace(1,4,7)); % for temporal convergence analysis
 gridsize = 10*4*linspace(3,21,7); % for spatial convergence analysis
 initialcondition = { 'sinL' };
@@ -35,7 +35,7 @@ for lscale = 1:1%length(L_scale)
     L_s1 = L_scale(lscale); % length-scale parameter in dim 1
     L_s2 = L_s1; % length-scale parameter in dim 2
     dt = 1e-2; % length of time-step
-    T = 1000; % time window
+    T = 20; % time window
     N = 32; % number of grid points 
     save_each = 1/dt; % number of iterations between saved timepoints - use T*10 to save 100, 1/dt to save 1 T
     %}
@@ -82,6 +82,10 @@ for lscale = 1:1%length(L_scale)
         time = toc;
         toc
         %}
+        switch run 
+            case 'kappa' % run kappa test
+                %z_n = AdjointSolve_2DKS_v1_0(u_n,v_n,N,L_s1,L_s2,dt,T,save_each);
+        end
 
         %%% save/inspect solution %%%
         switch run 

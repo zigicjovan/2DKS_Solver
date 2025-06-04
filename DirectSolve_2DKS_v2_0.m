@@ -115,71 +115,37 @@ u_n: solution vector for each time step in Physical space
     switch method 
 
         case 'imexrk4vec2a' % Solve vectorized equation by IMEXRK4 method
-            v_0step = v_n(:,1);
+            v_step = v_n(:,1);
+            Nonlin_v0 = 0;
             for i = 2:Ntime
 
                 % nonlinear terms and solution substeps
-% step 1
-                v_0step2x = reshape( D1vec .* v_0step, [ N_x1 , N_x2 ] ); % fx
-                v_0step2y = reshape( D2vec .* v_0step, [ N_x1 , N_x2 ] ); % fy
-                w1_r = multiply2D( v_0step2x , v_0step2x , 'fourier2real' ); % fx*fx
-                w1s_r = multiply2D( v_0step2y , v_0step2y , 'fourier2real' ); % fy*fy
-                Nonlin_v0_r = (-1/2) * ( w1_r + w1s_r ); % (-1/2)*(fx*fx+fy*fy)
-                Nonlin_v0 = multiply2D( fft2(Nonlin_v0_r) , fft2(Nonlin_v0_r) , 'dealias' ); % dealias
-                Nonlin_v0 = Nonlin_v0(:);
+                for k = 1:4
+                    v_step2x = reshape( D1vec .* v_step, [ N_x1 , N_x2 ] ); % fx
+                    v_step2y = reshape( D2vec .* v_step, [ N_x1 , N_x2 ] ); % fy
+                    w1_r = multiply2D( v_step2x , v_step2x , 'fourier2real' ); % fx*fx
+                    w1s_r = multiply2D( v_step2y , v_step2y , 'fourier2real' ); % fy*fy
+                    Nonlin_v1_r = (-1/2) * ( w1_r + w1s_r ); % (-1/2)*(fx*fx+fy*fy)
+                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) , 'dealias' ); % dealias
+                    Nonlin_v1 = Nonlin_v1(:);
+    
+                    v_1 = ( 1 - (dt * alpha_I(k) * Lin) ).^(-1) .* ...
+                        ( ( 1 + (dt * beta_I(k) * Lin) ) .* v_step + ...
+                        (dt * alpha_E(k) * Nonlin_v1) + ...
+                        (dt * beta_E(k)) * Nonlin_v0);
 
-                v_s1 = ( 1 - (dt * alpha_I(1) * Lin) ).^(-1) .* ...
-                    ( ( 1 + (dt * beta_I(1) * Lin) ) .* v_0step + ...
-                    (dt * alpha_E(1) * Nonlin_v0) + ...
-                    (dt * beta_E(1)) );
-% step 2
-                v_s12x = reshape( D1vec .* v_s1, [ N_x1 , N_x2 ] );
-                v_s12y = reshape( D2vec .* v_s1, [ N_x1 , N_x2 ] );
-                w2_r = multiply2D( v_s12x , v_s12x , 'fourier2real' ); 
-                w2s_r = multiply2D( v_s12y , v_s12y , 'fourier2real' ); 
-                Nonlin_v1_r = (-1/2) * ( w2_r + w2s_r ); 
-                Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) , 'dealias' ); 
-                Nonlin_v1 = Nonlin_v1(:);
+                    v_step = v_1;
+                    Nonlin_v0 = Nonlin_v1;
+                end
 
-                v_s2 = ( 1 - (dt * alpha_I(2) * Lin) ).^(-1) .* ...
-                    ( ( 1 + (dt * beta_I(2) * Lin) ) .* v_s1 + ...
-                    (dt * alpha_E(2) * Nonlin_v1) + ...
-                    (dt * beta_E(2)) * Nonlin_v0);
-% step 3
-                v_s22x = reshape( D1vec .* v_s2, [ N_x1 , N_x2 ] );
-                v_s22y = reshape( D2vec .* v_s2, [ N_x1 , N_x2 ] );
-                w3_r = multiply2D( v_s22x , v_s22x , 'fourier2real' );
-                w3s_r = multiply2D( v_s22y , v_s22y , 'fourier2real' ); 
-                Nonlin_v2_r = (-1/2) * ( w3_r + w3s_r );
-                Nonlin_v2 = multiply2D( fft2(Nonlin_v2_r) , fft2(Nonlin_v2_r) , 'dealias' ); 
-                Nonlin_v2 = Nonlin_v2(:);
-
-                v_s3 = ( 1 - (dt * alpha_I(3) * Lin) ).^(-1) .* ...
-                    ( ( 1 + (dt * beta_I(3) * Lin) ) .* v_s2 + ...
-                    (dt * alpha_E(3) * Nonlin_v2) + ...
-                    (dt * beta_E(3) * Nonlin_v1) ); 
-% step 4
-                v_s32x = reshape( D1vec .* v_s3, [ N_x1 , N_x2 ] );
-                v_s32y = reshape( D2vec .* v_s3, [ N_x1 , N_x2 ] );
-                w4_r = multiply2D( v_s32x , v_s32x , 'fourier2real' ); 
-                w4s_r = multiply2D( v_s32y , v_s32y , 'fourier2real' ); 
-                Nonlin_v3_r = (-1/2) * ( w4_r + w4s_r );
-                Nonlin_v3 = multiply2D( fft2(Nonlin_v3_r) , fft2(Nonlin_v3_r) , 'dealias' ); 
-                Nonlin_v3 = Nonlin_v3(:);
-
-                v_1 = ( 1 - (dt * alpha_I(4) * Lin) ).^(-1) .* ...
-                    ( ( 1 + (dt * beta_I(4) * Lin) ) .* v_s3 + ...
-                    (dt * alpha_E(4) * Nonlin_v3) + ...
-                    (dt * beta_E(4) * Nonlin_v2) ); 
-
-% correction of non-zero mean solution
+                % correction of non-zero mean solution
                 if abs(mean(v_1)) > 1e-5 
                     v_1(1) = 0;
                 end
 
                 v_12 = reshape( v_1, [ N_x1 , N_x2 ] );
                 u_1 = real(ifft2(v_12));  
-                v_0step = v_1;
+                v_step = v_1;
 
                 if save_each == 1
                     v_n(:,i) = v_12(:);
