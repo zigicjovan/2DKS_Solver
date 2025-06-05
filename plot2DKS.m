@@ -1,4 +1,4 @@
-function plot2DKS(v_n , u_n, solplot, method, N, dt, T, L_s1, L_s2)
+function plot2DKS(u_n, solplot, IC, N, dt, T, L_s1, L_s2, utility)
 
 Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
@@ -25,13 +25,12 @@ k2_0_pts = [ 0 : N/2-1 , 0 , -N/2+1 : -1];
 [ k1_0 , k2_0 ] = meshgrid(k1_0_pts,k2_0_pts); % 2-dimensional grid
 
 % compute L2 norm and Fourier mode evolution
-Ntime = size(u_n,2);
 normL2 = NaN(Ntime,1);
 v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
 v_meancount = v_mean;
 for i = 1:Ntime
     u_i = reshape( u_n(:,i) , [ N , N ] );
-    normL2(i,1) = norm(u_i)/N;
+    normL2(i,1) = sum( u_n(:,i) .* conj(u_n(:,i)) )*(L_s1*L_s2)/N^2;
     v = fftshift(real(abs(fft2(u_i))));
     for j = 1:N
         for k = 1:N
@@ -60,7 +59,7 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
         mkdir([pwd  '/data/media/movies' ]);
-        filename = [pwd '/data/media/movies/phys_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/movies/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '.gif'];
         set(gcf,'color','white')
         set(gca,'color','white')
@@ -128,9 +127,7 @@ switch solplot
     case 'diagnostics'
 
         % Wavenumber evolution plot
-        Ntime = size(u_n,2);
         timewindow = linspace(0,T,Ntime);
-        wavenumberevol_file = [pwd '/data/wavenumberevol_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
         semilogy(timewindow,v_mean(1,:))
         hold on;
@@ -150,10 +147,10 @@ switch solplot
         legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
+        wavenumberevol_file = [pwd '/data/wavenumberevol_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         imwrite(im,wavenumberevol_file,'png');
 
         % L2 norm plot
-        normL2_file = [pwd '/data/normL2_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
         semilogy(timewindow,normL2)
         set(gcf,'Position',[100 100 900 750])
@@ -167,11 +164,10 @@ switch solplot
         title("Evolution of L2 norm")
         frame = getframe(h);
         im = frame2im(frame);
+        normL2_file = [pwd '/data/normL2_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         imwrite(im,normL2_file,'png');
 
-
         % L2 norm time derivative plot
-        normL2_t_file = [pwd '/data/normL2_deriv_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         h = figure;
         plot(timewindow(2:end),normL2_t)
         set(gcf,'Position',[100 100 900 750])
@@ -185,6 +181,7 @@ switch solplot
         title("Evolution of L2 norm time derivative")
         frame = getframe(h);
         im = frame2im(frame);
+        normL2_t_file = [pwd '/data/normL2_deriv_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
         imwrite(im,normL2_t_file,'png');
 
     case 'initial'
@@ -194,7 +191,7 @@ switch solplot
         mkdir([pwd  '/data/media/figures' ]);
 
         % inspect physical and fourier spectrum
-        v_T = reshape( v_n(:,1) , [ N , N ] ); 
+        v_T = reshape( fft2(u_n(:,1)) , [ N , N ] ); 
         u_T = reshape( u_n(:,1) , [ N , N ] );
 
         % surface plot
@@ -209,7 +206,7 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/phys_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial.png'];
         imwrite(im,filename,'png');
 
@@ -218,7 +215,7 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/phys_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial_contour.png'];
         imwrite(im,filename,'png');
 
@@ -231,7 +228,7 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/four_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/four_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial.png'];
         imwrite(im,filename,'png');
 
@@ -242,7 +239,7 @@ switch solplot
         mkdir([pwd  '/data/media/figures' ]);
 
         % inspect physical and fourier spectrum
-        v_T = reshape( v_n(:,Ntime) , [ N , N ] ); 
+        v_T = reshape( fft2(u_n(:,Ntime)) , [ N , N ] ); 
         u_T = reshape( u_n(:,Ntime) , [ N , N ] );
 
         % surface plot
@@ -257,7 +254,7 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/phys_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal.png'];
         imwrite(im,filename,'png');
 
@@ -266,7 +263,7 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/phys_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal_contour.png'];
         imwrite(im,filename,'png');
 
@@ -279,8 +276,46 @@ switch solplot
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
-        filename = [pwd '/data/media/figures/four_' method '_N_' num2str(N) ...
+        filename = [pwd '/data/media/figures/four_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal.png'];
         imwrite(im,filename,'png');
 
+    case 'kappa'
+        kappa = utility;
+        kappaerror = NaN(size(kappa,1),size(kappa,2));
+        for i = 1:15
+            kappaerror(i,1) = abs( 1 - kappa(i,1) );
+        end
+
+        h = figure;
+        loglog(logspace(-15,-1,15),kappa)
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Perturbation $\varepsilon$','Interpreter','latex'); 
+        ylim([0.5 1.5])
+        ylabel('$\kappa(\varepsilon)$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Kappa Test 1")
+        frame = getframe(h);
+        im = frame2im(frame);
+        kappa1_file = [pwd '/data/kappa1_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        imwrite(im,kappa1_file,'png');
+
+        h = figure;
+        loglog(logspace(-15,-1,15),kappaerror)
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Perturbation $\varepsilon$','Interpreter','latex'); 
+        %xlim([0 T])
+        ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Kappa Test 2")
+        frame = getframe(h);
+        im = frame2im(frame);
+        kappaerr_file = [pwd '/data/kappaerr_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        imwrite(im,kappaerr_file,'png');
 end
