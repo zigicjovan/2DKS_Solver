@@ -10,7 +10,7 @@ IC = 'sinL';                                    % initial condition
 %%% choose parameter ranges %%%
 timewindow = linspace(0,60,7);                  % for time-stepping analysis
 timewindow(1) = 1;
-L_scale = 1.90:0.01:2.00;                       % for dynamical behavior analysis
+L_scale = 1.9:0.01:2.00;                       % for dynamical behavior analysis
 timestep = 10.^(-linspace(1,4,7));              % for temporal convergence analysis
 gridsize = 10*4*linspace(3,21,7);               % for spatial convergence analysis
 initialcondition = { 'sinL' };
@@ -31,9 +31,9 @@ for lscale = 1:1%length(L_scale)
     %
     L_s1 = L_scale(lscale);                     % length-scale parameter in dim 1
     L_s2 = L_s1;                                % length-scale parameter in dim 2
-    dt = 5e-3;                                  % length of time-step
-    T = 20;                                     % time window
-    N = 128;                                     % number of grid points 
+    dt = 1e-2;                                  % length of time-step
+    T = 18;                                     % time window
+    N = 32;                                     % number of grid points 
     save_each = 1/dt;                           % number of iterations between saved timepoints - use T*10 to save 100, 1/dt to save 1 T
     %}
 
@@ -73,6 +73,7 @@ for lscale = 1:1%length(L_scale)
         end
         
         %%% solve PDE problem in time %%%
+        disp('Solving forward equation...')
         tic
         [ v_n , u_n ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,0);
         time = toc;
@@ -81,27 +82,36 @@ for lscale = 1:1%length(L_scale)
         %%% save/inspect solution %%%
         switch run 
             case {'L','N','dt','T','IC'}                
-                save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);          % save solution
-                %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2);         % load solution
-                %plot2DKS(u_n, 'initial', IC, N, dt, T, L_s1, L_s2, 0);                           % save/inspect initial state
-                %plot2DKS(u_n, 'terminal', IC, N, dt, T, L_s1, L_s2, 0);                          % save/inspect terminal state
-                plot2DKS(u_n, 'diagnostics', IC, N, dt, T, L_s1, L_s2, 0);                        % save/inspect dynamical characteristics
-                %plot2DKS(u_n, 'gif', IC, N, dt, T, L_s1, L_s2, 0);                               % save/inspect time evolution    
+                save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);               % save solution
+                %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2);              % load solution
+                %plot2DKS(u_n, 'initial', IC, N, dt, T, L_s1, L_s2, 0);                                 % save/inspect initial state
+                %plot2DKS(u_n, 'terminal', IC, N, dt, T, L_s1, L_s2, 0);                                % save/inspect terminal state
+                plot2DKS(u_n, 'diagnostics', IC, N, dt, T, L_s1, L_s2, 0);                              % save/inspect dynamical characteristics
+                %plot2DKS(u_n, 'gif', IC, N, dt, T, L_s1, L_s2, 0);                                     % save/inspect time evolution    
             case 'kappa' 
-                J_init = sum( u_n(:,end) .* conj(u_n(:,end)) )*(L_s1*L_s2)/N^2;                         % initial objective functional (L^2 inner product of terminal forward state)        
+                L1 = 2*pi*L_s1;
+                L2 = 2*pi*L_s2;
+                J_init = sum( u_n(:,end) .* conj(u_n(:,end)) )*(L1*L2)/N^2;                             % initial objective functional (L^2 inner product of terminal forward state)        
+                disp('Solving backward equation...')
+                tic
                 [v_adj, u_adj] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_n);              % solve adjoint equation
-                gat_riesz = sum( u_adj(:,1) .* conj(u_n(:,1)) )*(L_s1*L_s2)/N^2;                        % kappa test denominator 
+                toc
+                gat_riesz = sum( u_adj(:,1) .* conj(u_n(:,1)) )*(L1*L2)/N^2;                            % kappa test denominator 
                 gradJ = v_adj(:,1);                                                                     % objective gradient
+                save_each = 1/dt;                                                                       % release memory
+                clear v_n v_adj u_adj                                                                   % release memory
+                disp('Solving perturbed equations...')
                 tic
                 for i = -15:1:-1
                     eps = 10^(i);                                                                       % define perturbation 
-                    [ v_pert , u_pert ] = solve_2DKS(IC,'kappa',N,L_s1,L_s2,dt,T,save_each,eps);        % solve perturbed forward equation
-                    J_pert(i+16,1) = sum( u_pert(:,end) .* conj(u_pert(:,end)) )*(L_s1*L_s2)/N^2;       % perturbed objective functional
+                    [ ~ , u_pert ] = solve_2DKS(IC,'kappa',N,L_s1,L_s2,dt,T,save_each,eps);             % solve perturbed forward equation
+                    J_pert(i+16,1) = sum( u_pert(:,end) .* conj(u_pert(:,end)) )*(L1*L2)/N^2;           % perturbed objective functional
                     gateaux_deriv(i+16,1) = (J_pert(i+16,1) - J_init)/eps;                              % kappa test numerator 
                     kappa(i+16,1) = gateaux_deriv(i+16,1)/gat_riesz;                                    % kappa test numerator 
                     toc
                 end
-                plot2DKS(u_n, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa);                          % save/inspect kappa test figure
+                clear v_pert u_pert                                                                     % release memory
+                plot2DKS(u_n, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa);                                % save/inspect kappa test figure
         end
 
         close all                                                                                       % close any open figures

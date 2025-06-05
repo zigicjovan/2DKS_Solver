@@ -83,7 +83,8 @@ u_n: solution vector for each time step in Physical space
             v_0 = fft2(u_0); 
         case 'kappa'
             eps = utility;
-            u_0 = u_0 + eps*u_0;
+            u_pert = u_0;
+            u_0 = u_0 + eps*u_pert;
             v_0 = fft2(u_0); 
         case 'backward'
             v_fwd = utility;
@@ -159,11 +160,8 @@ u_n: solution vector for each time step in Physical space
 
             end
         case {'backward'} % Solve adjoint equation
-            v_end = reshape( v_fwd(:,end), [ N_x1 , N_x2 ] ); 
-            u_end = real(ifft2(v_end)); 
-            u_TC = 2 .* u_end;                                                                  % physical terminal condition
-            u_n(:,end) = u_TC(:);                                                           
-            v_n(:,end) = fft2(u_n(:,end));                                                      % fourier TC
+            v_n(:,end) = 2 .* v_fwd(:,end);                                                     % fourier TC
+            u_n(:,end) = real(ifft2(v_n(:,end)));          
             v_step = v_n(:,end);                                                                % initialize stepping with fourier TC
             Nonlin_v0 = 0;
             for i = Ntime-1:-1:1

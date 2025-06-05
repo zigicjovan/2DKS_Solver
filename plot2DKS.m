@@ -4,10 +4,8 @@ Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
 
 % length-scale parameters
-L_x1 = (1/L_s1);
-L_x2 = (1/L_s2);
-L1 = 2*pi/L_x1;
-L2 = 2*pi/L_x2;
+L1 = 2*pi*L_s1;
+L2 = 2*pi*L_s2;
 
 % unit physical space domain
 x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
@@ -30,7 +28,7 @@ v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
 v_meancount = v_mean;
 for i = 1:Ntime
     u_i = reshape( u_n(:,i) , [ N , N ] );
-    normL2(i,1) = sum( u_n(:,i) .* conj(u_n(:,i)) )*(L_s1*L_s2)/N^2;
+    normL2(i,1) = sum( u_n(:,i) .* conj(u_n(:,i)) )*(L1*L2)/N^2;
     v = fftshift(real(abs(fft2(u_i))));
     for j = 1:N
         for k = 1:N
