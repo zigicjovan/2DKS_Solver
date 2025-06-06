@@ -2,7 +2,7 @@
 tic
 
 %%% choose switches %%%
-run = 'kappa';                                  % switch to 0, 'L', 'N', 'dt', 'T', 'IC', 'kappa'
+run = 'IC';                                  % switch to 0, 'L', 'N', 'dt', 'T', 'IC', 'kappa'
 test_parameter = 0;                             % do not alter
 diagnostics = 1;                                % evaluating dynamics of Fourier modes
 IC = 'sinL';                                    % initial condition
@@ -10,7 +10,7 @@ IC = 'sinL';                                    % initial condition
 %%% choose parameter ranges %%%
 timewindow = linspace(0,60,7);                  % for time-stepping analysis
 timewindow(1) = 1;
-L_scale = 1.9:0.01:2.00;                       % for dynamical behavior analysis
+L_scale = 1.9:0.35:2.6;                       % for dynamical behavior analysis
 timestep = 10.^(-linspace(1,4,7));              % for temporal convergence analysis
 gridsize = 10*4*linspace(3,21,7);               % for spatial convergence analysis
 initialcondition = { 'sinL' };
@@ -25,15 +25,17 @@ N = gridsize(3);                                % number of grid points
 save_each = 100;                                % number of iterations between saved timepoints
 %}
 
+%kappalist_48_1e3_sin_p1 = NaN(15,length(L_scale)); % temporary for kappa tests
+
 for lscale = 1:1%length(L_scale)
 
     %%% choose temporary parameters %%%
     %
     L_s1 = L_scale(lscale);                     % length-scale parameter in dim 1
     L_s2 = L_s1;                                % length-scale parameter in dim 2
-    dt = 1e-2;                                  % length of time-step
-    T = 18;                                     % time window
-    N = 32;                                     % number of grid points 
+    dt = 1e-3;                                  % length of time-step
+    T = 20;                                     % time window
+    N = 48;                                     % number of grid points 
     save_each = 1/dt;                           % number of iterations between saved timepoints - use T*10 to save 100, 1/dt to save 1 T
     %}
 
@@ -82,7 +84,7 @@ for lscale = 1:1%length(L_scale)
         %%% save/inspect solution %%%
         switch run 
             case {'L','N','dt','T','IC'}                
-                save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);               % save solution
+                %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);               % save solution
                 %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2);              % load solution
                 %plot2DKS(u_n, 'initial', IC, N, dt, T, L_s1, L_s2, 0);                                 % save/inspect initial state
                 %plot2DKS(u_n, 'terminal', IC, N, dt, T, L_s1, L_s2, 0);                                % save/inspect terminal state
@@ -112,6 +114,7 @@ for lscale = 1:1%length(L_scale)
                 end
                 clear v_pert u_pert                                                                     % release memory
                 plot2DKS(u_n, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa);                                % save/inspect kappa test figure
+                %kappalist_48_1e3_sin_p1(:,lscale) = kappa;
         end
 
         close all                                                                                       % close any open figures
