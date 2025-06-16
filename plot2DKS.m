@@ -50,6 +50,16 @@ for i = 2:length(normL2)
     normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
 end
 
+normL2data_file = [pwd '/data/normL2/normL2_' IC '_N_' num2str(N) '' ...
+        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '.dat'];
+writematrix(normL2, normL2data_file,'Delimiter','tab');
+normL2deriv_file = [pwd '/data/normL2_t/normL2_' IC '_N_' num2str(N) '' ...
+        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '.dat'];
+writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
+spectrum_file = [pwd '/data/spectrum/spectrum_' IC '_N_' num2str(N) '' ...
+        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '.dat'];
+writematrix(v_mean, spectrum_file,'Delimiter','tab');
+
 switch solplot
     case 'gif'
 
@@ -58,7 +68,7 @@ switch solplot
         axis tight manual % this ensures that getframe() returns a consistent size
         mkdir([pwd  '/data/media/movies' ]);
         filename = [pwd '/data/media/movies/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '.gif'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '.gif'];
         set(gcf,'color','white')
         set(gca,'color','white')
         
@@ -100,19 +110,19 @@ switch solplot
             xlim([0 T])
             ylim([min(normL2) max(normL2)+1e-1])
             title("Evolution of $L^2$ norm",'Interpreter','latex')
-            legend('L^{2} norm','Location','southeast')
+            %legend('L^{2} norm','Location','southeast')
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
             semilogy(v_mean(:,i),".")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-            title("Energy spectrum")
+            title("Energy spectrum",'Interpreter','latex')
             xlim([1 size(v_mean,1)])
             ylim([1e-15 max(v_mean(1,:))])
             set(gca,'fontsize', 12) 
         
-            sgtitle(['2DKS, x_1 = 2\pi(' num2str(L_s1) '), x_2 = 2\pi(' num2str(L_s2) '), T = ' num2str(currentT,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) ''])
+            sgtitle(['2DKS, $\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         
             if i == 1
                 gif(filename)
@@ -121,6 +131,18 @@ switch solplot
             end
         
         end
+
+        %{
+        % manual conversion of GIF to AVI:  
+        tic
+        testdirs = dir([pwd '/data/media/movies/phys_sinL_N_48_T_2000_dt_0.01_Ls1_*.gif']);
+        numberoftests = size(testdirs,1);
+        for test = 1:numberoftests
+            currenttest = testdirs(test).name;
+            gif2avi(currenttest,[],'FrameRate',10)
+            toc
+        end
+        %}
 
     case 'diagnostics'
 
@@ -143,11 +165,14 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Evolution of Fourier spectrum")
+        %title("Evolution of Fourier spectrum")
+        %title(['Evolution of Fourier spectrum, $\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        title('Evolution of Fourier spectrum','Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
-        wavenumberevol_file = [pwd '/data/energy/wavenumberevol_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        wavenumberevol_file = [pwd '/data/energy/wavenumberevol_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,wavenumberevol_file,'png');
 
         % L2 norm plot
@@ -161,10 +186,13 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Evolution of L2 norm")
+        %title("Evolution of L2 norm")
+        %title(['Evolution of $L^2$ norm, $\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        title('Evolution of $L^2$ norm','Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
-        normL2_file = [pwd '/data/energy/normL2_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        normL2_file = [pwd '/data/energy/normL2_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,normL2_file,'png');
 
         % L2 norm time derivative plot
@@ -178,10 +206,13 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Evolution of L2 norm time derivative")
+        %title("Evolution of L2 norm time derivative")
+        %title(['Evolution of $L^2$ norm time derivative, $\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        title('Evolution of $L^2$ norm time derivative','Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
-        normL2_t_file = [pwd '/data/energy/normL2_deriv_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        normL2_t_file = [pwd '/data/energy/normL2_deriv_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,normL2_t_file,'png');
 
     case 'initial'
@@ -207,7 +238,7 @@ switch solplot
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_initial.png'];
         imwrite(im,filename,'png');
 
         % contour plot
@@ -216,7 +247,7 @@ switch solplot
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial_contour.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_initial_contour.png'];
         imwrite(im,filename,'png');
 
         % fourier plot
@@ -229,7 +260,7 @@ switch solplot
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/four_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_initial.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_initial.png'];
         imwrite(im,filename,'png');
 
     case 'terminal'
@@ -248,15 +279,21 @@ switch solplot
         shading interp
         pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
         view(3);
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
         set(gcf,'color','white')
-        set(gca,'color','white')
+        set(gca,'color','white') 
         colormap(redblue)
+        title('Terminal state','Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        %{
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_terminal.png'];
         imwrite(im,filename,'png');
+        %}
 
         % contour plot
         view(2);
@@ -264,9 +301,10 @@ switch solplot
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal_contour.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_terminal_contour.png'];
         imwrite(im,filename,'png');
 
+        %{
         % fourier plot
         surfc(k1_0,k2_0,real(abs(v_T))); set(gca,'xscale','log','yscale','log','zscale','log');
         xlabel('k_1'); ylabel('k_2'); zlabel('|v(k_1,k_2)|');
@@ -277,8 +315,9 @@ switch solplot
         frame = getframe(h);
         im = frame2im(frame);
         filename = [pwd '/data/media/figures/four_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1) '_Ls2_' num2str(L_s2) '_terminal.png'];
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_terminal.png'];
         imwrite(im,filename,'png');
+        %}
 
     case 'kappa'
 
@@ -287,6 +326,7 @@ switch solplot
         kappa = utility;
         kappaerror = abs( 1 - kappa );
 
+        %{
         h = figure;
         semilogx(logspace(-15,-1,15),kappa)
         yline(1,'--')
@@ -302,8 +342,9 @@ switch solplot
         title("Kappa test for $\varphi$", 'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
-        kappa1_file = [pwd '/data/kappa/kappa1_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        kappa1_file = [pwd '/data/kappa/kappa_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,kappa1_file,'png');
+        %}
 
         h = figure;
         loglog(logspace(-15,-1,15),kappaerror)
@@ -318,42 +359,29 @@ switch solplot
         title("Kappa difference test for $\varphi_1$", 'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
-        kappaerr_file = [pwd '/data/kappa/kappaerr_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        kappaerr_file = [pwd '/data/kappa/kappaerr_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,kappaerr_file,'png');
 
         %{
-        kappasinL = [ kappalist_48_1e2_sinL_p1 kappalist_48_5e3_sinL_p1 kappalist_48_1e3_sinL_p1 ...
-        kappalist_64_1e2_sinL_p1 kappalist_64_5e3_sinL_p1 kappalist_64_1e3_sinL_p1 ] ;
-        kappasin = [ kappalist_48_1e2_sin_p1 kappalist_48_5e3_sin_p1 kappalist_48_1e3_sin_p1 ...
-        kappalist_64_1e2_sin_p1 kappalist_64_5e3_sin_p1 kappalist_64_1e3_sin_p1 ] ;
+        %%% timestep test %%%
+        kappasinL = [ kappalist_48_1e2_sinL_p30 kappalist_48_5e3_sinL_p30 kappalist_48_1e3_sinL_p30  ] ;
 
         kappaerrorsinL= abs( 1 - kappasinL );
-        kappaerrorsin = abs( 1 - kappasin );
 
-        %%% first test %%%
+        % kappa test %
         h = figure;
         semilogx(logspace(-15,-1,15),kappasinL(:,1),'r--+')
         hold on
         semilogx(logspace(-15,-1,15),kappasinL(:,4),'r--*')
         semilogx(logspace(-15,-1,15),kappasinL(:,7),'r--o')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+1),'r:+')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+4),'r:*')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+7),'r:o')
         semilogx(logspace(-15,-1,15),kappasinL(:,2),'g--+')
         semilogx(logspace(-15,-1,15),kappasinL(:,5),'g--*')
         semilogx(logspace(-15,-1,15),kappasinL(:,8),'g--o')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+2),'g:+')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+5),'g:*')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+8),'g:o')
         semilogx(logspace(-15,-1,15),kappasinL(:,3),'b--+')
         semilogx(logspace(-15,-1,15),kappasinL(:,6),'b--*')
         semilogx(logspace(-15,-1,15),kappasinL(:,9),'b--o')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+3),'b:+')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+6),'b:*')
-        %semilogx(logspace(-15,-1,15),kappasinL(:,9+9),'b:o')
 
         yline(1,'--')
-        %set(gcf,'Position',[100 100 900 750])
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
         ylim([0.97 1.03])
         xlim([1e-15 1e-1])
@@ -362,38 +390,29 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Kappa test for $\varphi_1$", 'Interpreter','latex')
+        title("Kappa test for $\varphi_{1}$", 'Interpreter','latex')
         legend("$N = 48, \Delta t = .01, \ell = 1.90", "$N = 48, \Delta t = .005, \ell = 1.90", "$N = 48, \Delta t = .001, \ell = 1.90", ...
             "$N = 48, \Delta t = .01, \ell = 2.25", "$N = 48, \Delta t = .005, \ell = 2.25", "$N = 48, \Delta t = .001, \ell = 2.25",  ...
             "$N = 48, \Delta t = .01, \ell = 2.60", "$N = 48, \Delta t = .005, \ell = 2.60", "$N = 48, \Delta t = .001, \ell = 2.60",  ...
             'Interpreter','latex', 'Location','southoutside', 'NumColumns',3)
         frame = getframe(h);
         im = frame2im(frame);
-        kappa1_file = [pwd '/data/kappa/kappasinL_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        kappa1_file = [pwd '/data/kappa/kappasinL_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,kappa1_file,'png');
 
+        % kappa difference test %
         h = figure;
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,1),'r--+')
         hold on
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,4),'r--*')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,7),'r--o')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+1),'r:+')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+4),'r:*')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+7),'r:o')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,2),'g--+')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,5),'g--*')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,8),'g--o')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+2),'g:+')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+5),'g:*')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+8),'g:o')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,3),'b--+')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,6),'b--*')
         loglog(logspace(-15,-1,15),kappaerrorsinL(:,9),'b--o')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+3),'b:+')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+6),'b:*')
-        %loglog(logspace(-15,-1,15),kappaerrorsinL(:,9+9),'b:o')
 
-        %set(gcf,'Position',[100 100 900 750])
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
         ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
         fontsize(12,"points")
@@ -401,59 +420,108 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Kappa difference test for $\varphi_1$", 'Interpreter','latex')
+        title("Kappa difference test for $\varphi_{1}$", 'Interpreter','latex')
         legend("$N = 48, \Delta t = .01, \ell = 1.90", "$N = 48, \Delta t = .005, \ell = 1.90", "$N = 48, \Delta t = .001, \ell = 1.90", ...
             "$N = 48, \Delta t = .01, \ell = 2.25", "$N = 48, \Delta t = .005, \ell = 2.25", "$N = 48, \Delta t = .001, \ell = 2.25",  ...
             "$N = 48, \Delta t = .01, \ell = 2.60", "$N = 48, \Delta t = .005, \ell = 2.60", "$N = 48, \Delta t = .001, \ell = 2.60",  ...
             'Interpreter','latex', 'Location','southoutside', 'NumColumns',3)
         frame = getframe(h);
         im = frame2im(frame);
-        kappa2_file = [pwd '/data/kappa/kappaerrsinL_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        kappa2_file = [pwd '/data/kappa/kappaerrsinL_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
+        imwrite(im,kappa2_file,'png');
+ 
+        %%% perturbation test %%%
+        kappasinL30p = [ kappalist_48_1e2_sinL30_p1 kappalist_48_5e3_sinL30_p1 kappalist_48_1e2_sinL30_p10 kappalist_48_5e3_sinL30_p10  ] ;
+
+        kappaerrorsinL30p = abs( 1 - kappasinL30p );
+
+        i=0;
+        % kappa difference test %
+        i = i +2;
+        h = figure;
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+1),'r--s')
+        hold on
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+2),'r--*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+3),'r--o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+4),'m--s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+5),'m--*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+6),'m--o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+7),'g--s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+8),'g--*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+9),'g--o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+10),'b--s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+11),'b--*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i-1)*12+12),'b--o')
+
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+1),'r:s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+2),'r:*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+3),'r:o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+4),'m:s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+5),'m:*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+6),'m:o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+7),'g:s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+8),'g:*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+9),'g:o')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+10),'b:s')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+11),'b:*')
+        loglog(logspace(-15,-1,15),kappaerrorsinLp(:,(i)*12+12),'b:o')
+
+        xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
+        ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
+        fontsize(12,"points")
+       
+        xlim([1e-15 1e-1])
+        %ylim([1e-4 1e-1])
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Kappa difference test for $\varphi_{1}, N=48, \varphi' = \varphi_{30}$", 'Interpreter','latex')
+        legend("$\Delta t = .010, \ell = 1.15",  "$\Delta t = .010, \ell = 1.30", "$\Delta t = .010, \ell = 1.45", "$\Delta t = .010, \ell = 1.60", ...
+            "$\Delta t = .010, \ell = 1.75", "$\Delta t = .010, \ell = 1.90", "$\Delta t = .010, \ell = 2.05", "$\Delta t = .010, \ell = 2.20", ...
+            "$\Delta t = .010, \ell = 2.35", "$\Delta t = .010, \ell = 2.50",  "$\Delta t = .010, \ell = 2.65", "$\Delta t = .010, \ell = 2.80", ...
+            "$\Delta t = .005, \ell = 1.15","$\Delta t = .005, \ell = 1.30",  "$\Delta t = .005, \ell = 1.45",  "$\Delta t = .005, \ell = 1.60", ...
+            "$\Delta t = .005, \ell = 1.75",  "$\Delta t = .005, \ell = 1.90",  "$\Delta t = .005, \ell = 2.05",  "$\Delta t = .005, \ell = 2.20", ...
+            "$\Delta t = .005, \ell = 2.35", "$\Delta t = .005, \ell = 2.50","$\Delta t = .005, \ell = 2.65", "$\Delta t = .005, \ell = 2.80", ...
+            'Interpreter','latex', 'Location','southoutside', 'NumColumns',4)
+        frame = getframe(h);
+        im = frame2im(frame);
+        kappa2_file = [pwd '/data/kappa/kappaerrsinLp30_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,kappa2_file,'png');
 
-        %%% second test %%%
-        h = figure;
-        semilogx(logspace(-15,-1,15),kappasin(:,1),'r--+')
-        hold on
-        semilogx(logspace(-15,-1,15),kappasin(:,4),'r--*')
-        semilogx(logspace(-15,-1,15),kappasin(:,7),'r--o')
-        semilogx(logspace(-15,-1,15),kappasin(:,2),'g--+')
-        semilogx(logspace(-15,-1,15),kappasin(:,5),'g--*')
-        semilogx(logspace(-15,-1,15),kappasin(:,8),'g--o')
-        semilogx(logspace(-15,-1,15),kappasin(:,3),'b--+')
-        semilogx(logspace(-15,-1,15),kappasin(:,6),'b--*')
-        semilogx(logspace(-15,-1,15),kappasin(:,9),'b--o')
-
-        yline(1,'--')
-        xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
-        xlim([1e-15 1e-1])
-        ylim([0.97 1.03])
-        ylabel('$\kappa(\varepsilon)$','Interpreter','latex');
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title("Kappa test for $\varphi_2$", 'Interpreter','latex')
-        legend("$N = 48, \Delta t = .01, \ell = 1.90", "$N = 48, \Delta t = .005, \ell = 1.90", "$N = 48, \Delta t = .001, \ell = 1.90", ...
-            "$N = 48, \Delta t = .01, \ell = 2.25", "$N = 48, \Delta t = .005, \ell = 2.25", "$N = 48, \Delta t = .001, \ell = 2.25",  ...
-            "$N = 48, \Delta t = .01, \ell = 2.60", "$N = 48, \Delta t = .005, \ell = 2.60", "$N = 48, \Delta t = .001, \ell = 2.60",  ...
-            'Interpreter','latex', 'Location','southoutside', 'NumColumns',3)
+        xlim([1e-10 1e-5])
         frame = getframe(h);
         im = frame2im(frame);
-        kappa1_file = [pwd '/data/kappa/kappasin_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
-        imwrite(im,kappa1_file,'png');
+        kappa2_file = [pwd '/data/kappa/kappaerrsinLp30zoom_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
+        imwrite(im,kappa2_file,'png');
 
+        %%% time window test %%%
+
+        kappaerr_T_1e2_sinL30_p30 = abs( 1 - kappalist_T_1e2_sinL30_p30 );
+
+        i=0;
+        % kappa difference test %
+        i = i+1;
         h = figure;
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,1),'r--+')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+1),'r--o')
         hold on
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,4),'r--*')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,7),'r--o')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,2),'g--+')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,5),'g--*')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,8),'g--o')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,3),'b--+')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,6),'b--*')
-        loglog(logspace(-15,-1,15),kappaerrorsin(:,9),'b--o')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+2),'r--x')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+3),'r--+')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+4),'r--*')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+5),'m--s')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+6),'m--d')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+7),'m--^')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+8),'m--p')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+9),'m--h')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+10),'g--<')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+11),'g--o')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+12),'g--x')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+13),'g--+')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+14),'g--*')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+15),'b--s')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+16),'b--d')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+17),'b--^')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+18),'b--p')
+        loglog(logspace(-15,-1,15),kappaerr_T_1e2_sinL30_p30(:,(i-1)*length(timewindow)+19),'b--h')
 
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
         ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
@@ -462,14 +530,42 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Kappa difference test for $\varphi_2$", 'Interpreter','latex')
-        legend("$N = 48, \Delta t = .01, \ell = 1.90", "$N = 48, \Delta t = .005, \ell = 1.90", "$N = 48, \Delta t = .001, \ell = 1.90", ...
-            "$N = 48, \Delta t = .01, \ell = 2.25", "$N = 48, \Delta t = .005, \ell = 2.25", "$N = 48, \Delta t = .001, \ell = 2.25",  ...
-            "$N = 48, \Delta t = .01, \ell = 2.60", "$N = 48, \Delta t = .005, \ell = 2.60", "$N = 48, \Delta t = .001, \ell = 2.60",  ...
-            'Interpreter','latex', 'Location','southoutside', 'NumColumns',3)
+        title('Kappa difference test for $\varphi_{30}: \ell = 2.80, N=48, \Delta t = .01, \varphi'' = \varphi_{30}$','Interpreter','latex');
+        legend("$T=20", "$T=30$", "$T=40", "$T=50$", "$T=60", "$T=70$", "$T=80", "$T=90$", "$T=100$", ...
+                "$T=110", "$T=120", "$T=130$", "$T=140", "$T=150$", "$T=160", "$T=170$", "$T=180", "$T=190$", "$T=200$", ...
+            'Interpreter','latex', 'Location','eastoutside', 'NumColumns',1)
         frame = getframe(h);
         im = frame2im(frame);
-        kappa2_file = [pwd '/data/kappa/kappaerrsin_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1) '_lY' num2str(L_s2) '.png'];
+        kappa2_file = [pwd '/data/kappa/kappaerrsinL30_ell280_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
+        imwrite(im,kappa2_file,'png');
+
+        h = figure;
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((1-1)*length(timewindow)+1:(1)*length(timewindow)+0,1)),'r--o')
+        hold on
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((2-1)*length(timewindow)+1:(2)*length(timewindow)+0,1)),'r--x')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((3-1)*length(timewindow)+1:(3)*length(timewindow)+0,1)),'r--+')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((4-1)*length(timewindow)+1:(4)*length(timewindow)+0,1)),'m--*')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((5-1)*length(timewindow)+1:(5)*length(timewindow)+0,1)),'m--s')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((6-1)*length(timewindow)+1:(6)*length(timewindow)+0,1)),'m--d')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((7-1)*length(timewindow)+1:(7)*length(timewindow)+0,1)),'g--o')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((8-1)*length(timewindow)+1:(8)*length(timewindow)+0,1)),'g--x')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((9-1)*length(timewindow)+1:(9)*length(timewindow)+0,1)),'g--+')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((10-1)*length(timewindow)+1:(10)*length(timewindow)+0,1)),'b--*')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((11-1)*length(timewindow)+1:(11)*length(timewindow)+0,1)),'b--s')
+        semilogy(timewindow,abs(rieszlist_T_1e2_sinL30_p30((12-1)*length(timewindow)+1:(12)*length(timewindow)+0,1)),'b--d')
+        xlabel('Time window $T$','Interpreter','latex'); 
+        ylabel('$\langle \nabla\mathcal{J}_T (\varphi), \varphi''  \rangle_{L^2}$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title("Kappa test denominator for $\varphi_{1}, N=48, \Delta t = .01, \varphi' = \varphi_{1}$", 'Interpreter','latex')
+        legend("$\ell = 1.15$", "$\ell = 1.30$", "$\ell = 1.45$", "$\ell = 1.60$", "$\ell = 1.75$", "$\ell = 1.90$", ...
+            "$\ell = 2.05$", "$\ell = 2.20$", "$\ell = 2.35$", "$\ell = 2.50$", "$\ell = 2.65$", "$\ell = 2.80$", ...
+            'Interpreter','latex', 'Location','eastoutside', 'NumColumns',1)
+        frame = getframe(h);
+        im = frame2im(frame);
+        kappa2_file = [pwd '/data/kappa/kappadenomsinL_2DKS_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,kappa2_file,'png');
         %}
 

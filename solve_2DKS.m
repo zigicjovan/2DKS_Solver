@@ -1,4 +1,4 @@
-function [ v_n , u_n , utility ] = solve_2DKS(IC,solver,N_x1,L_s1,L_s2,dt,T,save_each,utility)
+function [ v_n , u_n , utilityout ] = solve_2DKS(IC,solver,N_x1,L_s1,L_s2,dt,T,save_each,utilityin)
 
 %{ 
 Output:
@@ -57,12 +57,14 @@ u_n: solution vector for each time step in Physical space
             u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
         case 'sinL'
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
+        case 'sinL10'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 10*L_x2*x2 );
+        case 'sinL30'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 30*L_x2*x2 );
         case 'gauss'
             u_0 = exp(-0.1*( (x1 - 0.5*L1).^2 + (x2 - 0.5*L2).^2));
         case 'noise'
             u_0 = 1e-14*(2*rand(N_x1)-ones(N_x1));
-        case 'sinX'
-            u_0 = ((10.0)^(0))*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 1.0*(L_x1*x1.^2) ));
         case 'mn5'
             u_0 = ((10.0)^(-5))*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
                                  sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
@@ -76,16 +78,20 @@ u_n: solution vector for each time step in Physical space
                                   sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
                                   sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
     end
+
+    % perturbation function for adjoint calculus
+    u_pert = u_0; %sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 30*L_x2*x2 );                    
+
     switch solver
         case 'forward'
-            v_0 = fft2(u_0); 
+            v_0 = fft2(u_0);            % FFT of physical initial condition
         case 'kappa'
-            eps = utility;
-            u_pert = u_0;
-            u_0 = u_0 + eps*u_pert;
-            v_0 = fft2(u_0); 
+            eps = utilityin;            % perturbation magnitude for kappa test
+            u_0 = u_0 + eps*u_pert;     % perturbed initial condition
+            v_0 = fft2(u_0);            % FFT of perturbed physical initial condition
         case 'backward'
-            v_fwd = utility;
+            utilityout = u_pert(:);     % perturbed physical initial condition
+            v_fwd = utilityin;          % forward solution in Fourier space
     end
 
 %%% (2) solve time-dependent problem %%%
@@ -163,16 +169,16 @@ u_n: solution vector for each time step in Physical space
             v_step = v_n(:,end);                                                                % initialize stepping with fourier TC
             Nonlin_v0 = 0;
             for i = Ntime-1:-1:1
-                v_fwdstep = v_fwd(:,i);
+                v_fwdstep = v_fwd(:,i+1);
+                v_fwd2x = reshape( D1vec .* v_fwdstep, [ N_x1 , N_x2 ] );                       % f_x
+                v_fwd2y = reshape( D2vec .* v_fwdstep, [ N_x1 , N_x2 ] );                       % f_y
+                v_fwd2lap = reshape( Lap .* v_fwdstep, [ N_x1 , N_x2 ] );                       % lap(f)
 
                 % nonlinear terms and solution substeps
                 for k = 1:4
                     v_step2 = reshape( v_step, [ N_x1 , N_x2 ] );                               % z (adjoint variable)
                     v_step2x = reshape( D1vec .* v_step, [ N_x1 , N_x2 ] );                     % z_x
                     v_step2y = reshape( D2vec .* v_step, [ N_x1 , N_x2 ] );                     % z_y
-                    v_fwd2x = reshape( D1vec .* v_fwdstep, [ N_x1 , N_x2 ] );                   % f_x
-                    v_fwd2y = reshape( D2vec .* v_fwdstep, [ N_x1 , N_x2 ] );                   % f_y
-                    v_fwd2lap = reshape( Lap .* v_fwdstep, [ N_x1 , N_x2 ] );                   % lap(f)
                     w1_r = multiply2D( v_step2x , v_fwd2x , 'fourier2real' );                   % z_x * f_x in physical space (pseudospectral)
                     w1s_r = multiply2D( v_step2y , v_fwd2y , 'fourier2real' );                  % z_y * f_y in physical space (pseudospectral)
                     w2_r = multiply2D( v_fwd2lap , v_step2 , 'fourier2real' );                  % lap(f) * z in physical space (pseudospectral)
