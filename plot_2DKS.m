@@ -70,7 +70,7 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')
         
-        for i = 1 : ceil(Ntime/Ntime) : Ntime
+        for i = 1 : ceil(Ntime/100) : Ntime
         
             currentT = (i-1)/(Ntime-1)*T;
 
@@ -92,7 +92,7 @@ switch solplot
             xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
-            pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_i)) ] );
+            pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_i))) ] );
             xline(L1,'--');
             yline(L2,'--');
             view(2);
@@ -121,7 +121,7 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'];
+            title2 = ['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'];
             sgtitle({title1, title2},'Interpreter','latex');
 
             if i == 1
@@ -166,8 +166,8 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Evolution of Fourier spectrum','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
-        legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        %legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
         wavenumberevol_file = [pwd '/data/media/energy/wavenumberevol_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
@@ -185,12 +185,13 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Evolution of $L^2$ norm','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
         normL2_file = [pwd '/data/media/energy/normL2_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,normL2_file,'png');
 
+        %{
         % L2 norm time derivative plot
         h = figure;
         plot(timewindow(2:end),normL2_t)
@@ -203,11 +204,12 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Evolution of $L^2$ norm time derivative','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
         normL2_t_file = [pwd '/data/media/energy/normL2_deriv_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];
         imwrite(im,normL2_t_file,'png');
+        %}
 
     case 'initial'
 
@@ -228,7 +230,7 @@ switch solplot
         colormap(redblue)
         view(3);
         title('Initial state','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         % Save image
         frame = getframe(h);
         im = frame2im(frame);
@@ -266,7 +268,7 @@ switch solplot
         set(gca,'color','white') 
         colormap(redblue)
         title('Terminal state','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{1}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
+        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex')
         %{
         % Save image
         frame = getframe(h);
@@ -322,7 +324,7 @@ switch solplot
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title("Kappa difference test for $\varphi_1$", 'Interpreter','latex')
+        title(['Kappa difference test for $\varphi_{' IC '}$'], 'Interpreter','latex')
         frame = getframe(h);
         im = frame2im(frame);
         kappaerr_file = [pwd '/data/media/kappa/kappaerr_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.2f') '_lY' num2str(L_s2,'%.2f') '.png'];

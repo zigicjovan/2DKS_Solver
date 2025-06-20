@@ -53,14 +53,20 @@ u_n: solution vector for each time step in Physical space
     
     % impose initial and boundary conditions in physical and fourier space
     switch IC 
-        case 'sin'
+        case 's'
             u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
-        case 'sinL'
+        case 's1'
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
-        case 'sinL10'
-            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 10*L_x2*x2 );
-        case 'sinL30'
-            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 30*L_x2*x2 );
+        case 's30'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
+        case 'tg1'
+            u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'tg30'
+            u_0 = sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
+        case 'stg1'
+            u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'stg30'
+            u_0 = sin( (L_x1*x1 + L_x2*x2) ) +  sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
         case 'gauss'
             u_0 = exp(-0.1*( (x1 - 0.5*L1).^2 + (x2 - 0.5*L2).^2));
         case 'noise'
