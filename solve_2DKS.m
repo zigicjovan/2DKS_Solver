@@ -1,4 +1,4 @@
-function [ v_n , u_n , utilityout ] = solve_2DKS(IC,solver,N_x1,L_s1,L_s2,dt,T,save_each,utilityin)
+function [ v_n , u_n , utilityout ] = solve_2DKS(IC,solver,N_x1,L_s1,L_s2,dt,T,save_each,utilityin,kappapert)
 
 %{ 
 Output:
@@ -86,7 +86,22 @@ u_n: solution vector for each time step in Physical space
     end
 
     % perturbation function for adjoint calculus
-    u_pert = u_0; %sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 1*L_x1*x1 ) + sin( 30*L_x2*x2 );                    
+    switch kappapert 
+        case 's'
+            u_pert = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
+        case 's1'
+            u_pert = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
+        case 's30'
+            u_pert = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
+        case 'tg1'
+            u_pert = sin( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'tg30'
+            u_pert = sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
+        case 'stg1'
+            u_pert = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'stg30'
+            u_pert = sin( (L_x1*x1 + L_x2*x2) ) +  sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
+    end                   
 
     switch solver
         case 'forward'
