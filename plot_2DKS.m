@@ -1,4 +1,4 @@
-function plot_2DKS(u_n, solplot, IC, N, dt, T, L_s1, L_s2, utility,pertIC)
+function plot_2DKS(u_n, solplot, IC, N, dt, T, L_s1, L_s2, utility1,utility2)
 
 Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
@@ -17,46 +17,49 @@ x12_pts = 2*L1*linspace( 0 , 1 - 1/N , 2*N );
 x22_pts = 2*L2*linspace( 0 , 1 - 1/N , 2*N ); 
 [ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
 
-% compute L2 norm and Fourier mode evolution
-normL2 = NaN(Ntime,1);
-v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
-v_meancount = v_mean;
-for i = 1:Ntime
-    u_i = reshape( u_n(:,i) , [ N , N ] );
-    normL2(i,1) = sqrt(sum( u_n(:,i) .* conj(u_n(:,i)) )*(L1*L2)/N^2);
-    v = fftshift(real(abs(fft2(u_i))));
-    for j = 1:N
-        for k = 1:N
-            index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
-            v_mean(index,i) = v_mean(index,i) + v(j,k);
-            v_meancount(index,i) = v_meancount(index,i) + 1;
+switch solplot
+    case {'norms','gif','diagnostics','kappa'}
+        % compute L2 norm and Fourier mode evolution
+        normL2 = NaN(Ntime,1);
+        v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
+        v_meancount = v_mean;
+        for i = 1:Ntime
+            u_i = reshape( u_n(:,i) , [ N , N ] );
+            normL2(i,1) = sqrt(sum( u_n(:,i) .* conj(u_n(:,i)) )*(L1*L2)/N^2);
+            v = fftshift(real(abs(fft2(u_i))));
+            for j = 1:N
+                for k = 1:N
+                    index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
+                    v_mean(index,i) = v_mean(index,i) + v(j,k);
+                    v_meancount(index,i) = v_meancount(index,i) + 1;
+                end
+            end
+            for m = 1:size(v_meancount,1)
+                v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
+            end
         end
-    end
-    for m = 1:size(v_meancount,1)
-        v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
-    end
+        v_mean = v_mean(2:end,:);
+        
+        % L2 norm time derivative computation
+        normL2_t = NaN(Ntime-1,1);
+        dt_save = T/(Ntime-1);
+        for i = 2:length(normL2)
+            normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
+        end
+        
+        mkdir([pwd  '/data/normL2' ]);
+        mkdir([pwd  '/data/normL2_t' ]);
+        mkdir([pwd  '/data/spectrum' ]);
+        normL2data_file = [pwd '/data/normL2/normL2_' IC '_N_' num2str(N) '' ...
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+        writematrix(normL2, normL2data_file,'Delimiter','tab');
+        normL2deriv_file = [pwd '/data/normL2_t/normL2_' IC '_N_' num2str(N) '' ...
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+        writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
+        spectrum_file = [pwd '/data/spectrum/spectrum_' IC '_N_' num2str(N) '' ...
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+        writematrix(v_mean, spectrum_file,'Delimiter','tab');
 end
-v_mean = v_mean(2:end,:);
-
-% L2 norm time derivative computation
-normL2_t = NaN(Ntime-1,1);
-dt_save = T/(Ntime-1);
-for i = 2:length(normL2)
-    normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
-end
-
-mkdir([pwd  '/data/normL2' ]);
-mkdir([pwd  '/data/normL2_t' ]);
-mkdir([pwd  '/data/spectrum' ]);
-normL2data_file = [pwd '/data/normL2/normL2_' IC '_N_' num2str(N) '' ...
-        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-writematrix(normL2, normL2data_file,'Delimiter','tab');
-normL2deriv_file = [pwd '/data/normL2_t/normL2_' IC '_N_' num2str(N) '' ...
-        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
-spectrum_file = [pwd '/data/spectrum/spectrum_' IC '_N_' num2str(N) '' ...
-        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-writematrix(v_mean, spectrum_file,'Delimiter','tab');
 
 switch solplot
     case 'gif'
@@ -291,32 +294,14 @@ switch solplot
 
         mkdir([pwd  '/data/media/kappa' ]);
 
-        kappa = utility;
+        kappa = utility1;
+        pertIC = utility2;
         kappaerror = abs( 1 - kappa );
 
-        %{
         h = figure;
-        semilogx(logspace(-15,-1,15),kappa)
-        yline(1,'--')
-        %set(gcf,'Position',[100 100 900 750])
-        xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
-        ylim([0.97 1.03])
-        xlim([1e-15 1e-1])
-        ylabel('$\kappa(\varepsilon)$','Interpreter','latex');
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title("Kappa test for $\varphi$", 'Interpreter','latex')
-        frame = getframe(h);
-        im = frame2im(frame);
-        kappa1_file = [pwd '/data/kappa/kappa_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.png'];
-        imwrite(im,kappa1_file,'png');
-        %}
-
-        h = figure;
-        loglog(logspace(-15,-1,15),kappaerror)
-        %set(gcf,'Position',[100 100 900 750])
+        %epscheck = [.001,.0025,.005,.0075,.01,.025,.05,.075,.1,.25,.5,.75,1];
+        epscheck = logspace(-15,-1,15);
+        loglog(epscheck,kappaerror)
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
         ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
         fontsize(12,"points")

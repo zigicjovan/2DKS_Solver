@@ -2,28 +2,27 @@
 tic
 
 %%% choose test %%%
-run = 'kappa';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'load
+run = 'energygrowth';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 
 %%% choose parameter testing ranges %%%
-L_scale =  [ 2.36,2.78] ;        % domain sizes
-timestep = [ .005, .001, .0005 ];                                % time-step sizes
+L_scale =  1:.02:2.99 ;        % domain sizes
+timestep = .01;%[ .005, .001, .0005 ];                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = linspace(20,200,10);          % time windows
-initialcondition = { 's1', 'stg1' };                  % initial conditions
-kappapert = 0;%{ 's1', 'stg1', 'stg30' , 's30' };                  % perturbation function
+timewindow = 500;%linspace(20,200,10);          % time windows
+initialcondition = { 's1' };                  % initial conditions
+kappapert = 0;                  % perturbation function
+L_target = 2.36;                   % domain size of interest
 
 %%% choose default parameters %%%
 L_s1 = L_scale(1);                              % length-scale parameter in dim 1
 L_s2 = L_scale(1);                              % length-scale parameter in dim 2
-dt = timestep(2);                               % length of time-step
+dt = timestep(1);                               % length of time-step
 N = gridsize(1);                                % number of grid points
 T = timewindow(1);                              % length of simulation time window
 IC = strjoin(initialcondition(1),'');           % initial condition
 save_each = 1/dt;                               % number of iterations between saved timepoints - 1/dt to save each 1 T
 
 numberoftests = length(initialcondition)*length(kappapert)*length(timewindow)*length(L_scale);
-kappalist = NaN(15,numberoftests); % temporary for kappa tests
-rieszlist = NaN(numberoftests,1); % temporary for kappa tests
 testcounter = 0;
 
 %for init = 4 : length(kappapert)
@@ -46,13 +45,13 @@ testcounter = 0;
                     test_parameter = gridsize;          % (spatial convergence)
                 case 'dt'
                     test_parameter = timestep;          % (temporal convergence)
-                case {'IC', 'load'}
+                case {'IC', 'energygrowth'}
                     test_parameter = initialcondition;  
                 case 'kappa'
                     test_parameter = initialcondition; 
-                    J_pert = NaN(15,1);                 % store perturbed objective functionals  
+                    J_pert = NaN(13,1);                 % store perturbed objective functionals  
                     gateaux_deriv = NaN(15,1);          % store kappa test numerators 
-                    kappa = NaN(15,1);                  % store kappa test results 
+                    kappa = NaN(13,1);                  % store kappa test results 
             end
         
             for k = 1 : length(test_parameter)          % length('x') indicates 'x' testing
@@ -65,7 +64,7 @@ testcounter = 0;
                         N = gridsize(k);                        % number of grid points 
                     case 'dt'
                         dt = timestep(k);                       % length of time-step
-                    case {'IC', 'load'}
+                    case {'IC', 'energygrowth'}
                         IC = strjoin(initialcondition(k),'');   % choice of initial condition
                     case 'kappa'
                         save_each = 1;                          % save all timesteps for backward solver
@@ -87,23 +86,19 @@ testcounter = 0;
         
                 %%% save/inspect solution %%%
                 switch run 
-                    case 'load'
+                    case 'energygrowth'
                         if exist('l2norms_avg','var') == 0
-                            l2norms_avg = NaN(length(L_scale),length(test_parameter));
-                            l2norms_max = NaN(length(L_scale),length(test_parameter));
-                            l2norms_mode = NaN(length(L_scale),length(test_parameter));
-                            l2norms_diff = NaN(length(L_scale),3);
+                            l2norms_avg = NaN(length(L_scale),length(test_parameter)+1);
+                            l2norms_mode = NaN(length(L_scale),length(test_parameter)+1);
                         end
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2);               % load solution
                         [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, L_s1, L_s2);                       % load solution
                         u_normL2rd = round(u_normL2,1);
                         l2norms_mode(choros,k) = mode(u_normL2rd);
                         l2norms_avg(choros,k) = mean(u_normL2(ceil(end/2):end,1));
-                        l2norms_max(choros,k) = max(u_normL2);
                         if k == length(test_parameter) 
-                            l2norms_diff(choros,1) = abs(l2norms_avg(choros,1) - l2norms_avg(choros,2));
-                            l2norms_diff(choros,2) = abs(l2norms_max(choros,1) - l2norms_max(choros,2));
-                            l2norms_diff(choros,3) = abs(l2norms_mode(choros,1) - l2norms_mode(choros,2));
+                            l2norms_avg(choros,k+1) = std(l2norms_avg(choros,1:k));
+                            l2norms_mode(choros,k+1) = std(l2norms_mode(choros,1:k));
                         end
                     case {'L','N','dt','IC'}                
                         %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);               % save solution
@@ -115,6 +110,11 @@ testcounter = 0;
                         toc
                         close all                                                                                % close any open figures
                     case 'kappa' 
+                        epscheck = logspace(-15,-1,15);
+                        if exist('kappalist','var') == 0
+                            kappalist = NaN(length(epscheck),numberoftests); 
+                            rieszlist = NaN(numberoftests,1); 
+                        end
                         L1 = 2*pi*L_s1;
                         L2 = 2*pi*L_s2;
                         J_init = sum( u_n(:,end) .* conj(u_n(:,end)) )*(L1*L2)/N^2;                             % initial objective functional (L^2 inner product of terminal forward state)        
@@ -122,23 +122,29 @@ testcounter = 0;
                         [v_adj, u_adj, u_pertIC] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_n,pertIC);    % solve adjoint equation
                         toc
                         gat_riesz = sum( u_adj(:,1) .* conj(u_pertIC) )*(L1*L2)/N^2;                            % kappa test denominator 
-                        rieszlist(testcounter,1) = gat_riesz;                               % temporary for kappa tests
+                        rieszlist(testcounter,1) = abs(gat_riesz);                               % temporary for kappa tests
                         gradJ = v_adj(:,1);                                                                     % objective gradient
                         save_each = 1/dt;                                                                       % release memory
                         clear v_n v_adj u_adj                                                                   % release memory
                         disp('Solving perturbed forward-time problems...')
-                        for i = -15:1:-1
-                            eps = 10^(i);                                                                       % define perturbation 
+                        for i = 1:length(epscheck)   
+                            eps = epscheck(i);                                                                  % define perturbation 
                             [ ~ , u_pert ] = solve_2DKS(IC,'kappa',N,L_s1,L_s2,dt,T,save_each,eps,pertIC);             % solve perturbed forward equation
-                            J_pert(i+16,1) = sum( u_pert(:,end) .* conj(u_pert(:,end)) )*(L1*L2)/N^2;           % perturbed objective functional
-                            gateaux_deriv(i+16,1) = (J_pert(i+16,1) - J_init)/eps;                              % kappa test numerator 
-                            kappa(i+16,1) = gateaux_deriv(i+16,1)/gat_riesz;                                    % kappa test numerator 
+                            J_pert(i,1) = sum( u_pert(:,end) .* conj(u_pert(:,end)) )*(L1*L2)/N^2;           % perturbed objective functional
+                            gateaux_deriv(i,1) = (J_pert(i,1) - J_init)/eps;                              % kappa test numerator 
+                            kappa(i,1) = gateaux_deriv(i,1)/gat_riesz;                                    % kappa test numerator 
                             toc
                         end
                         clear v_pert u_pert                                                                     % release memory
                         plot_2DKS(u_n, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa,pertIC);                               % save/inspect kappa test figure
                         kappalist(:,testcounter) = kappa;                 % temporary for kappa tests
                         close all                                                                                % close any open figures
+                        kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+                        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                        writematrix(kappalist, kappalist_file,'Delimiter','tab');
+                        rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+                         '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                        writematrix(rieszlist, rieszlist_file,'Delimiter','tab');
                 end
             end
         end
@@ -146,86 +152,13 @@ testcounter = 0;
 %end
 
 switch run 
-    case 'kappa'
-        kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-        writematrix(kappalist, kappalist_file,'Delimiter','tab');
-        rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-        writematrix(rieszlist, rieszlist_file,'Delimiter','tab');
-    case 'load'
-        %{
-        figure
-        plot(L_scale,l2norms_T(:,1))
-        hold on
-        plot(L_scale,l2norms_T(:,2))
-        plot(L_scale,l2norms_T(:,3))
-        plot(L_scale,l2norms_T(:,4))
-        plot(L_scale,l2norms_T(:,5))
-        plot(L_scale,l2norms_T(:,6))
-        title("terminal")
-        legend('s1', 's30', 'stg1', 'stg30' , 'tg1', 'tg30','Location','northwest')
-        hold off
-
-        figure
-        plot(L_scale,l2norms_std(:,1))
-        hold on
-        plot(L_scale,l2norms_std(:,2))
-        plot(L_scale,l2norms_std(:,3))
-        title("std")
-        legend('terminal', 'max', 'combined','Location','northwest')
-        hold off
-        %}
-
-        figure
-        plot(L_scale,l2norms_mode(:,1),'r-x')
-        hold on
-        plot(L_scale,l2norms_mode(:,2),'b-o')
-        plot(L_scale,l2norms_avg(:,1),'g-+')
-        plot(L_scale,l2norms_avg(:,2),'k-s')
-        xl1 = xline(2.36,'--',{'2.36'});
-        xl2 = xline(2.78,'--',{'2.78'});
-        xl1.LabelVerticalAlignment = 'top';
-        xl1.LabelHorizontalAlignment = 'left';
-        xl2.LabelVerticalAlignment = 'top';
-        xl2.LabelHorizontalAlignment = 'left';
-        title('Modal energy ($t\in [0,500]$) and mean energy ($t\in [250,500]$)','Interpreter','latex')
-        xlabel('Domain factor $\ell$','Interpreter','latex')
-        %ylabel('$Energy value || \varphi_{IC}(t) ||_{L^2}$','Interpreter','latex')
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white') 
-        legend('Modal $|| \varphi_{s1}(t) ||_{L^2}$',...
-            'Modal $|| \varphi_{stg1}(t) ||_{L^2}$' ,...
-            'Mean $|| \varphi_{s1}(t) ||_{L^2}$',...
-            'Mean $|| \varphi_{stg1}(t) ||_{L^2}$' ,...
-            'Location','northwest','Interpreter','latex')
-        legend('boxoff')
-        hold off
-
-        figure
-        plot(L_scale,l2norms_diff(:,1),'r-*')
-        hold on
-        plot(L_scale,l2norms_diff(:,3),'b-o')
-        xl1 = xline(2.36,'--',{'2.36'});
-        xl2 = xline(2.78,'--',{'2.78'});
-        xl1.LabelVerticalAlignment = 'top';
-        xl1.LabelHorizontalAlignment = 'left';
-        xl2.LabelVerticalAlignment = 'top';
-        xl2.LabelHorizontalAlignment = 'left';
-        title('Difference in $|| \varphi_{IC}(t) ||_{L^2}$ values for ${IC} = \{s1,stg1 \}$ within $T =500$','Interpreter','latex')
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')  
-        xlabel('Domain factor $\ell$','Interpreter','latex')
-        legend('Difference in mean values','Difference in modal values','Location','northwest')
-
+    case 'energygrowth'                                                                             % currently for comparing two initial conditions only 
+        plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, L_target, l2norms_avg);
+        save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, L_scale, T, L_target, 0);
     case 'N'                                                                                        % spatial convergence: error analysis and computational time
-        [error_2,error_inf,comptime] = spatialconvergence_2DKS(gridsize, IC, dt, T, L_s1, L_s2);
+        [error_2,error_inf,comptime] = plot_measures('spatial', dt, IC, gridsize, T, L_s1, L_s2);
         save_measures('spatial', error_2, error_inf, comptime, IC, 0, dt, T, L_s1, L_s2);
     case 'dt'                                                                                       % temporal convergence: error analysis and computational time
-        [error_2,error_inf,comptime] = temporalconvergence_2DKS(timestep, IC, N, T, L_s1, L_s2);
-        save_measures('temporal', error_2, error_inf, comptime, meICthod, N, 0, T, L_s1, L_s2);
+        [error_2,error_inf,comptime] = plot_measures('temporal', timestep, IC, N, T, L_s1, L_s2);
+        save_measures('temporal', error_2, error_inf, comptime, IC, N, 0, T, L_s1, L_s2);
 end
