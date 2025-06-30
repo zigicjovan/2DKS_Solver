@@ -1,6 +1,17 @@
-function plot_2DKS(u_n, solplot, IC, N, dt, T, L_s1, L_s2, utility1,utility2)
+function plot_2DKS(save_each, solplot, IC, N, dt, T, L_s1, L_s2, utility1,utility2)
 
-Ntime = size(u_n,2);
+% number of timesteps
+time1 = ceil(T/dt); 
+time2 = ceil(time1/save_each);
+if T >= 1
+    Ntime = max(time1,time2);
+    Ntime_save = min(time1,time2);
+    save_each = ceil(Ntime/Ntime_save);
+    Ntime = ceil(Ntime/save_each);
+end
+Ntime_save_max = 10000;
+
+%Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
 
 % length-scale parameters
@@ -18,14 +29,33 @@ x22_pts = 2*L2*linspace( 0 , 1 - 1/N , 2*N );
 [ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
 
 switch solplot
-    case {'norms','gif','diagnostics','kappa'}
+    case {'norms','gif','diagnostics','initial','terminal'}
         % compute L2 norm and Fourier mode evolution
         normL2 = NaN(Ntime,1);
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount = v_mean;
+        Ntime_remaining = Ntime;
         for i = 1:Ntime
-            u_i = reshape( u_n(:,i) , [ N , N ] );
-            normL2(i,1) = sqrt(sum( u_n(:,i) .* conj(u_n(:,i)) )*(L1*L2)/N^2);
+
+            if Ntime < Ntime_save_max && i == 1
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime);
+            else
+                if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
+                    currentT = (i+Ntime_save_max-1)/Ntime*T;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max);
+                    Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                elseif (mod(i,Ntime_save_max) == 1)
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_remaining);
+                end
+            end
+            
+            if mod(i,Ntime_save_max) ~= 0
+                imod = mod(i,Ntime_save_max);
+            else
+                imod = Ntime_save_max;
+            end
+            u_i = reshape( u_n(:,imod) , [ N , N ] );
+            normL2(i,1) = sqrt(sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/N^2);
             v = fftshift(real(abs(fft2(u_i))));
             for j = 1:N
                 for k = 1:N
@@ -37,6 +67,13 @@ switch solplot
             for m = 1:size(v_meancount,1)
                 v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
             end
+                
+            if i == 1
+                u_IC = u_n(:,1);
+            elseif i == Ntime
+                u_TC = u_n(:,end);
+            end
+
         end
         v_mean = v_mean(2:end,:);
         
@@ -68,18 +105,44 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
         mkdir([pwd  '/data/media/movies' ]);
-        filename = [pwd '/data/media/movies/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.gif'];
+
         set(gcf,'color','white')
         set(gca,'color','white')
+
+        Ntime_remaining = Ntime;
+        frames = Ntime;
+        frameovermax = 0;
         
-        for i = 1 : ceil(Ntime/Ntime) : Ntime
+        filename = [pwd '/data/media/movies/phys_' IC '_N_' num2str(N) ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_frames_ ' num2str(frames) '.gif'];
+
+        for i = 1 : ceil(Ntime/frames) : Ntime
         
+            if Ntime < Ntime_save_max && i == 1
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime);
+            else
+                if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    currentT = frameovermax*Ntime_save_max/Ntime*T;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max);
+                    Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_remaining);
+                end
+            end
+
             currentT = (i-1)/(Ntime-1)*T;
+
+            if mod(i,Ntime_save_max) ~= 0
+                imod = mod(i,Ntime_save_max);
+            else
+                imod = Ntime_save_max;
+            end
 
             subplot(2,2,1);
             % Draw surface plot
-            u_i = reshape( u_n(:,i) , [ N , N ] );
+            u_i = reshape( u_n(:,imod) , [ N , N ] );
             surfc(x1,x2,u_i);
             xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
             shading(gca,'interp')
@@ -221,7 +284,7 @@ switch solplot
         mkdir([pwd  '/data/media/figures' ]);
 
         % inspect physical solution 
-        u_T = reshape( u_n(:,1) , [ N , N ] );
+        u_T = reshape( u_IC , [ N , N ] );
 
         % surface plot
         surfc(x1,x2,u_T); 
@@ -257,7 +320,7 @@ switch solplot
         mkdir([pwd  '/data/media/figures' ]);
 
         % inspect physical solution
-        u_T = reshape( u_n(:,Ntime) , [ N , N ] );
+        u_T = reshape( u_TC , [ N , N ] );
 
         % surface plot
         surfc(x1,x2,u_T); 
