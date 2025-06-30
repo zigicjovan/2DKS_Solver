@@ -5,10 +5,10 @@ tic
 run = 'kappa';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 
 %%% choose parameter testing ranges %%%
-L_scale =  2.36 ;        % domain sizes
-timestep = [ .005, .001, .0005 , .0001 ];                                % time-step sizes
+L_scale =  2.25 ;        % domain sizes
+timestep = [ .005, .001, .0005  ];                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = linspace(50,500,10);          % time windows
+timewindow = [20 25];%linspace(50,400,8);          % time windows
 initialcondition = { 's1' };                  % initial conditions
 kappapert = 0;                  % perturbation function
 L_target = 2.36;                   % domain size of interest
@@ -16,7 +16,7 @@ L_target = 2.36;                   % domain size of interest
 %%% choose default parameters %%%
 L_s1 = L_scale(1);                              % length-scale parameter in dim 1
 L_s2 = L_scale(1);                              % length-scale parameter in dim 2
-dt = timestep(4);                               % length of time-step
+dt = timestep(1);                               % length of time-step
 N = gridsize(1);                                % number of grid points
 T = timewindow(1);                              % length of simulation time window
 IC = strjoin(initialcondition(1),'');           % initial condition
@@ -49,10 +49,6 @@ testcounter = 0;
                     test_parameter = initialcondition;  
                 case 'kappa'
                     test_parameter = initialcondition; 
-                    epscheck = logspace(-15,-1,15);
-                    J_pert = NaN(length(epscheck),1);                 % store perturbed objective functionals  
-                    gateaux_deriv = NaN(length(epscheck),1);          % store kappa test numerators 
-                    kappa = NaN(length(epscheck),1);                  % store kappa test results 
             end
         
             for k = 1 : length(test_parameter)          % length('x') indicates 'x' testing
@@ -111,39 +107,7 @@ testcounter = 0;
                         toc
                         close all                                                                                % close any open figures
                     case 'kappa' 
-                        %plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2, 0,0); 
-                        if exist('kappalist','var') == 0
-                            kappalist = NaN(length(epscheck),numberoftests); 
-                            rieszlist = NaN(numberoftests,1); 
-                        end
-                        L1 = 2*pi*L_s1;
-                        L2 = 2*pi*L_s2;
-                        J_init = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                          % initial objective functional (L^2 inner product of terminal forward state)        
-                        disp(['Solving adjoint problem for pertIC = ' pertIC])
-                        [v_adjIC, u_adjIC, u_pertIC] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,pertIC);    % solve adjoint equation
-                        toc
-                        gat_riesz = sum( u_adjIC .* conj(u_pertIC) )*(L1*L2)/N^2;                               % kappa test denominator 
-                        rieszlist(testcounter,1) = abs(gat_riesz);                                              % save kappa test denominator values
-                        gradJ = v_adjIC;                                                                        % objective gradient
-                        save_each = 1/dt;                                                                       % release memory
-                        disp('Solving perturbed forward-time problems...')
-                        for i = 1:length(epscheck)   
-                            eps = epscheck(i);                                                                  % define perturbation 
-                            [ ~ , u_pertTC ] = solve_2DKS(IC,'kappa',N,L_s1,L_s2,dt,T,save_each,eps,pertIC);    % solve perturbed forward equation
-                            J_pert(i,1) = sum( u_pertTC .* conj(u_pertTC) )*(L1*L2)/N^2;                        % perturbed objective functional
-                            gateaux_deriv(i,1) = (J_pert(i,1) - J_init)/eps;                                    % kappa test numerator 
-                            kappa(i,1) = gateaux_deriv(i,1)/gat_riesz;                                          % kappa test numerator 
-                            toc
-                        end
-                        plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa,pertIC);                        % save/inspect kappa test figure
-                        kappalist(:,testcounter) = kappa;                                                       % save kappa test values
-                        close all                                                                               % close any open figures
-                        kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-                        writematrix(kappalist, kappalist_file,'Delimiter','tab');
-                        rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                         '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-                        writematrix(rieszlist, rieszlist_file,'Delimiter','tab');
+                        [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,save_each,u_TC,v_TC,pertIC);
                 end
             end
         end
