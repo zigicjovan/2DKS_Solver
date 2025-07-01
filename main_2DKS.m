@@ -2,10 +2,10 @@
 tic
 
 %%% choose test %%%
-run = 'kappa';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
+run = 'optimize';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 
 %%% choose parameter testing ranges %%%
-L_scale =  2.25 ;        % domain sizes
+L_scale =  2.36 ;        % domain sizes
 timestep = [ .005, .001, .0005  ];                                % time-step sizes
 gridsize = 48;                                  % grid sizes
 timewindow = [20 25];%linspace(50,400,8);          % time windows
@@ -64,7 +64,6 @@ testcounter = 0;
                     case {'IC', 'energygrowth'}
                         IC = strjoin(initialcondition(k),'');   % choice of initial condition
                     case 'kappa'
-                        save_each = 1;                          % save all timesteps for backward solver
                         IC = strjoin(initialcondition(k),'');   % choice of initial condition
                         pertIC = IC;
                 end
@@ -76,7 +75,7 @@ testcounter = 0;
                     case {'L','N','dt','IC','kappa'} 
                         disp(['Solving forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
                         tic
-                        [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,0,0);
+                        [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,0,0);
                         time = toc;
                         toc
                 end
@@ -107,7 +106,9 @@ testcounter = 0;
                         toc
                         close all                                                                                % close any open figures
                     case 'kappa' 
-                        [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,save_each,u_TC,v_TC,pertIC);
+                        [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC);
+                    case 'optimize' 
+                        [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC);
                 end
             end
         end

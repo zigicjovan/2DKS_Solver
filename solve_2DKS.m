@@ -53,6 +53,8 @@ u_n: solution vector for each time step in Physical space
     
     % impose initial and boundary conditions in physical and fourier space
     switch IC 
+        case 'optimized'
+            u_0 = reshape( utilityin, [ N , N_x2 ] );
         case 's'
             u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
         case 's1'
@@ -111,8 +113,12 @@ u_n: solution vector for each time step in Physical space
             u_0 = u_0 + eps*u_pert;     % perturbed initial condition
             v_0 = fft2(u_0);            % FFT of perturbed physical initial condition
         case 'backward'
-            utilityout = u_pert(:);     % perturbed physical initial condition
-            v_TC = utilityin;          % forward solution in Fourier space
+            try
+                utilityout = u_pert(:);     % perturbed physical initial condition
+            catch
+                utilityout = 0;
+            end
+            v_TC = utilityin;           % forward solution in Fourier space
     end
 
 %%% (2) solve time-dependent problem %%%
@@ -149,7 +155,7 @@ u_n: solution vector for each time step in Physical space
     end
 
     switch solver 
-        case {'forward'}                                                                % Solve vectorized equation by IMEXRK4 method
+        case {'forward'}                                                                       % Solve vectorized equation by IMEXRK4 method
             u_n(:,1) = u_0(:);                                                                  % physical IC
             v_n(:,1) = v_0(:);                                                                  % fourier IC
             v_step = v_n(:,1);                                                                  % initialize stepping with fourier IC
@@ -225,6 +231,7 @@ u_n: solution vector for each time step in Physical space
                     save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save); % save solution to machine
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
+                    utilityout = u_n(:,1);
                 end
             end
         case {'kappa'}                                                                % Solve vectorized equation by IMEXRK4 method

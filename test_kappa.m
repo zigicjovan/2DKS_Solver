@@ -1,5 +1,6 @@
-function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,save_each,u_TC,v_TC,pertIC)
+function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC)
 
+    save_each = 1;                                        % save all timesteps for backward solver
     if exist('kappalist','var') == 0
         epscheck = logspace(-15,-1,15);
         J_pert = NaN(length(epscheck),1);                 % store perturbed objective functionals  
@@ -12,12 +13,11 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
     L2 = 2*pi*L_s2;
     J_init = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                          % initial objective functional (L^2 inner product of terminal forward state)        
     disp(['Solving adjoint problem for pertIC = ' pertIC])
-    [v_adjIC, u_adjIC, u_pertIC] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,pertIC);    % solve adjoint equation
+    [~, u_adjIC, u_pertIC] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,pertIC);    % solve adjoint equation
     toc
     gat_riesz = sum( u_adjIC .* conj(u_pertIC) )*(L1*L2)/N^2;                               % kappa test denominator 
     rieszlist(testcounter,1) = abs(gat_riesz);                                              % save kappa test denominator values
-    gradJ = v_adjIC;                                                                        % objective gradient
-    save_each = 1/dt;                                                                       % release memory
+    save_each = 1/dt;                                                                       % release memory if necessary
     disp('Solving perturbed forward-time problems...')
     for i = 1:length(epscheck)   
         eps = epscheck(i);                                                                  % define perturbation 
