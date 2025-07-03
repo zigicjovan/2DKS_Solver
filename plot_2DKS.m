@@ -290,7 +290,7 @@ switch solplot
         switch IC 
             case {'optimized'}
                 mkdir([pwd  '/data/media/optimization' ]);
-                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', IC, dt, T, N, L_s1, L_s2, 0);
+                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, L_s1, L_s2, 0);
 
                 % J history plot
                 plotdata = diagnostics(:,1);
@@ -398,7 +398,7 @@ switch solplot
                 h = figure;
                 semilogy(linesearchJ(:,1))
                 hold on
-                for iter = 2:length(plotdata)
+                for iter = 2:(length(plotdata)-1)
                     semilogy(linesearchJ(:,iter))
                 end
                 hold off
@@ -414,6 +414,8 @@ switch solplot
                 subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
                 filename = [pwd '/data/media/optimization/linesearch_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
                 exportgraphics(h,filename)
+
+                disp(['Optimization loop computation time: ' num2str(diagnostics(length(plotdata),5)) ])
 
                 close all
         end
