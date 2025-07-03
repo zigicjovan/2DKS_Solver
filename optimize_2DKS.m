@@ -1,16 +1,16 @@
 function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC)
 
     maxiter = 1000;                                 % set maximum number of iterations
-    if exist('kappalist','var') == 0
-        %epscheck = logspace(-15,-1,15);
+    if exist('J_history','var') == 0
         J_history = NaN(maxiter,1);                        % store updated objective functionals  
         J_change = NaN(maxiter,1);                         % store changes in objective functional value
         stepsize_history = NaN(maxiter,1);                 % store optimization step sizes
         manifold_history = NaN(maxiter,1);                 % store manifold sizes
-        %gateaux_deriv = NaN(length(epscheck),1);          % store kappa test numerators 
-        %kappa = NaN(length(epscheck),1);                  % store kappa test results 
-        %Jlist = NaN(length(epscheck),numberoftests); 
-        %rieszlist = NaN(numberoftests,1); 
+        dirsize_history = NaN(maxiter,1);                  % store direction sizes
+        gradJsize_history = NaN(maxiter,1);                % store gradient sizes
+        momentumsize_history = NaN(maxiter,1);             % store momentum sizes
+        diagnostics_history = NaN(maxiter,7);              % store all of the above
+        linesearchJ_history = NaN(maxiter,maxiter);        % store line search objective functionals
     end
 
     save_each = 1;                                                                          % save all timesteps for backward solver
@@ -29,37 +29,44 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     momentum_size = 0;                                                                      % initialize current momentum
     projGradJ_old = 0;                                                                      % initialize old projected objective gradient
     J_change(iter,1) = 1;                                                                   % initialize change in objective functional value 
-    
+    gradJsize_history(iter,1) = 0;                                                          % initialize gradient sizes
+    dirsize_history(iter,1) = 0;                                                            % initialize direction sizes
+    momentumsize_history(iter,1) = momentum_size;                                           % initialize momentum sizes
+
     while (abs(J_change(iter,1)) > tol) && (iter <= maxiter)
 
         disp(['Solving adjoint problem for iteration = ' num2str(iter)])
-        [~, GradJ_cur] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,0);                   % current objective gradient via adjoint equation
+        [~, GradJ] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,0);                       % current objective gradient via adjoint equation
         toc
-        angleGradJ_cur = sum( u_IC .* conj(GradJ_cur) )*(L1*L2)/N^2;                                    % angle with current objective gradient
-        proj_cur = GradJ_cur - (angleGradJ_cur/manifold_size).*(u_IC);                                  % current projection operator
-        projGradJ_cur = proj_cur .* GradJ_cur;                                                          % current projected objective gradient
+        GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
+        angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
+        projGradJ_cur = GradJ - (angleGradJ/manifold_size).*(u_IC);                                     % current projected objective gradient
         if iter > 1
-            angleDir_old = sum( u_IC .* conj(angleDir_old) )*(L1*L2)/N^2;                               % angle with old direction
+            angleDir_old = sum( u_IC .* conj(dir_old) )*(L1*L2)/N^2;                                    % angle with old direction
+            angleprojGradJ_old = sum( u_IC .* conj(projGradJ_old) )*(L1*L2)/N^2;                        % angle with old projected gradient
             vectransport = (dir_old - (angleDir_old/manifold_size).*(u_IC))/manifold_size;              % current vector transport operator
-            diff_projGradJ = projGradJ_cur - ( vectransport .* projGradJ_old );                         % momentum parameter term
-            diff_projGradJ_ip = sum( projGradJ_cur .* conj(diff_projGradJ) )*(L1*L2)/N^2;               % momentum parameter numerator
-            projGradJ_old_ip = sum( projGradJ_old .* conj(projGradJ_old) )*(L1*L2)/N^2;                 % momentum parameter denominator
-            momentum_size = diff_projGradJ_ip / projGradJ_old_ip;                                       % current momentum parameter
+            transportprojGradJ_old = (projGradJ_old - (angleprojGradJ_old/manifold_size).*(u_IC))/manifold_size; % transport old projected gradient 
+            diff_projGradJ = projGradJ_cur - transportprojGradJ_old;                                    % momentum parameter term
+            diff_projGradJ_size = sum( projGradJ_cur .* conj(diff_projGradJ) )*(L1*L2)/N^2;             % momentum parameter numerator
+            projGradJ_old_size = sum( projGradJ_old .* conj(projGradJ_old) )*(L1*L2)/N^2;               % momentum parameter denominator
+            momentum_size = diff_projGradJ_size / projGradJ_old_size;                                   % current momentum parameter
         else
-            GradJ_cur_ip = sum( GradJ_cur .* conj(GradJ_cur) )*(L1*L2)/N^2;                             % inner product current objective gradient
-            step_size = .1;%-2*real(angleGradJ_cur/GradJ_cur_ip);                                        % initialize current step-size
+            IC = 'optimized';                                                                           % set IC to optimized
+            J_change(1,1) = NaN;                                                                          % fix initial change in objective functional value 
+            step_size = 1e-7;%(angleGradJ/GradJ_size);                                                  % initialize current step-size
             stepsize_history(iter,1) = step_size;                                                       % store optimization step size
+            diagnostics_history(1,:) = [J_history(1,1), J_change(1,1), stepsize_history(1,1)...
+                manifold_history(1,1), dirsize_history(1,1), gradJsize_history(1,1),...
+                momentumsize_history(1,1)];
         end
-        dir_cur = projGradJ_cur + (momentum_size .* vectransport .* dir_old);                           % current direction
+        dir_cur = projGradJ_cur + (momentum_size .* vectransport);                                      % current direction
         [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T); % current step-size via Brent's method
         disp(['Line-search problem number of iterations = ' num2str(iter_search)])
-        J_history(iter+1:iter + iter_search,1) = J_search;                                              % store objective functional history from line search
-        iter = iter + iter_search;                                                                      % update iteration number from line search
+        linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search
         update_term = u_IC + ( step_size .* dir_cur );                                                  % retraction operator term
-        retraction =  1 / sqrt(sum( update_term .* conj(update_term) )*(L1*L2)/N^2 );                   % retraction operator                                   
+        retraction =  sqrt(manifold_history(1,1)) / sqrt(sum( update_term .* conj(update_term) )*(L1*L2)/N^2 );                   % retraction operator                                   
         u_IC = retraction .* update_term;                                                               % current initial forward state
         manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                          % current manifold (L^2 inner product of initial forward state) 
-        IC = 'optimized';                                                                               % change initial condition
         [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,u_IC,0);                   % terminal forward state via forward equation
         J_old = J_cur;                                                                                  % old objective functional
         J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                                  % current objective functional 
@@ -71,19 +78,22 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
         J_change(iter,1) = (J_cur - J_old)/(J_old);                                                     % store change in objective functional value
         stepsize_history(iter,1) = step_size;                                                           % store optimization step size
         manifold_history(iter,1) = manifold_size;                                                       % store manifold sizes
-
+        dirsize_history(iter,1) = sum( dir_old .* conj(dir_old) )*(L1*L2)/N^2;                          % store direction sizes
+        gradJsize_history(iter,1) = GradJ_size;                                                         % store gradient sizes
+        momentumsize_history(iter,1) = momentum_size;                                                   % store momentum sizes
+        diagnostics_history(iter,:) = [J_history(iter,1), J_change(iter,1), stepsize_history(iter,1)...
+            manifold_history(iter,1), dirsize_history(iter,1), gradJsize_history(iter,1),...
+            momentumsize_history(iter,1)];
     end
 
-    J_change(1,1) = 0;                                                                   % fix initial change in objective functional value 
-    %{
-    plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa,pertIC);                  % save/inspect kappa test figure
-    kappalist(:,testcounter) = kappa;                                                       % save kappa test values
-    close all                                                                               % close any open figures
-    kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+    diagnostics_history = diagnostics_history(1:length(find(~isnan(diagnostics_history(:,1)))),:);      % remove NaN rows
+    linesearchJ_history = linesearchJ_history(:,1:iter);                                                % remove NaN columns
+    mkdir([pwd  '/data/optimization' ]);
+    diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_N_' num2str(N) '' ...
     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-    writematrix(kappalist, kappalist_file,'Delimiter','tab');
-    rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+    writematrix(diagnostics_history, diagnostics_file,'Delimiter','tab');
+    linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_N_' num2str(N) '' ...
      '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-    writematrix(rieszlist, rieszlist_file,'Delimiter','tab');
+    writematrix(linesearchJ_history, linesearchJ_file,'Delimiter','tab');
     %}
 end

@@ -43,6 +43,16 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s
             file1 = readmatrix(norm_file);
             file2 = 0;
             file3 = 0;
+        case {'optimization'}
+            diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_N_' num2str(N) '' ...
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+
+            linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_N_' num2str(N) '' ...
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+
+            file1 = readmatrix(diagnostics_file);
+            file2 = readmatrix(linesearchJ_file);
+            file3 = 0;
     end
 
 end

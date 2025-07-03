@@ -2,7 +2,7 @@
 tic
 
 %%% choose test %%%
-run = 'optimize';                                     % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'optimize';                            % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 
 %%% choose parameter testing ranges %%%
 L_scale =  2.36 ;        % domain sizes
@@ -96,10 +96,10 @@ testcounter = 0;
                         end
                     case {'L','N','dt','IC'}                
                         %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2);               % save solution
-                        %plot_2DKS(u_n, 'initial', IC, N, dt, T, L_s1, L_s2, 0,0);                               % save/inspect initial state
-                        %plot_2DKS(u_n, 'terminal', IC, N, dt, T, L_s1, L_s2, 0,0);                              % save/inspect terminal state
-                        %plot_2DKS(u_n, 'diagnostics', IC, N, dt, T, L_s1, L_s2, 0,0);                           % save/inspect dynamical characteristics
-                        %plot_2DKS(u_n, 'norms', IC, N, dt, T, L_s1, L_s2, 0,0);                                 % save/inspect dynamical characteristics
+                        %plot_2DKS(save_each, 'initial', IC, N, dt, T, L_s1, L_s2, 0,0);                               % save/inspect initial state
+                        %plot_2DKS(save_each, 'terminal', IC, N, dt, T, L_s1, L_s2, 0,0);                              % save/inspect terminal state
+                        %plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, L_s1, L_s2, 0,0);                           % save/inspect dynamical characteristics
+                        %plot_2DKS(save_each, 'norms', IC, N, dt, T, L_s1, L_s2, 0,0);                                 % save/inspect dynamical characteristics
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2, 0,0);                                    % save/inspect time evolution 
                         toc
                         close all                                                                                % close any open figures
@@ -108,6 +108,11 @@ testcounter = 0;
                         [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC);
                     case 'optimize' 
                         [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC);
+                        plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2, 0,0);   
+                        plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, L_s1, L_s2, 0,0);
+                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, L_s1, L_s2, 0,0);
+                        plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, L_s1, L_s2, 0,0);
+                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, L_s1, L_s2, 0,0);
                 end
             end
         end
