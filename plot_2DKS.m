@@ -587,7 +587,7 @@ switch solplot
         h = figure;
         %epscheck = [.001,.0025,.005,.0075,.01,.025,.05,.075,.1,.25,.5,.75,1];
         epscheck = logspace(-15,-1,15);
-        loglog(epscheck,kappaerror)
+        loglog(epscheck,kappaerror,'r-*')
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
         ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
         fontsize(12,"points")

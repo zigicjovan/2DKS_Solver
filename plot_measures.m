@@ -1,6 +1,83 @@
 function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, L_s1, utility1)
 
 switch testcase
+    case 'kappa'
+        measure1 = 0;
+        measure2 = 0;
+        measure3 = 0;
+
+        start = utility1 - 10;
+        dt = timestep;
+        IC = control;
+        pertIC = control;
+        N = gridsize;
+        lastT = T(end);
+        L_s2 = L_s1;
+
+        kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+            '_T_' num2str(lastT) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+
+        rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
+             '_T_' num2str(lastT) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+        
+        kappalist = readmatrix(kappalist_file);
+        rieszlist = readmatrix(rieszlist_file);
+
+        kappalist = abs(1 - kappalist);
+
+        h = figure;
+        semilogy(T,rieszlist(start+1:start+10,1),'r-*')
+        title('Kappa test denominator','Interpreter','latex')
+        subtitle(['$\ell = ' num2str(L_s1,'%.3f') ', \varphi_{' IC '}, \Delta t = ' num2str(dt,'%.4f') ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        xlabel('Time window $T$','Interpreter','latex'); 
+        ylabel('$\langle \nabla\mathcal{J}_T (\varphi), \varphi''  \rangle_{L^2}$','Interpreter','latex');
+        xlim([ T(1) T(10) ])
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')        
+        legend(['$\ell = ' num2str(L_s1,'%.3f') ', \varphi_{' IC '}$'],...
+            'Interpreter','latex','Location','northwest')
+        hold off
+        filename = [pwd '/media/kappa/rieszlist_' IC '_p' pertIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(lastT) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
+        exportgraphics(h,filename)
+
+        h = figure;
+        loglog(logspace(-15,-1,15),kappalist(:,start+1),'r--x')
+        hold on
+        loglog(logspace(-15,-1,15),kappalist(:,start+2),'r--d')
+        loglog(logspace(-15,-1,15),kappalist(:,start+3),'r--o')
+        loglog(logspace(-15,-1,15),kappalist(:,start+4),'g--x')
+        loglog(logspace(-15,-1,15),kappalist(:,start+5),'g--d')
+        loglog(logspace(-15,-1,15),kappalist(:,start+6),'g--o')
+        loglog(logspace(-15,-1,15),kappalist(:,start+7),'b--x')
+        loglog(logspace(-15,-1,15),kappalist(:,start+8),'b--d')
+        loglog(logspace(-15,-1,15),kappalist(:,start+9),'b--o')
+        loglog(logspace(-15,-1,15),kappalist(:,start+10),'m--x')
+        title('Kappa difference test','Interpreter','latex')
+        subtitle(['$\ell = ' num2str(L_s1,'%.3f') ', \varphi_{' IC '}, \Delta t = ' num2str(dt,'%.4f') ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
+        ylabel('$| 1 - \kappa(\varepsilon)|$','Interpreter','latex');
+        xlim([1e-15 1e-1])
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')        
+        legend(['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(1),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(2),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(3),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(4),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(5),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(6),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(7),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(8),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(9),'%.4f') '$'],...
+            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(10),'%.4f') '$'],...
+            'Interpreter','latex','Location','north','NumColumns',3)
+        hold off
+        filename = [pwd '/media/kappa/kappalist_' IC '_p' pertIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(lastT) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
+        exportgraphics(h,filename)
+
+        close all
+
     case 'energygrowth'
 
         IC = control;

@@ -1,13 +1,13 @@
-function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC)
+function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist)
 
-    save_each = 1;                                        % save all timesteps for backward solver
-    if exist('kappalist','var') == 0
-        epscheck = logspace(-15,-1,15);
-        J_pert = NaN(length(epscheck),1);                 % store perturbed objective functionals  
-        gateaux_deriv = NaN(length(epscheck),1);          % store kappa test numerators 
-        kappa = NaN(length(epscheck),1);                  % store kappa test results 
-        kappalist = NaN(length(epscheck),numberoftests); 
-        rieszlist = NaN(numberoftests,1); 
+    save_each = 1;                                                                          % save all timesteps for backward solver
+    epscheck = logspace(-15,-1,15);
+    J_pert = NaN(length(epscheck),1);                                                       % store perturbed objective functionals  
+    gateaux_deriv = NaN(length(epscheck),1);                                                % store kappa test numerators 
+    kappa = NaN(length(epscheck),1);                                                        % store kappa test results 
+    if isscalar(kappalist)
+        kappalist = NaN(length(epscheck),numberoftests);                                    % store multiple kappa tests
+        rieszlist = NaN(numberoftests,1);                                                   % store kappa denominator values
     end
     L1 = 2*pi*L_s1;
     L2 = 2*pi*L_s2;
@@ -27,7 +27,7 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
         kappa(i,1) = gateaux_deriv(i,1)/gat_riesz;                                          % kappa test numerator 
         toc
     end
-    plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa,pertIC);                        % save/inspect kappa test figure
+    %plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2, kappa,pertIC);                 % save/inspect kappa test figure
     kappalist(:,testcounter) = kappa;                                                       % save kappa test values
     close all                                                                               % close any open figures
     kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...

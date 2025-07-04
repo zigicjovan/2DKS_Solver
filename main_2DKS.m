@@ -2,16 +2,16 @@
 tic
 
 %%% choose test %%%
-run = 'optimize';                            % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'kappa';                            % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 
 %%% choose parameter testing ranges %%%
-L_scale =  2.36 ;                               % domain sizes
-timestep = [ .005, .001, .0005  ];              % time-step sizes
+L_scale =  1.00:0.02:2.99 ;                      % domain sizes
+timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 5.5;% [5.5 , 8 , 12.5];                  % time windows
+timewindow = 10:10:100;                         % time windows
 initialcondition = { 's1' };                    % initial conditions
-kappapert = 0;                                  % perturbation function
-L_target = 2.36;                                % domain size of interest
+kappapert = 0;                                  % perturbation functions
+L_target = 2.36;                                % domain sizes of interest
 
 %%% choose default parameters %%%
 L_s1 = L_scale(1);                              % length-scale parameter in dim 1
@@ -105,7 +105,11 @@ testcounter = 0;
                         close all                                                                                       % close any open figures
                     case 'kappa' 
                         pertIC = IC;
-                        [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC);
+                        if testcounter > 1
+                            [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist);
+                        else
+                            [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,0,0);
+                        end                 
                     case 'optimize' 
                         [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC);
                         plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2, IC,0);   
@@ -122,17 +126,21 @@ testcounter = 0;
                 end
             end
         end
+        switch run 
+            case 'kappa'    % designed for 10 tests only
+                plot_measures('kappa', dt, IC, N, timewindow, L_s1, testcounter);
+        end
     end
 %end
 
 switch run 
-    case 'energygrowth'                                                                             % currently for comparing two initial conditions only 
+    case 'energygrowth'     % designed for comparing two initial conditions only 
         plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, L_target, l2norms_avg);
         save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, L_scale, T, L_target, 0);
-    case 'N'                                                                                        % spatial convergence: error analysis and computational time
+    case 'N'                % spatial convergence: error analysis and computational time
         [error_2,error_inf,comptime] = plot_measures('spatial', dt, IC, gridsize, T, L_s1, L_s2);
         save_measures('spatial', error_2, error_inf, comptime, IC, 0, dt, T, L_s1, L_s2);
-    case 'dt'                                                                                       % temporal convergence: error analysis and computational time
+    case 'dt'               % temporal convergence: error analysis and computational time
         [error_2,error_inf,comptime] = plot_measures('temporal', timestep, IC, N, T, L_s1, L_s2);
         save_measures('temporal', error_2, error_inf, comptime, IC, N, 0, T, L_s1, L_s2);
 end
