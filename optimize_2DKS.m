@@ -1,4 +1,4 @@
-function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC)
+function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max)
 
     maxiter = 1000;                                 % set maximum number of iterations
     if exist('J_history','var') == 0
@@ -36,7 +36,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     while (abs(J_change(iter,1)) > tol) && (iter <= maxiter)
 
         disp(['Solving adjoint problem for iteration ' num2str(iter)])
-        [~, GradJ] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,v_TC,0);                       % current objective gradient via adjoint equation
+        [~, GradJ] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,0);        % current objective gradient via adjoint equation
         toc
         GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
         angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
@@ -60,14 +60,14 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
                 momentumsize_history(1,1)];
         end
         dir_cur = projGradJ_cur + (momentum_size .* vectransport);                                      % current direction
-        [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T); % current step-size via Brent's method
+        [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T,Ntime_save_max); % current step-size via Brent's method
         disp(['Line-search problem number of iterations: ' num2str(iter_search)])
         linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search
         update_term = u_IC + ( step_size .* dir_cur );                                                  % retraction operator term
         retraction =  sqrt(manifold_history(1,1)) / sqrt(sum( update_term .* conj(update_term) )*(L1*L2)/N^2 );                   % retraction operator                                   
         u_IC = retraction .* update_term;                                                               % current initial forward state
         manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                          % current manifold (L^2 inner product of initial forward state) 
-        [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,u_IC,0);                   % terminal forward state via forward equation
+        [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,0);    % terminal forward state via forward equation
         J_old = J_cur;                                                                                  % old objective functional
         J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                                  % current objective functional 
         iter = iter + 1;                                                                                % update iteration number

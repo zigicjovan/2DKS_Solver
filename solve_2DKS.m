@@ -1,4 +1,4 @@
-function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,L_s1,L_s2,dt,T,save_each,utilityin,kappapert)
+function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,utilityin,kappapert)
 
 %{ 
 Output:
@@ -108,10 +108,16 @@ u_n: solution vector for each time step in Physical space
     switch solver
         case 'forward'
             v_0 = fft2(u_0);            % FFT of physical initial condition
+            v_out = 0;
+            u_out = 0;
+            utilityout = 0;
         case 'kappa'
             eps = utilityin;            % perturbation magnitude for kappa test
             u_0 = u_0 + eps*u_pert;     % perturbed initial condition
             v_0 = fft2(u_0);            % FFT of perturbed physical initial condition
+            v_out = 0;
+            u_out = 0;
+            utilityout = 0;
         case 'backward'
             try
                 utilityout = u_pert(:);     % perturbed physical initial condition
@@ -138,8 +144,7 @@ u_n: solution vector for each time step in Physical space
         save_each = time1;
     end
 
-    % solution vectors in fourier and physical spectrum (max 100k columns)
-    Ntime_save_max = 10000;
+    % solution vectors in fourier and physical spectrum (max 10k columns)
     switch solver
         case {'forward','kappa'}  
             if Ntime_save > Ntime_save_max

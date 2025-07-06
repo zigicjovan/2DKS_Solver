@@ -1,4 +1,4 @@
-function plot_2DKS(save_each, solplot, IC, N, dt, T, L_s1, L_s2, utility1,utility2)
+function plot_2DKS(save_each, solplot, IC, N, dt, T, L_s1, L_s2, Ntime_save_max, utility1, utility2)
 
 % number of timesteps
 time1 = ceil(T/dt); 
@@ -9,7 +9,6 @@ if T >= 1
     save_each = ceil(Ntime/Ntime_save);
     Ntime = ceil(Ntime/save_each);
 end
-Ntime_save_max = 10000;
 
 %Ntime = size(u_n,2);
 timewindow = linspace(0,T,Ntime);
@@ -168,7 +167,11 @@ switch solplot
         set(gca,'color','white')
 
         Ntime_remaining = Ntime;
-        frames = Ntime;
+        if utility2 > 0
+            frames = utility2;
+        else
+            frames = Ntime;
+        end
         frameovermax = 0;
         switch IC 
             case {'optimized'}
@@ -303,9 +306,11 @@ switch solplot
             case {'optimized'}
                 subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
         end
-        %legend("Fourier mode", 'Location','southeast','NumColumns',9,'Interpreter','latex')
-        filename = [pwd '/media/energy/wavenumberevol_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
-        exportgraphics(h,filename)
+        %legend("Fourier band", 'Location','southeast','NumColumns',9,'Interpreter','latex')
+        frame = getframe(h);
+        im = frame2im(frame);
+        filename = [pwd '/media/energy/wavenumberevol_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.png'];
+        imwrite(im,filename,'png')
 
         % L2 norm plot
         h = figure;
