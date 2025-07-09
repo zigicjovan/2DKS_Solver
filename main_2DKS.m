@@ -6,10 +6,10 @@ run = 'kappa';                                  % switch to 'L', 'N', 'dt', 'IC'
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale =  [ 1.00:0.02:1.06 , 1.42:0.02:1.48 , 2.24:0.02:2.64 , 2.74:0.02:2.98 ];                     % domain sizes
+L_scale =  [ 1.02:0.02:1.02 , 1.46:0.02:1.48 , 2.34:0.02:2.38 , 2.42:0.04:2.46 ];                     % domain sizes
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 110:10:200;                        % time windows
+timewindow = 210:10:250;                        % time windows
 initialcondition = { 's1' };                    % initial conditions
 kappapert = 0;                                  % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
@@ -130,8 +130,8 @@ testcounter = 0;
             end
         end
         switch run 
-            case 'kappa'    % designed for 10 tests only
-                plot_measures('kappa', dt, IC, N, timewindow, L_s1, testcounter);
+            case 'kappa'    % designed for 5 or 10 tests only
+                plot_measures('kappa', dt, IC, N, timewindow, L_s1, testcounter, length(timewindow));
         end
     end
 %end
