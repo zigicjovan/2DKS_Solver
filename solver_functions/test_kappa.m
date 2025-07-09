@@ -27,7 +27,7 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
         kappa(i,1) = gateaux_deriv(i,1)/gat_riesz;                                          % kappa test numerator 
         toc
     end
-    %plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,kappa,pertIC);                 % save/inspect kappa test figure
+    plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,kappa,pertIC);    % save/inspect kappa test figure
     kappalist(:,testcounter) = kappa;                                                       % save kappa test values
     close all                                                                               % close any open figures
     mkdir([pwd  '/data/kappa' ]);
