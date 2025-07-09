@@ -1,4 +1,4 @@
-function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, L_s1, utility1)
+function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, L_s1, utility1, utility2)
 
 switch testcase
     case 'kappa'
@@ -8,12 +8,12 @@ switch testcase
         measure2 = 0;
         measure3 = 0;
 
-        start = utility1 - 10;
+        start = utility1 - utility2;
         dt = timestep;
         IC = control;
         pertIC = control;
         N = gridsize;
-        lastT = T(end);
+        lastT = T(utility2);
         L_s2 = L_s1;
 
         kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
@@ -28,12 +28,12 @@ switch testcase
         kappalist = abs(1 - kappalist);
 
         h = figure;
-        semilogy(T,rieszlist(start+1:start+10,1),'r-*')
+        semilogy(T,rieszlist(start+1:start+utility2,1),'r-*')
         title('Kappa test denominator','Interpreter','latex')
         subtitle(['$\ell = ' num2str(L_s1,'%.3f') ', \varphi_{' IC '}, \Delta t = ' num2str(dt,'%.4f') ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
         xlabel('Time window $T$','Interpreter','latex'); 
         ylabel('$\langle \nabla\mathcal{J}_T (\varphi), \varphi''  \rangle_{L^2}$','Interpreter','latex');
-        xlim([ T(1) T(10) ])
+        xlim([ T(1) T(utility2) ])
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')        
@@ -43,18 +43,31 @@ switch testcase
         filename = [pwd '/media/kappa/rieszlist_' IC '_p' pertIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(lastT) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
         exportgraphics(h,filename)
 
+        lgd = cell(utility2,1);
         h = figure;
         loglog(logspace(-15,-1,15),kappalist(:,start+1),'r--x')
+        lgd{1} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(1),'%.0f') '$'];
         hold on
         loglog(logspace(-15,-1,15),kappalist(:,start+2),'r--d')
+        lgd{2} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(2),'%.0f') '$'];
         loglog(logspace(-15,-1,15),kappalist(:,start+3),'r--o')
+        lgd{3} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(3),'%.0f') '$'];
         loglog(logspace(-15,-1,15),kappalist(:,start+4),'g--x')
+        lgd{4} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(4),'%.0f') '$'];
         loglog(logspace(-15,-1,15),kappalist(:,start+5),'g--d')
-        loglog(logspace(-15,-1,15),kappalist(:,start+6),'g--o')
-        loglog(logspace(-15,-1,15),kappalist(:,start+7),'b--x')
-        loglog(logspace(-15,-1,15),kappalist(:,start+8),'b--d')
-        loglog(logspace(-15,-1,15),kappalist(:,start+9),'b--o')
-        loglog(logspace(-15,-1,15),kappalist(:,start+10),'m--x')
+        lgd{5} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(5),'%.0f') '$'];
+        if utility2 == 10
+            loglog(logspace(-15,-1,15),kappalist(:,start+6),'g--o')
+            lgd{6} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(6),'%.0f') '$'];
+            loglog(logspace(-15,-1,15),kappalist(:,start+7),'b--x')
+            lgd{7} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(7),'%.0f') '$'];
+            loglog(logspace(-15,-1,15),kappalist(:,start+8),'b--d')
+            lgd{8} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(8),'%.0f') '$'];
+            loglog(logspace(-15,-1,15),kappalist(:,start+9),'b--o')
+            lgd{9} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(9),'%.0f') '$'];
+            loglog(logspace(-15,-1,15),kappalist(:,start+10),'m--x')
+            lgd{10} = ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(10),'%.0f') '$'];
+        end
         title('Kappa difference test','Interpreter','latex')
         subtitle(['$\ell = ' num2str(L_s1,'%.3f') ', \varphi_{' IC '}, \Delta t = ' num2str(dt,'%.4f') ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
         xlabel('Perturbation magnitude $\varepsilon$','Interpreter','latex'); 
@@ -63,17 +76,7 @@ switch testcase
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')        
-        legend(['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(1),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(2),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(3),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(4),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(5),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(6),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(7),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(8),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(9),'%.0f') '$'],...
-            ['$\ell = ' num2str(L_s1,'%.3f') ', T = ' num2str(T(10),'%.0f') '$'],...
-            'Interpreter','latex','Location','north','NumColumns',3)
+        legend(lgd,'Interpreter','latex','Location','north','NumColumns',3)
         hold off
         filename = [pwd '/media/kappa/kappalist_' IC '_p' pertIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(lastT) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
         exportgraphics(h,filename)
