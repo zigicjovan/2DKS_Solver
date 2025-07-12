@@ -1,4 +1,4 @@
-function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,utilityin,kappapert)
+function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,utility1,utility2)
 
 %{ 
 Output:
@@ -54,13 +54,29 @@ u_n: solution vector for each time step in Physical space
     % impose initial and boundary conditions in physical and fourier space
     switch IC 
         case 'optimized'
-            u_0 = reshape( utilityin, [ N , N_x2 ] );
+            u_0 = reshape( utility1, [ N , N_x2 ] );
         case 's'
             u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
         case 's1'
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
+        case 's1n1'
+            u_0 = ((10.0)^(-1))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+        case 's1n5'
+            u_0 = ((10.0)^(-5))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+        case 's1n10'
+            u_0 = ((10.0)^(-10))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+        case 's1n14'
+            u_0 = ((10.0)^(-14))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's30'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
+        case 's30n1'
+            u_0 = ((10.0)^(-1))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+        case 's30n5'
+            u_0 = ((10.0)^(-5))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+        case 's30n10'
+            u_0 = ((10.0)^(-10))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+        case 's30n14'
+            u_0 = ((10.0)^(-14))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 'tg1'
             u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'tg30'
@@ -88,7 +104,7 @@ u_n: solution vector for each time step in Physical space
     end
 
     % perturbation function for adjoint calculus
-    switch kappapert 
+    switch utility2 
         case 's'
             u_pert = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
         case 's1'
@@ -112,7 +128,7 @@ u_n: solution vector for each time step in Physical space
             u_out = 0;
             utilityout = 0;
         case 'kappa'
-            eps = utilityin;            % perturbation magnitude for kappa test
+            eps = utility1;            % perturbation magnitude for kappa test
             u_0 = u_0 + eps*u_pert;     % perturbed initial condition
             v_0 = fft2(u_0);            % FFT of perturbed physical initial condition
             v_out = 0;
@@ -124,7 +140,7 @@ u_n: solution vector for each time step in Physical space
             catch
                 utilityout = 0;
             end
-            v_TC = utilityin;           % forward solution in Fourier space
+            v_TC = utility1;           % forward solution in Fourier space
     end
 
 %%% (2) solve time-dependent problem %%%
@@ -209,7 +225,7 @@ u_n: solution vector for each time step in Physical space
                 if (Ntime_save > Ntime_save_max) && (mod(i,Ntime_save_max) == 0) && (i ~= Ntime)
                     currentT = i/Ntime*T;
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
                     if (Ntime - i) < Ntime_save_max
                         fullsave = 0;
                         Ntime_save_remaining = Ntime - i;
@@ -225,15 +241,15 @@ u_n: solution vector for each time step in Physical space
                 elseif (Ntime_save > Ntime_save_max) && (i == Ntime)
                     time = toc;
                     if fullsave == 1
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_max); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
                     else 
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_remaining); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_remaining, utility2); % save solution to machine
                     end
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                 elseif i == Ntime
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save, utility2); % save solution to machine
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                     utilityout = u_n(:,1);
@@ -296,7 +312,7 @@ u_n: solution vector for each time step in Physical space
             if Ntime_residual == 0
                 Ntime_residual = Ntime_save_max;
             end
-            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_residual);
+            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_residual, utility2);
             count = 0;
             for i = Ntime-1:-1:1
                 v_fwdstep = v_fwd(:,Ntime_residual-count);
@@ -338,14 +354,14 @@ u_n: solution vector for each time step in Physical space
                     time = toc;
                     v_n(:,1) = v_step;
                     u_n(:,1) = real(ifft2(v_n(:,1)));
-                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, 2); % save solution to machine
+                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, 2, utility2); % save solution to machine
                     v_out = v_12(:);
                     u_out = u_1(:);
                 elseif mod(count,Ntime_residual) == (Ntime_residual - 1)
                     Ntime_residual = Ntime_save_max;
                     count = 0;
                     currentT = i/Ntime*T;
-                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_residual);
+                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_residual, utility2);
                 else
                     count = count + 1;                    
                 end

@@ -13,6 +13,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
         linesearchJ_history = NaN(maxiter,maxiter);        % store line search objective functionals
     end
 
+    originalIC = IC;                                                                        % save name of initial guess IC
     save_each = 1;                                                                          % save all timesteps for backward solver
     tol = 1e-5;                                                                             % set optimization tolerance critera
     iter = 1;                                                                               % start counting iterations  
@@ -36,7 +37,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     while (abs(J_change(iter,1)) > tol) && (iter <= maxiter)
 
         disp(['Solving adjoint problem for iteration ' num2str(iter)])
-        [~, GradJ] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,0);        % current objective gradient via adjoint equation
+        [~, GradJ] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,originalIC);        % current objective gradient via adjoint equation
         toc
         GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
         angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
@@ -60,14 +61,14 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
                 momentumsize_history(1,1)];
         end
         dir_cur = projGradJ_cur + (momentum_size .* vectransport);                                      % current direction
-        [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T,Ntime_save_max); % current step-size via Brent's method
+        [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T,Ntime_save_max,originalIC); % current step-size via Brent's method
         disp(['Line-search problem number of iterations: ' num2str(iter_search)])
         linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search
         update_term = u_IC + ( step_size .* dir_cur );                                                  % retraction operator term
         retraction =  sqrt(manifold_history(1,1)) / sqrt(sum( update_term .* conj(update_term) )*(L1*L2)/N^2 );                   % retraction operator                                   
         u_IC = retraction .* update_term;                                                               % current initial forward state
         manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                          % current manifold (L^2 inner product of initial forward state) 
-        [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,0);    % terminal forward state via forward equation
+        [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);    % terminal forward state via forward equation
         J_old = J_cur;                                                                                  % old objective functional
         J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                                  % current objective functional 
         iter = iter + 1;                                                                                % update iteration number
@@ -90,11 +91,10 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     diagnostics_history = diagnostics_history(1:length(find(~isnan(diagnostics_history(:,1)))),:);      % remove NaN rows
     linesearchJ_history = linesearchJ_history(:,1:(iter-1));                                            % remove NaN columns
     mkdir([pwd  '/data/optimization' ]);
-    diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_N_' num2str(N) '' ...
+    diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_' originalIC '_N_' num2str(N) '' ...
     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
     writematrix(diagnostics_history, diagnostics_file,'Delimiter','tab');
-    linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_N_' num2str(N) '' ...
+    linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_' originalIC '_N_' num2str(N) '' ...
      '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
     writematrix(linesearchJ_history, linesearchJ_file,'Delimiter','tab');
-    %}
 end
