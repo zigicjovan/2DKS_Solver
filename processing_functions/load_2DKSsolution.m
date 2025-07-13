@@ -25,6 +25,11 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s
             try
                 norm_file = [pwd '/data/' foldername '/normL2_' IC '_N_' num2str(N) '' ...
                 '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                switch IC
+                    case 'optimized'
+                        norm_file = [pwd '/data/' foldername '/normL2_' IC '_' originalIC '_N_' num2str(N) '' ...
+                        '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                end
                 file1 = readmatrix(norm_file);
             catch
                 norm_file = [pwd '/data/' foldername '/normL2_' IC '_N_' num2str(N) '' ...
