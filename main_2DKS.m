@@ -2,15 +2,15 @@
 tic
 
 %%% choose test %%%
-run = 'optimize';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'energygrowth';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale =  1.48;%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];                                % domain sizes
+L_scale =  [1.1,1.4,1.5,2.2,3.2,5.2,10.2];                                % domain sizes
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
 timewindow = 20;                                % time windows
-initialcondition = { 'noise' };%, 's1', 's1n1', 's1n5', 's1n10', 's1n14' , 's30', 's30n1', 's30n5', 's30n10', 's30n14'};                    % initial conditions
+initialcondition = { 'noise' , 's1n5', 's1n10', 's1n14'};                    % initial conditions
 kappapert = 0;                                  % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
 
@@ -85,9 +85,14 @@ testcounter = 0;
                         if exist('l2norms_avg','var') == 0
                             l2norms_avg = NaN(length(L_scale),length(test_parameter)+1);
                             l2norms_mode = NaN(length(L_scale),length(test_parameter)+1);
+                            l2norms_guess = NaN(T/dt,numberoftests);
+                            %l2norms_opt = NaN(T/dt,numberoftests);
                         end
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2, 0);                   % load solution
-                        [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, L_s1, L_s2, 0);                       % load solution
+                        [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, L_s1, L_s2, 0, 0);                       % load solution
+                        l2norms_guess(:,testcounter) = u_normL2;
+                        %[u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, L_s1, L_s2, 0, IC);                       % load solution
+                        %l2norms_opt(:,testcounter) = u_normL2;
                         u_normL2rd = round(u_normL2,1);
                         l2norms_mode(choros,k) = mode(u_normL2rd);
                         l2norms_avg(choros,k) = mean(u_normL2(ceil(end/2):end,1));
@@ -115,7 +120,7 @@ testcounter = 0;
                         delete_2DKSsolution('backward', IC, dt, T, N, L_s1, L_s2, Ntime_save_max,0);
                     case 'optimize' 
                         [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max);
-                        plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);   
+                        %plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);   
                         plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC ,0);
                         plot_2DKS(save_each, 'initial', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
                         plot_2DKS(save_each, 'terminal', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
