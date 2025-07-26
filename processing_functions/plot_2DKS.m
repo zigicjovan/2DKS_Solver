@@ -18,13 +18,13 @@ L1 = 2*pi*L_s1;
 L2 = 2*pi*L_s2;
 
 % unit physical space domain
-x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
-x2_pts = L2*linspace( 0 , 1 - 1/N , N ); 
+x1_pts = L_s1*linspace( 0 , 1 - 1/N , N ); 
+x2_pts = L_s2*linspace( 0 , 1 - 1/N , N ); 
 [ x1 , x2 ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
 
 % 4-period physical space domain
-x12_pts = 2*L1*linspace( 0 , 1 - 1/N , 2*N ); 
-x22_pts = 2*L2*linspace( 0 , 1 - 1/N , 2*N ); 
+x12_pts = 2*L_s1*linspace( 0 , 1 - 1/N , 2*N ); 
+x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N ); 
 [ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
 
 switch IC
@@ -224,23 +224,23 @@ switch solplot
             % Draw surface plot
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             surfc(x1,x2,u_i);
-            xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_i))) ] );
-            view([37.5,30]);
+            view(3);
             drawnow
 
             subplot(2,2,2);
             % Draw surface plot
             u_i2x = [ u_i , u_i ; u_i, u_i];
             surfc(x12x,x22x,u_i2x);
-            xlabel('x_1'); ylabel('x_2'); %zlabel('Solution')
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
-            pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_i))) ] );
-            xline(L1,'--');
-            yline(L2,'--');
+            pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+            xline(L_s1,'--');
+            yline(L_s2,'--');
             view(2);
             drawnow
 
@@ -250,7 +250,7 @@ switch solplot
             xline(currentT,'-');
             hold off
             xlabel('$t$','Interpreter','latex');
-            ylabel('$|| \phi(t) ||$','Interpreter','latex');
+            ylabel('$|| \phi(t;\varphi) ||$','Interpreter','latex');
             xlim([0 T])
             ylim([min(normL2) max(normL2)+1e-1])
             title("Evolution of $L^2$ norm",'Interpreter','latex')
@@ -337,7 +337,7 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$||{\phi(t)}||_{L^2}$','Interpreter','latex');
+        ylabel('$||{\phi(t;\varphi)}||_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
@@ -387,7 +387,7 @@ switch solplot
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Time $t$','Interpreter','latex'); 
                 xlim([0 T])
-                ylabel('$||{\phi(t)}||_{L^2}$','Interpreter','latex');
+                ylabel('$||{\phi(t;\varphi)}||_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
@@ -538,7 +538,7 @@ switch solplot
 
         % surface plot
         surfc(x1,x2,u_T); 
-        xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
         fontsize(12,"points")
@@ -587,7 +587,7 @@ switch solplot
 
         % surface plot
         surfc(x1,x2,u_T); 
-        xlabel('x_1'); ylabel('x_2'); zlabel('u(x_1,x_2)');
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
         view(3);

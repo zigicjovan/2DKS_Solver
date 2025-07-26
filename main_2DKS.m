@@ -2,16 +2,16 @@
 tic
 
 %%% choose test %%%
-run = 'energygrowth';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'kappa';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale =  [1.1,1.4,1.5,2.2,3.2,5.2,10.2];                                % domain sizes
+L_scale =  [ 1.12:.02:1.4 , 1.5:.02:2.24 , 2.56, 2.66:.02:2.74 ];%[ 1:.02:1.02 , 1.46:.02:1.48 , 2.34:.02:2.38 , 2.42 , 2.92  ];%[ 1:.02:1.08 , 1.4:.02:1.48 , 2.26:.02:2.54 , 2.58:.02:2.64 , 2.72:.02:2.98  ];%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];%[0.5,0.7,0.9];                                % domain sizes
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 20;                                % time windows
-initialcondition = { 'noise' , 's1n5', 's1n10', 's1n14'};                    % initial conditions
-kappapert = 0;                                  % perturbation functions
+timewindow = 50:10:90;                                % time windows
+initialcondition = { 's1' };                   % initial conditions
+kappapert = {'stg30'};                            % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
 
 %%% choose default parameters %%%
@@ -26,9 +26,9 @@ save_each = 1;                                  % number of iterations between s
 numberoftests = length(initialcondition)*length(kappapert)*length(timewindow)*length(L_scale);
 testcounter = 0;
 
-%for init = 4 : length(kappapert)
+for init = 1 : length(kappapert)
 
-    %pertIC = strjoin(kappapert(init),'');
+    pertIC = strjoin(kappapert(init),'');
 
     for choros = 1 : length(L_scale)
     
@@ -105,12 +105,12 @@ testcounter = 0;
                         %plot_2DKS(save_each, 'initial', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect initial state
                         %plot_2DKS(save_each, 'terminal', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                               % save/inspect terminal state
                         %plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
-                        %plot_2DKS(save_each, 'norms', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
-                        plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
+                        plot_2DKS(save_each, 'norms', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
+                        %plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
                         toc
                         close all                                                                                       % close any open figures
                     case 'kappa' 
-                        pertIC = IC;
+                        %pertIC = IC;
                         if testcounter > 1
                             [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max);
                         else
@@ -137,13 +137,13 @@ testcounter = 0;
         end
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
-                %plot_measures('kappa', dt, IC, N, timewindow, L_s1, testcounter, length(timewindow));
+                plot_measures('kappa', dt, pertIC, N, timewindow, L_s1, testcounter, length(timewindow));
         end
     end
-%end
+end
 
 switch run 
-    case 'energygrowth'     % designed for comparing two initial conditions only 
+    case 'energygrowthXX'     % designed for comparing two initial conditions only 
         plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, L_target, l2norms_avg);
         save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, L_scale, T, L_target, 0);
     case 'N'                % spatial convergence: error analysis and computational time

@@ -42,7 +42,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
         GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
         angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
         projGradJ_cur = GradJ - (angleGradJ/manifold_size).*(u_IC);                                     % current projected objective gradient
-        if iter > 1
+        if iter > 1000
             angleDir_old = sum( u_IC .* conj(dir_old) )*(L1*L2)/N^2;                                    % angle with old direction
             angleprojGradJ_old = sum( u_IC .* conj(projGradJ_old) )*(L1*L2)/N^2;                        % angle with old projected gradient
             vectransport = (dir_old - (angleDir_old/manifold_size).*(u_IC))/manifold_size;              % current vector transport operator

@@ -10,7 +10,7 @@ switch testcase
 
         start = utility1 - utility2;
         dt = timestep;
-        IC = control;
+        IC = 's1';
         pertIC = control;
         N = gridsize;
         lastT = T(utility2);
