@@ -2,16 +2,16 @@
 tic
 
 %%% choose test %%%
-run = 'kappa';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'optimize';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale =  [ 1.12:.02:1.4 , 1.5:.02:2.24 , 2.56, 2.66:.02:2.74 ];%[ 1:.02:1.02 , 1.46:.02:1.48 , 2.34:.02:2.38 , 2.42 , 2.92  ];%[ 1:.02:1.08 , 1.4:.02:1.48 , 2.26:.02:2.54 , 2.58:.02:2.64 , 2.72:.02:2.98  ];%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];%[0.5,0.7,0.9];                                % domain sizes
+L_scale = 2.36;%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];                                % domain sizes
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 50:10:90;                                % time windows
-initialcondition = { 's1' };                   % initial conditions
-kappapert = {'stg30'};                            % perturbation functions
+timewindow = 5.5;                                % time windows
+initialcondition = {'s1'};                      % initial conditions
+kappapert = {'s1'};                             % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
 
 %%% choose default parameters %%%
@@ -86,13 +86,13 @@ for init = 1 : length(kappapert)
                             l2norms_avg = NaN(length(L_scale),length(test_parameter)+1);
                             l2norms_mode = NaN(length(L_scale),length(test_parameter)+1);
                             l2norms_guess = NaN(T/dt,numberoftests);
-                            %l2norms_opt = NaN(T/dt,numberoftests);
+                            l2norms_opt = NaN(T/dt,numberoftests);
                         end
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2, 0);                   % load solution
                         [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, L_s1, L_s2, 0, 0);                       % load solution
                         l2norms_guess(:,testcounter) = u_normL2;
                         %[u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, L_s1, L_s2, 0, IC);                       % load solution
-                        %l2norms_opt(:,testcounter) = u_normL2;
+                        l2norms_opt(:,testcounter) = u_normL2;
                         u_normL2rd = round(u_normL2,1);
                         l2norms_mode(choros,k) = mode(u_normL2rd);
                         l2norms_avg(choros,k) = mean(u_normL2(ceil(end/2):end,1));
@@ -137,7 +137,7 @@ for init = 1 : length(kappapert)
         end
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
-                plot_measures('kappa', dt, pertIC, N, timewindow, L_s1, testcounter, length(timewindow));
+                %plot_measures('kappa', dt, pertIC, N, timewindow, L_s1, testcounter, length(timewindow));
         end
     end
 end

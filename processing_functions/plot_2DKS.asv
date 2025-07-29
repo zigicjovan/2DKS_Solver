@@ -585,8 +585,6 @@ switch solplot
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
                     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial.pdf'];
-                filenamefig = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial.fig'];
         end
         exportgraphics(h,filename)
         saveas(h,filenamefig)
@@ -596,17 +594,12 @@ switch solplot
         % Save image
         filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour.pdf'];
-        filenamefig = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour.fig'];
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
                     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour.pdf'];
-                filenamefig = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour.fig'];
         end
         exportgraphics(h,filename)
-        saveas(h,filenamefig)
 
     case 'terminal'
 
@@ -638,34 +631,24 @@ switch solplot
         % Save image
         filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal.pdf'];
-        filenamefig = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal.fig'];
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
                     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal.pdf'];
-                filenamefig = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal.fig'];
         end
         exportgraphics(h,filename)
-        saveas(h,filenamefig)
 
         % contour plot
         view(2);
         % Save image
         filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour.pdf'];
-        filenamefig = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour.fig'];
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
                     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour.pdf'];
-                filenamefig = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour.fig'];
         end
         exportgraphics(h,filename)
-        saveas(h,filenamefig)
 
     case 'kappa'
 
