@@ -1,0 +1,149 @@
+function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,IC)
+    %N = 48;
+    %L_s1 = 1.1;
+    L_s2 = L_s1;
+    %T = 20;
+    %u_IC_opt = u_IC_opt_11;
+    
+    u = reshape(u_IC_opt,[N,N]);
+    [~, max_idx] = min(u(:));
+    [rowmax, colmax] = ind2sub(size(u), max_idx);
+    u1 = [ u(rowmax+1:end,:) ;  u(1:rowmax,:)  ];
+    u2 = [ u1(:,colmax:end) ,  u1(:,1:colmax-1)  ];
+    %u2 = u;
+    
+    N_x2 = N;                                                % discretized equally in each dimension
+    
+    % length-scale parameters
+    L_x1 = (1/L_s1);
+    L_x2 = (1/L_s2);
+    L1 = 2*pi*L_s1;
+    L2 = 2*pi*L_s2;
+    
+    % unit physical space domain
+    x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
+    x2_pts = L2*linspace( 0 , 1 - 1/N_x2 , N_x2 ); 
+    [ x1 , x2 ] = meshgrid(x1_pts,x2_pts);                      % 2-dimensional grid
+    
+    x1_pts = L_s1*linspace( 0 , 1 - 1/N , N ); 
+    x2_pts = L_s2*linspace( 0 , 1 - 1/N , N ); 
+    [ x1p , x2p ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
+    
+    amps = ceil(L_s1)^2;
+    modes = NaN(amps,2);
+    modelist = NaN(amps,2);
+    k1c = 0;
+    k2c = 1;
+    for k = 1:size(modelist,1)
+        if isnan(modelist(k,1))
+            if k1c == 0
+                modelist(k,:) = [ k1c k2c ];
+                modelist(k+1,:) = flip(modelist(k,:));
+                k1c = k1c + 1;
+            elseif k2c > k1c
+                modelist(k,:) = [ k1c k2c ];
+                modelist(k+1,:) = flip(modelist(k,:));
+                k1c = k1c + 1;
+            elseif k2c == k1c
+                modelist(k,:) = [ k1c k2c ];
+                k2c = k2c + 1;
+                k1c = 0;
+            end
+        end
+    end
+
+    modelist = [ modelist ; -modelist];
+
+    for k = 1:length(modelist)/2
+        if modelist(k,1) > 0 && modelist(k,2) > 0
+            modelist = [ modelist ; -modelist(k,1),modelist(k,2) ; modelist(k,1),-modelist(k,2) ];
+        end
+    end
+
+    modecount = 1;
+    for k = 1:size(modelist,1)
+        if sqrt(modelist(k,1)^2 + modelist(k,2)^2) < L_s1 
+            modes(modecount,:) = modelist(k,:);
+            modecount = modecount + 1;
+        end
+    end
+    modes = rmmissing(modes);
+    amps = size(modes,1);
+    ampstars = NaN(amps,1);
+
+    for k = 1:size(modes,1)
+        u_ef = cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) );
+        u_ef = u_ef / sqrt(sum((u_ef(:)) .* conj((u_ef(:))) )*(L1*L2)/N^2);
+        %u_ef = (cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) ) + cos( (modes(k,1)*L_x1*x1 - modes(k,2)*L_x2*x2) ));
+        [~, max_idx] = min(u_ef(:));
+        [rowmax, colmax] = ind2sub(size(u_ef), max_idx);
+        u1_ef = [ u_ef(rowmax+1:end,:) ;  u_ef(1:rowmax,:)  ];
+        u2_ef = [ u1_ef(:,colmax:end) ,  u1_ef(:,1:colmax-1)  ];
+        %u2_ef = u_ef;
+
+        u_centered = u2 - mean(u2(:));
+        u_norm = u_centered / sqrt( sum((u_centered(:)) .* conj((u_centered(:))))*(L1*L2)/N^2 );
+        phi_norm = u2_ef / sqrt( sum((u2_ef(:)) .* conj((u2_ef(:))))*(L1*L2)/N^2 );
+        %phi_norm = u_ef / sqrt( sum((u_ef(:)) .* conj((u_ef(:))))*(L1*L2)/N^2 );
+        ampstars(k,1) = (sum((u_norm(:)) .* conj((phi_norm(:))) )*(L1*L2)/N^2);
+        %ampstars(k,1) = (sum((u_norm(:)) .* conj((phi_norm(:))) )*(L1*L2)/N^2) / (((modes(k,1)*L_x1)^2+(modes(k,2)*L_x2)^2)-((modes(k,1)*L_x1)^2+(modes(k,2)*L_x2)^2)^2);
+    end
+
+    % check orthogonality
+    orthocheck = NaN(amps);
+    for m = 1:size(modes,1)
+        mm = cos( (modes(m,1)*L_x1*x1 + modes(m,2)*L_x2*x2) );
+        mm = mm / sqrt(sum((mm(:)) .* conj((mm(:))) )*(L1*L2)/N^2);
+        for n = 1:size(modes,1)
+            nn = cos( (modes(n,1)*L_x1*x1 + modes(n,2)*L_x2*x2) );
+            nn = nn / sqrt(sum((nn(:)) .* conj((nn(:))) )*(L1*L2)/N^2);
+            orthocheck(m,n) = sum((mm(:)) .* conj((nn(:))) )*(L1*L2)/N^2;
+        end
+    end
+
+    u_eff = 0;
+    for k = 1:size(modes,1)
+        u_ef = cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) );
+        u_ef = u_ef / sqrt(sum((u_ef(:)) .* conj((u_ef(:))) )*(L1*L2)/N^2);
+        u_ef = ampstars(k,1)*u_ef;
+        %u_ef = ampstars(k,1)*(cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) ) + cos( (modes(k,1)*L_x1*x1 - modes(k,2)*L_x2*x2) ));
+        [~, max_idx] = min(u_ef(:));
+        [rowmax, colmax] = ind2sub(size(u_ef), max_idx);
+        u1_ef = [ u_ef(rowmax+1:end,:) ;  u_ef(1:rowmax,:)  ];
+        u2_ef = [ u1_ef(:,colmax:end) ,  u1_ef(:,1:colmax-1)  ];
+
+        u_eff = u_eff + u2_ef;
+        %u_eff = u_eff + u_ef;
+    end
+
+    u_centered = u2 - mean(u2(:));
+    u_norm = u_centered / sqrt( sum((u_centered(:)) .* conj((u_centered(:))))*(L1*L2)/N^2 );
+    phi_norm = u_eff / sqrt( sum((u_eff(:)) .* conj((u_eff(:))))*(L1*L2)/N^2 );
+    match_score = 1 - sum((u_norm(:)) .* conj((phi_norm(:))))*(L1*L2)/N^2 ;
+    fprintf('Correlation match: %.7f\n', match_score(1)); 
+    
+    %
+    h = figure;
+    set(gcf,'Position',[100 100 1800 750])
+    set(gcf,'color','white')
+    set(gca,'color','white') 
+    subplot(1,2,1)
+    pcolor(x1p, x2p, u2); 
+    shading interp;
+    xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',18); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',18);
+    title(['Phase-shifted $\widetilde{\varphi}_{K,2\pi(' num2str(L_s1) '),' num2str(T) '}$'],'Interpreter','latex','FontSize',18);
+    colormap(redblue)
+    
+    subplot(1,2,2)
+    pcolor(x1p, x2p, u_eff);
+    shading interp;
+    xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',18); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',18);
+    title(['$\phi^*(' num2str(L_s1) ',' num2str(L_s2) ')$ with ' num2str(length(ampstars)) ' modes'],'Interpreter','latex','FontSize',18);
+    colormap(redblue)
+    %}
+
+    filename = [ pwd '/match' num2str(L_s1) '_' IC '_T' num2str(T) '_N' num2str(N)];
+    writematrix(match_score, [filename '.dat']);
+    exportgraphics(h,[filename '.pdf'])
+
+end

@@ -2,17 +2,21 @@
 tic
 
 %%% choose test %%%
-run = 'optimize';                               % switch to 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth', 'optimize'
+run = 'optimize';                               % switch to 'optimize', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale = 2.36;%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];                                % domain sizes
+L_scale = [4,sqrt(18),sqrt(26),sqrt(32)];  % domain sizes
+%[1.1,1.4,1.5,2.2,3.2,5.2,10.2];
+%[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
+%[sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)];
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 5.5;                                % time windows
-initialcondition = {'s1'};                      % initial conditions
-kappapert = {'s1'};                             % perturbation functions
+timewindow = 30;                                % time windows
+initialcondition = {'noise4'};                      % initial conditions
+kappapert = {'stg30'};                             % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
+tol = 1e-10;                                     % set optimization tolerance critera
 
 %%% choose default parameters %%%
 L_s1 = L_scale(1);                              % length-scale parameter in dim 1
@@ -78,6 +82,7 @@ for init = 1 : length(kappapert)
                         time = toc;
                         toc
                 end
+                pause(1)
         
                 %%% save/inspect solution %%%
                 switch run 
@@ -91,7 +96,7 @@ for init = 1 : length(kappapert)
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, L_s1, L_s2, 0);                   % load solution
                         [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, L_s1, L_s2, 0, 0);                       % load solution
                         l2norms_guess(:,testcounter) = u_normL2;
-                        %[u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, L_s1, L_s2, 0, IC);                       % load solution
+                        [u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, L_s1, L_s2, 0, IC);                       % load solution
                         l2norms_opt(:,testcounter) = u_normL2;
                         u_normL2rd = round(u_normL2,1);
                         l2norms_mode(choros,k) = mode(u_normL2rd);
@@ -104,9 +109,9 @@ for init = 1 : length(kappapert)
                         %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, L_s1, L_s2,0,0);                      % save solution
                         %plot_2DKS(save_each, 'initial', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect initial state
                         %plot_2DKS(save_each, 'terminal', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                               % save/inspect terminal state
-                        %plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
-                        plot_2DKS(save_each, 'norms', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
-                        %plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
+                        plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
+                        %plot_2DKS(save_each, 'norms', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
+                        plot_2DKS(save_each, 'gif', IC, N, dt, T, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
                         toc
                         close all                                                                                       % close any open figures
                     case 'kappa' 
@@ -119,19 +124,23 @@ for init = 1 : length(kappapert)
                         delete_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_save_max,0);
                         delete_2DKSsolution('backward', IC, dt, T, N, L_s1, L_s2, Ntime_save_max,0);
                     case 'optimize' 
-                        [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max);
+                        [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol);
                         %plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);   
-                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC ,0);
+                        %
+                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC ,tol);
                         plot_2DKS(save_each, 'initial', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
                         plot_2DKS(save_each, 'terminal', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);
+                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,tol);
+                        %}                        
+                        plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,tol);
                         disp(['Solved optimization problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
                         disp(['Initial objective functional value: ' num2str(J_history(1,1))])
                         disp(['Optimal objective functional value: ' num2str(J_history(end,1))])
                         disp(['Number of iterations: ' num2str(length(J_history)-1)])
-                        save_2DKSsolution('optimal', u_IC_opt, 0, 0, IC, dt, T, N, L_s1, L_s2, 1, 0); % save solution to machine
+                        save_2DKSsolution('optimal', u_IC_opt, 0, 0, IC, dt, T, N, L_s1, L_s2, 1, tol); % save solution to machine
                         close all
+                        %u_IC_opt = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0); % load solution from machine
+                        [match_score,ampstars,modes] = validation_script(u_IC_opt,L_s1, N, T,IC);
                 end
             end
         end

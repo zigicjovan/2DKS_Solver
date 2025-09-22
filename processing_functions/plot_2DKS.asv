@@ -395,7 +395,7 @@ switch solplot
         switch IC 
             case {'optimized'}
                 
-                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, L_s1, L_s2, tol, originalIC);
+                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, L_s1, L_s2, 0, originalIC);
 
                 optfilename = [ IC '_' originalIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '_tol_' num2str(tol) ];
 
@@ -588,7 +588,7 @@ switch solplot
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol)  '_initial'];
+                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -601,7 +601,7 @@ switch solplot
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol)  '_initial_contour'];
+                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -638,7 +638,7 @@ switch solplot
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '_terminal'];
+                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -651,7 +651,7 @@ switch solplot
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '_terminal_contour'];
+                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])

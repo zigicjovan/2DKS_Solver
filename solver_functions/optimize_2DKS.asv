@@ -1,4 +1,4 @@
-function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol)
+function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max)
 
     if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/optimization' ]);
@@ -19,6 +19,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
 
     originalIC = IC;                                                                        % save name of initial guess IC
     save_each = 1;                                                                          % save all timesteps for backward solver
+    tol = 1e-8;                                                                             % set optimization tolerance critera
     iter = 1;                                                                               % start counting iterations  
     L1 = 2*pi*L_s1;                                                                         % dimension 1 length
     L2 = 2*pi*L_s2;                                                                         % dimension 2 length
@@ -95,9 +96,9 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     diagnostics_history = diagnostics_history(1:length(find(~isnan(diagnostics_history(:,1)))),:);      % remove NaN rows
     linesearchJ_history = linesearchJ_history(:,1:(iter-1));                                            % remove NaN columns
     diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_' originalIC '_N_' num2str(N) '' ...
-    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
+    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol ''.dat'];
     writematrix(diagnostics_history, diagnostics_file,'Delimiter','tab');
     linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_' originalIC '_N_' num2str(N) '' ...
-     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
+     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
     writematrix(linesearchJ_history, linesearchJ_file,'Delimiter','tab');
 end

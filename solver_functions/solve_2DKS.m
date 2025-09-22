@@ -59,24 +59,53 @@ u_n: solution vector for each time step in Physical space
             u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
         case 's1'
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
+        case 'sc1'
+            u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'ef'
+            if L_s1 < 1
+                kp1 = 1;
+                kp2 = 0;
+                mag = 1;
+            elseif L_s1 < 2
+                kp1 = 1;
+                kp2 = 0;
+                mag = 1e-14;
+            elseif L_s1 < 3
+                kp1 = 1;
+                kp2 = 1;
+                mag = 1e-14;
+            elseif L_s1 < 4
+                kp1 = 2;
+                kp2 = 1;
+                mag = 1e-14;
+            elseif L_s1 < 10
+                kp1 = 3;
+                kp2 = 2;
+                mag = 1e-14;
+            elseif L_s1 > 10
+                kp1 = 6;
+                kp2 = 4;
+                mag = 1e-14;
+            end
+            u_0 = mag*( cos( (kp1*L_x1*x1 + kp2*L_x2*x2) ) + cos( (kp1*L_x1*x1 + kp2*L_x2*x2) ) );
         case 's1n1'
-            u_0 = ((10.0)^(-1))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+            u_0 = 1e-1*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's1n5'
-            u_0 = ((10.0)^(-5))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+            u_0 = 1e-5*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's1n10'
-            u_0 = ((10.0)^(-10))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+            u_0 = 1e-10*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's1n14'
-            u_0 = ((10.0)^(-14))*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
+            u_0 = 1e-14*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's30'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
         case 's30n1'
-            u_0 = ((10.0)^(-1))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+            u_0 = 1e-1*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 's30n5'
-            u_0 = ((10.0)^(-5))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+            u_0 = 1e-5*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 's30n10'
-            u_0 = ((10.0)^(-10))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+            u_0 = 1e-10*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 's30n14'
-            u_0 = ((10.0)^(-14))*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
+            u_0 = 1e-14*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 'tg1'
             u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'tg30'
@@ -89,16 +118,20 @@ u_n: solution vector for each time step in Physical space
             u_0 = exp(-0.1*( (x1 - 0.5*L1).^2 + (x2 - 0.5*L2).^2));
         case 'noise'
             u_0 = 1e-14*(2*rand(N)-ones(N));
+        case 'noise4'
+            u_0 = 1e-4*(2*rand(N)-ones(N));
+        case 'noise2'
+            u_0 = 1e-2*(2*rand(N)-ones(N));
         case 'mn5'
-            u_0 = ((10.0)^(-5))*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
+            u_0 = 1e-5*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
                                  sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
                                  sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
         case 'mn10'
-            u_0 = ((10.0)^(-10))*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
+            u_0 = 1e-10*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
                                   sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
                                   sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
         case 'mn14'
-            u_0 = ((10.0)^(-14))*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
+            u_0 = 1e-14*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
                                   sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
                                   sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
     end
@@ -148,7 +181,7 @@ u_n: solution vector for each time step in Physical space
     % number of timesteps
     time1 = ceil(T/dt); 
     time2 = ceil(time1/save_each);
-    if T >= 1
+    if T >= 0
         Ntime = max(time1,time2);
         Ntime_save = min(time1,time2);
         save_each = ceil(Ntime/Ntime_save);
@@ -331,7 +364,7 @@ u_n: solution vector for each time step in Physical space
                     Nonlin_v1_r = (-1)*( w1_r + w1s_r ) - ( w2_r ) ;                            % - (z_x * f_x + z_y * f_y) - (lap(f) * z) in physical space
                     Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) , 'dealias'); % dealias
                     Nonlin_v1 = Nonlin_v1(:);
-    
+
                     v_1 = ( 1 + (dt * alpha_I(k) * Lin) ).^(-1) .* ...
                         ( ( 1 - (dt * beta_I(k) * Lin) ) .* v_step - ...
                         (dt * alpha_E(k) * Nonlin_v1) - (dt * beta_E(k) * Nonlin_v0) );

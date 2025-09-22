@@ -1,5 +1,7 @@
-function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s1, L_s2, saved, originalIC)
+function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s1, L_s2, utility1, utility2)
 
+    saved = utility1;
+    originalIC = utility2;
     switch foldername
         case {'forward','backward'}
             phys_file = [pwd '/data/' foldername '/phys_' IC '_N_' num2str(N) '' ...
@@ -17,6 +19,18 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s
                     time_file = [pwd '/data/' foldername '/time_' IC '_' originalIC '_N_' num2str(N) '' ...
                     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_samples_' num2str(saved) '.dat'];
             end
+
+            file1 = readmatrix(phys_file);   
+            file2 = readmatrix(four_file);
+            file3 = readmatrix(time_file);
+        case {'optimal'}
+            tol = utility1;
+            phys_file = [pwd '/data/' foldername '/phys_' IC '_N_' num2str(N) '' ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_tol_' num2str(tol) '.dat'];
+            four_file = [pwd '/data/' foldername '/four_' IC '_N_' num2str(N) '' ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_tol_' num2str(tol) '.dat'];
+            time_file = [pwd '/data/' foldername '/time_' IC '_N_' num2str(N) '' ...
+            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_tol_' num2str(tol) '.dat'];
 
             file1 = readmatrix(phys_file);   
             file2 = readmatrix(four_file);
@@ -69,11 +83,12 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, L_s
             file2 = 0;
             file3 = 0;
         case {'optimization'}
+            tol = utility1;
             diagnostics_file = [pwd '/data/optimization/diagnostics_' IC '_' originalIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
 
             linesearchJ_file = [pwd '/data/optimization/linesearchJ_' IC '_' originalIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
 
             file1 = readmatrix(diagnostics_file);
             file2 = readmatrix(linesearchJ_file);

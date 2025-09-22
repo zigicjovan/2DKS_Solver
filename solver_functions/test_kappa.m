@@ -1,5 +1,9 @@
 function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max)
 
+    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
+            mkdir([pwd  '/data/kappa' ]);
+    end
+
     save_each = 1;                                                                          % save all timesteps for backward solver
     epscheck = logspace(-15,-1,15);
     J_pert = NaN(length(epscheck),1);                                                       % store perturbed objective functionals  
@@ -30,7 +34,6 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
     plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,kappa,pertIC);    % save/inspect kappa test figure
     kappalist(:,testcounter) = kappa;                                                       % save kappa test values
     close all                                                                               % close any open figures
-    mkdir([pwd  '/data/kappa' ]);
     kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
     '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
     writematrix(kappalist, kappalist_file,'Delimiter','tab');
