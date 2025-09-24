@@ -1,7 +1,8 @@
 function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, L_s1, utility1, utility2)
 
-    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
+    if not(isfolder([pwd  '/data/kappa' ]))                                           % create local directories for data storage
         mkdir([pwd  '/media/kappa' ]);
+        addpath([pwd  '/media/kappa' ]);
     end
     
     switch testcase

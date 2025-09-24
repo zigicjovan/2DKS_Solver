@@ -1,7 +1,8 @@
 function save_2DKSsolution(foldername, u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, saved, utility1)
 
-    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
+    if not(isfolder([pwd  '/data/' foldername '' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/' foldername '' ]);
+        addpath([pwd  '/data/' foldername '' ]);
     end
 
     if strcmp('optimal',foldername)

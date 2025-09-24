@@ -1,7 +1,8 @@
 function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol)
 
-    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
+    if not(isfolder([pwd  '/data/optimization' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/optimization' ]);
+        addpath([pwd  '/data/optimization' ]);
     end
 
     maxiter = 1000;                                 % set maximum number of iterations

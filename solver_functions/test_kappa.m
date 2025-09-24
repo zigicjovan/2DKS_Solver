@@ -1,7 +1,8 @@
 function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max)
 
-    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
-            mkdir([pwd  '/data/kappa' ]);
+    if not(isfolder([pwd  '/data/kappa' ]))                                           % create local directories for data storage
+        mkdir([pwd  '/data/kappa' ]);
+        addpath([pwd  '/data/kappa' ]);
     end
 
     save_each = 1;                                                                          % save all timesteps for backward solver

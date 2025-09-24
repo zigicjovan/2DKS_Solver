@@ -1,7 +1,6 @@
 function plot_2DKS(save_each, solplot, IC, N, dt, T, L_s1, L_s2, Ntime_save_max, utility1, utility2)
 
-if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
-    mkdir([pwd  '/data' ])
+if not(isfolder([pwd  '/data/normL2' ]))                                           % create local directories for data storage
     mkdir([pwd  '/data/normL2' ])
     mkdir([pwd  '/data/normL2_t' ]);
     mkdir([pwd  '/data/spectrum' ]);
@@ -13,6 +12,17 @@ if not(isfolder([pwd  '/data' ]))                                           % cr
     mkdir([pwd  '/media/figures' ]);
     mkdir([pwd  '/media/figures/state' ]);
     mkdir([pwd  '/media/kappa' ]);
+    addpath([pwd  '/data/normL2' ])
+    addpath([pwd  '/data/normL2_t' ]);
+    addpath([pwd  '/data/spectrum' ]);
+    addpath([pwd  '/data/kappa' ]);
+    addpath([pwd  '/media' ]);
+    addpath([pwd  '/media/movies' ]);
+    addpath([pwd  '/media/energy' ]);
+    addpath([pwd  '/media/optimization' ]);
+    addpath([pwd  '/media/figures' ]);
+    addpath([pwd  '/media/figures/state' ]);
+    addpath([pwd  '/media/kappa' ]);
 end
 
 tol = utility2;

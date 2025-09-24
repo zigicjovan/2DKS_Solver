@@ -1,16 +1,12 @@
-function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,IC)
-    %N = 48;
-    %L_s1 = 1.1;
+function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T, IC, type)
+
     L_s2 = L_s1;
-    %T = 20;
-    %u_IC_opt = u_IC_opt_11;
     
     u = reshape(u_IC_opt,[N,N]);
     [~, max_idx] = min(u(:));
     [rowmax, colmax] = ind2sub(size(u), max_idx);
     u1 = [ u(rowmax+1:end,:) ;  u(1:rowmax,:)  ];
     u2 = [ u1(:,colmax:end) ,  u1(:,1:colmax-1)  ];
-    %u2 = u;
     
     N_x2 = N;                                                % discretized equally in each dimension
     
@@ -61,11 +57,21 @@ function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,I
     end
 
     modecount = 1;
-    for k = 1:size(modelist,1)
-        if sqrt(modelist(k,1)^2 + modelist(k,2)^2) < L_s1 
-            modes(modecount,:) = modelist(k,:);
-            modecount = modecount + 1;
-        end
+    switch type
+        case {'active','full'}
+            for k = 1:size(modelist,1)
+                if sqrt(modelist(k,1)^2 + modelist(k,2)^2) < L_s1
+                    modes(modecount,:) = modelist(k,:);
+                    modecount = modecount + 1;
+                end
+            end
+        case 'dominant'
+            for k = 1:size(modelist,1)
+                if abs(L_s1 - sqrt(modelist(k,1)^2 + modelist(k,2)^2)*sqrt(2)) < 1e-2 
+                    modes(modecount,:) = modelist(k,:);
+                    modecount = modecount + 1;
+                end
+            end
     end
     modes = rmmissing(modes);
     amps = size(modes,1);
@@ -74,19 +80,15 @@ function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,I
     for k = 1:size(modes,1)
         u_ef = cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) );
         u_ef = u_ef / sqrt(sum((u_ef(:)) .* conj((u_ef(:))) )*(L1*L2)/N^2);
-        %u_ef = (cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) ) + cos( (modes(k,1)*L_x1*x1 - modes(k,2)*L_x2*x2) ));
-        [~, max_idx] = min(u_ef(:));
+        [~, max_idx] = max(u_ef(:));
         [rowmax, colmax] = ind2sub(size(u_ef), max_idx);
         u1_ef = [ u_ef(rowmax+1:end,:) ;  u_ef(1:rowmax,:)  ];
         u2_ef = [ u1_ef(:,colmax:end) ,  u1_ef(:,1:colmax-1)  ];
-        %u2_ef = u_ef;
 
         u_centered = u2 - mean(u2(:));
         u_norm = u_centered / sqrt( sum((u_centered(:)) .* conj((u_centered(:))))*(L1*L2)/N^2 );
         phi_norm = u2_ef / sqrt( sum((u2_ef(:)) .* conj((u2_ef(:))))*(L1*L2)/N^2 );
-        %phi_norm = u_ef / sqrt( sum((u_ef(:)) .* conj((u_ef(:))))*(L1*L2)/N^2 );
         ampstars(k,1) = (sum((u_norm(:)) .* conj((phi_norm(:))) )*(L1*L2)/N^2);
-        %ampstars(k,1) = (sum((u_norm(:)) .* conj((phi_norm(:))) )*(L1*L2)/N^2) / (((modes(k,1)*L_x1)^2+(modes(k,2)*L_x2)^2)-((modes(k,1)*L_x1)^2+(modes(k,2)*L_x2)^2)^2);
     end
 
     % check orthogonality
@@ -101,19 +103,29 @@ function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,I
         end
     end
 
+    switch type
+        case 'active'
+            for k = 1:size(modes,1)
+                if abs(ampstars(k,1)) < 1e-3
+                    ampstars(k,1) = NaN;
+                    modes(k,:) = [ NaN NaN ];
+                end
+            end
+    end
+    modes = rmmissing(modes);
+    ampstars = rmmissing(ampstars);
+
     u_eff = 0;
     for k = 1:size(modes,1)
         u_ef = cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) );
         u_ef = u_ef / sqrt(sum((u_ef(:)) .* conj((u_ef(:))) )*(L1*L2)/N^2);
         u_ef = ampstars(k,1)*u_ef;
-        %u_ef = ampstars(k,1)*(cos( (modes(k,1)*L_x1*x1 + modes(k,2)*L_x2*x2) ) + cos( (modes(k,1)*L_x1*x1 - modes(k,2)*L_x2*x2) ));
         [~, max_idx] = min(u_ef(:));
         [rowmax, colmax] = ind2sub(size(u_ef), max_idx);
         u1_ef = [ u_ef(rowmax+1:end,:) ;  u_ef(1:rowmax,:)  ];
         u2_ef = [ u1_ef(:,colmax:end) ,  u1_ef(:,1:colmax-1)  ];
 
         u_eff = u_eff + u2_ef;
-        %u_eff = u_eff + u_ef;
     end
 
     u_centered = u2 - mean(u2(:));
@@ -122,7 +134,6 @@ function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,I
     match_score = 1 - sum((u_norm(:)) .* conj((phi_norm(:))))*(L1*L2)/N^2 ;
     fprintf('Correlation match: %.7f\n', match_score(1)); 
     
-    %
     h = figure;
     set(gcf,'Position',[100 100 1800 750])
     set(gcf,'color','white')
@@ -138,12 +149,25 @@ function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T,I
     pcolor(x1p, x2p, u_eff);
     shading interp;
     xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',18); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',18);
-    title(['$\phi^*(' num2str(L_s1) ',' num2str(L_s2) ')$ with ' num2str(length(ampstars)) ' modes'],'Interpreter','latex','FontSize',18);
+    switch type
+        case {'active','full'}
+            title(['$\phi_*(' num2str(L_s1) ',' num2str(L_s2) ')$ with ' num2str(length(ampstars)) ' modes'],'Interpreter','latex','FontSize',18);
+        case 'dominant'
+            title(['$\phi^d_*(' num2str(L_s1) ',' num2str(L_s2) ')$ with ' num2str(length(ampstars)) ' modes'],'Interpreter','latex','FontSize',18);
+    end    
     colormap(redblue)
-    %}
 
     filename = [ pwd '/match' num2str(L_s1) '_' IC '_T' num2str(T) '_N' num2str(N)];
-    writematrix(match_score, [filename '.dat']);
+    switch type
+        case 'active'
+            filename = [ pwd '/matcha' num2str(L_s1) '_' IC '_T' num2str(T) '_N' num2str(N)];
+        case 'dominant'
+            filename = [ pwd '/matchd' num2str(L_s1) '_' IC '_T' num2str(T) '_N' num2str(N)];
+    end
+    writematrix(match_score, [filename '_matchscore.dat']);
+    writematrix(modes, [filename '_modes.dat']);
+    writematrix(ampstars, [filename '_amps.dat']);
+    saveas(h,[filename '.fig'])
     exportgraphics(h,[filename '.pdf'])
 
 end

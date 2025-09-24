@@ -1,7 +1,8 @@
 function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, L_s1, L_s2)
 
-    if not(isfolder([pwd  '/data' ]))                                           % create local directories for data storage
+    if not(isfolder([pwd  '/data/' foldername '_measures' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/' foldername '_measures' ]);
+        addpath([pwd  '/data/' foldername '_measures' ]);
     end
     
     switch foldername

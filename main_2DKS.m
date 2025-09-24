@@ -140,7 +140,9 @@ for init = 1 : length(kappapert)
                         save_2DKSsolution('optimal', u_IC_opt, 0, 0, IC, dt, T, N, L_s1, L_s2, 1, tol); % save solution to machine
                         close all
                         %u_IC_opt = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0); % load solution from machine
-                        [match_score,ampstars,modes] = validation_script(u_IC_opt,L_s1, N, T,IC);
+                        [match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
+                        [match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
+                        [match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
                 end
             end
         end
