@@ -1,10 +1,18 @@
-function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol)
+function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol)
 
     if not(isfolder([pwd  '/data/optimization' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/optimization' ]);
         addpath([pwd  '/data/optimization' ]);
     end
 
+    switch method
+        case 'RG'
+            rcgIter = 1000;
+        case 'RCG'
+            rcgIter = 1;
+        case 'RCGd5'
+            rcgIter = 5;
+    end
     maxiter = 1000;                                 % set maximum number of iterations
     if exist('J_history','var') == 0
         J_history = NaN(maxiter,1);                        % store updated objective functionals  
@@ -37,6 +45,7 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
     gradJsize_history(iter,1) = 0;                                                          % initialize gradient sizes
     time_history(iter,1) = toc;                                                             % initialize timer count
     momentumsize_history(iter,1) = momentum_size;                                           % initialize momentum sizes
+    momentum_counter = 0;                                                                   % initialize momentum size reset counter
 
     while (abs(J_change(iter,1)) > tol) && (iter <= maxiter)
 
@@ -46,15 +55,19 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
         GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
         angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
         projGradJ_cur = GradJ - (angleGradJ/manifold_size).*(u_IC);                                     % current projected objective gradient
-        if iter > 1000
+        if iter > rcgIter
             angleDir_old = sum( u_IC .* conj(dir_old) )*(L1*L2)/N^2;                                    % angle with old direction
-            angleprojGradJ_old = sum( u_IC .* conj(projGradJ_old) )*(L1*L2)/N^2;                        % angle with old projected gradient
-            vectransport = (dir_old - (angleDir_old/manifold_size).*(u_IC))/manifold_size;              % current vector transport operator
-            transportprojGradJ_old = (projGradJ_old - (angleprojGradJ_old/manifold_size).*(u_IC))/manifold_size; % transport old projected gradient 
+            angleprojGradJ_old = sum( u_IC .* conj(projGradJ_old) )*(L1*L2)/N^2;                    % angle with old projected gradient
+            vectransport = (dir_old - (angleDir_old/manifold_size).*(u_IC))/sqrt(manifold_size);              % current vector transport operator
+            transportprojGradJ_old = (projGradJ_old - (angleprojGradJ_old/manifold_size).*(u_IC))/sqrt(manifold_size); % transport old projected gradient 
             diff_projGradJ = projGradJ_cur - transportprojGradJ_old;                                    % momentum parameter term
             diff_projGradJ_size = sum( projGradJ_cur .* conj(diff_projGradJ) )*(L1*L2)/N^2;             % momentum parameter numerator
             projGradJ_old_size = sum( projGradJ_old .* conj(projGradJ_old) )*(L1*L2)/N^2;               % momentum parameter denominator
             momentum_size = diff_projGradJ_size / projGradJ_old_size;                                   % current momentum parameter
+            momentum_counter = momentum_counter + 1;
+            if mod(iter,20) == 0
+                momentum_size = 0;                                                                      % reset accumulated momentum after modulo 20 iterations
+            end
         elseif iter == 1
             IC = 'optimized';                                                                           % set IC to optimized
             J_change(1,1) = NaN;                                                                        % fix initial change in objective functional value 
@@ -65,6 +78,12 @@ function [J_cur , J_history , u_TC , u_IC] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u
                 momentumsize_history(1,1)];
         end
         dir_cur = projGradJ_cur + (momentum_size .* vectransport);                                      % current direction
+        dir_size = sqrt(sum( dir_cur .* conj(dir_cur) )*(L1*L2)/N^2);                                   % current direction size
+        projGradJ_cur_size = sqrt(sum( projGradJ_cur .* conj(projGradJ_cur) )*(L1*L2)/N^2);             % current projected gradient size
+        ascent_size = (sum( dir_cur .* conj(projGradJ_cur) )*(L1*L2)/N^2)/( dir_size .* projGradJ_cur_size); % ascent direction size
+        if ascent_size < 1e-5
+            dir_cur = projGradJ_cur;                                                                      % reset accumulated momentum after modulo 20 iterations
+        end
         [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,L_s1,L_s2,dt,T,Ntime_save_max,originalIC); % current step-size via Brent's method
         disp(['Line-search problem number of iterations: ' num2str(iter_search)])
         linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search

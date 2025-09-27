@@ -1,7 +1,7 @@
 close all
-L_scale = sqrt(18);                                % domain sizes
+L_scale = sqrt(13);                                % domain sizes
 %sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)
-%[1.1,1.4,1.5,2.2,3.2,5.2,10.2,sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)]
+%[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)]
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
 timewindow = 30;                                % time windows
@@ -18,6 +18,5 @@ IC = strjoin(initialcondition(1),'');           % initial condition
 
 u_IC_opt = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0);
 [match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
-[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
+%[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
 [match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
-eigdiags = [ ampstars  modes ];

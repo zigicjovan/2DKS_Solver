@@ -592,6 +592,7 @@ switch solplot
             case {'optimized'}
                 subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
         end
+        %{
         % Save image
         filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial'];
@@ -602,7 +603,7 @@ switch solplot
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
-
+        %}
         % contour plot
         view(2);
         % Save image
@@ -642,6 +643,7 @@ switch solplot
             case {'optimized'}
                 subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
         end
+        %{
         % Save image
         filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
             '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal'];
@@ -652,7 +654,7 @@ switch solplot
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
-
+        %}
         % contour plot
         view(2);
         % Save image

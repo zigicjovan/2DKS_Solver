@@ -3,17 +3,19 @@ tic
 
 %%% choose test %%%
 run = 'optimize';                               % switch to 'optimize', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
+continuation = 0;                               % 1 to use data from file, 0 to generate new data
+optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
-L_scale = [4,sqrt(18),sqrt(26),sqrt(32)];  % domain sizes
+L_scale = 2.36;  % domain sizes
 %[1.1,1.4,1.5,2.2,3.2,5.2,10.2];
 %[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
 %[sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)];
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
-timewindow = 30;                                % time windows
-initialcondition = {'noise4'};                      % initial conditions
+timewindow = 5.5;                                % time windows
+initialcondition = {'s1'};                      % initial conditions
 kappapert = {'stg30'};                             % perturbation functions
 L_target = 2.36;                                % domain sizes of interest
 tol = 1e-10;                                     % set optimization tolerance critera
@@ -75,12 +77,53 @@ for init = 1 : length(kappapert)
                 disp(['Test ' num2str(testcounter) ' of ' num2str(numberoftests) ])
                 %%% solve forward-time PDE problem %%%
                 switch run 
-                    case {'L','N','dt','IC','kappa','optimize'} 
+                    case {'L','N','dt','IC','kappa'} 
                         disp(['Solving forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
                         tic
                         [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
                         time = toc;
                         toc
+                    case 'optimize'
+                        if continuation == 1
+                            try 
+                                [ u_IC , v_TC ] = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0);
+                                u_TC = real(ifft2(v_TC));
+                                tic
+                                disp(['Continuing from loaded optimal solution for forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
+                            catch
+                                try 
+                                    time1 = ceil(T/(dt*save_each));
+                                    if time1 > Ntime_save_max 
+                                        timeIC = Ntime_save_max;
+                                        timeTC = mod(time1,Ntime_save_max);
+                                        time2 = ceil(Ntime_save_max*dt*save_each);
+                                    else
+                                        timeIC = time1;
+                                        timeTC = time1;
+                                        time2 = T;
+                                    end
+                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, L_s1, L_s2, timeIC, IC);
+                                    [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, L_s1, L_s2, timeTC, IC);
+                                    u_IC = u(:,1);
+                                    v_TC = v(:,end);
+                                    u_TC = real(ifft2(v_TC));
+                                    tic
+                                    disp(['No "optimal" file found. Continuing from loaded optimal solution for forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
+                                catch
+                                    disp(['No saved solution. Solving forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
+                                    tic
+                                    [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                    time = toc;
+                                    toc
+                                end
+                            end
+                        else
+                            disp(['Solving forward-time problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
+                            tic
+                            [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                            time = toc;
+                            toc
+                        end
                 end
                 pause(1)
         
@@ -124,7 +167,12 @@ for init = 1 : length(kappapert)
                         delete_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_save_max,0);
                         delete_2DKSsolution('backward', IC, dt, T, N, L_s1, L_s2, Ntime_save_max,0);
                     case 'optimize' 
-                        [J_opt, J_history , u_TC_opt , u_IC_opt] = optimize_2DKS(IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol);
+                        [J_opt, J_history , v_TC_opt , u_IC_opt] = optimize_2DKS(optmethod,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,tol);
+                        disp(['Solved optimization problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
+                        disp(['Initial objective functional value: ' num2str(J_history(1,1))])
+                        disp(['Optimal objective functional value: ' num2str(J_history(end,1))])
+                        disp(['Number of iterations: ' num2str(length(J_history)-1)])
+                        save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, L_s1, L_s2, 1, tol); % save solution to machine
                         %plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,0);   
                         %
                         plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC ,tol);
@@ -133,15 +181,10 @@ for init = 1 : length(kappapert)
                         plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,tol);
                         %}                        
                         plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        disp(['Solved optimization problem for L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt)])
-                        disp(['Initial objective functional value: ' num2str(J_history(1,1))])
-                        disp(['Optimal objective functional value: ' num2str(J_history(end,1))])
-                        disp(['Number of iterations: ' num2str(length(J_history)-1)])
-                        save_2DKSsolution('optimal', u_IC_opt, 0, 0, IC, dt, T, N, L_s1, L_s2, 1, tol); % save solution to machine
                         close all
-                        %u_IC_opt = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0); % load solution from machine
+                        %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0); % load solution from machine
                         [match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
-                        [match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
+                        %[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
                         [match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
                 end
             end
