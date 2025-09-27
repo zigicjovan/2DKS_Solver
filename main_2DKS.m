@@ -4,7 +4,7 @@ tic
 %%% choose test %%%
 run = 'optimize';                               % switch to 'optimize', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 continuation = 0;                               % 1 to use data from file, 0 to generate new data
-optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
+optmethod = 'RG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 
 %%% choose parameter testing ranges %%%
@@ -183,9 +183,9 @@ for init = 1 : length(kappapert)
                         plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, L_s1, L_s2,Ntime_save_max,IC,tol);
                         close all
                         %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, L_s1, L_s2, tol, 0); % load solution from machine
-                        [match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
-                        %[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
-                        [match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
+                        %[match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
+                        %%[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
+                        %[match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
                 end
             end
         end

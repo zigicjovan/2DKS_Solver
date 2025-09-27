@@ -108,6 +108,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,L_s1,L_s2
         diagnostics_history(iter,:) = [J_history(iter,1), J_change(iter,1), stepsize_history(iter,1)...
             manifold_history(iter,1), time_history(iter,1), gradJsize_history(iter,1),...
             momentumsize_history(iter,1)];
+        disp(['Iteration ' num2str(iter) ' objective value: ' num2str(J_history(iter,1))])
         disp(['Iteration ' num2str(iter) ' objective value change: ' num2str(abs(J_change(iter,1)))])
     end
 
