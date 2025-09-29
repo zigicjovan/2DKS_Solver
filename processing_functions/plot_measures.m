@@ -1,13 +1,65 @@
-function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, L_s1, utility1, utility2)
+function [measure1,measure2,measure3] = plot_measures(testcase, timestep, control, gridsize, T, K, L_s1, L_s2, utility1, utility2, input1, input2)
 
     if not(isfolder([pwd  '/data/kappa' ]))                                           % create local directories for data storage
         mkdir([pwd  '/media/kappa' ]);
         addpath([pwd  '/media/kappa' ]);
     end
     
+    parameterlist = ['optimized_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    %originalIC = utility1;
+    %tol = utility2;
+    %optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
+    Jinitdata = utility1;
+    Joptdata = utility2;
+
     switch testcase
+        case 'optimization'
+            Klist = unique(Joptdata(:,1));
+            Llist = unique(Joptdata(:,2));
+            Tlist = unique(Joptdata(:,3));
+            legendlist = cell(1,2*length(Klist)*length(Llist));
+
+            for IC_i = 1:length(control)
+                IC = strjoin(control(IC_i));
+                Tcounter = 0;
+
+                h = figure;
+                parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', \| \varphi \|_{L^2} = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white') 
+                set(gcf,'Position',[100 100 1200 900])
+                xlabel('Time Window $T$','Interpreter','latex'); 
+                xlim([Tlist(1) Tlist(end)])
+                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+                title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+                subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+                hold on
+
+                for K_i = 1:length(Klist)
+                    K = Klist(K_i);
+                    for L_i = 1:length(Llist)
+                        L_s1 = Llist(L_i);
+                        L_s2 = Llist(L_i);
+                        Tcounter = Tcounter + 1;
+
+                        Tstart = (Tcounter-1)*length(Tlist) + 1;
+                        Tend = Tstart + length(Tlist) - 1;       
+                        plot(Joptdata(Tstart:Tend,3),Joptdata(Tstart:Tend,3+IC_i),'Marker','o')               
+                        plot(Jinitdata(Tstart:Tend,3),Jinitdata(Tstart:Tend,3+IC_i),'Marker','x')
+                        legendlist(2*Tcounter-1) = {['$\widetilde{\varphi}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
+                        legendlist(2*Tcounter) = {['$\varphi_{' IC '}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
+                        
+                    end
+                end
+                legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2)
+                hold off
+                parameterlist = [IC '_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.2f') '_' num2str(Tlist(end),'%.2f') ];
+                filename = [pwd '/media/optimization/branches_' parameterlist ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+            end
         case 'kappa'
-    
             measure1 = 0;
             measure2 = 0;
             measure3 = 0;
@@ -20,11 +72,8 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             lastT = T(utility2);
             L_s2 = L_s1;
     
-            kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                '_T_' num2str(lastT) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-    
-            rieszlist_file = [pwd '/data/kappa/rieszlist_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                 '_T_' num2str(lastT) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+            kappalist_file = [pwd '/data/kappa/kappalist_p' pertIC '_' parameterlist '.dat'];  
+            rieszlist_file = [pwd '/data/kappa/rieszlist_p' pertIC '_' parameterlist '.dat'];
             
             kappalist = readmatrix(kappalist_file);
             rieszlist = readmatrix(rieszlist_file);
@@ -155,13 +204,13 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             measure2 = 0;
             measure3 = 0;
         case 'temporal'
-            L_s2 = utility1;
+
             %%% (1) choose smallest step %%%
             dt = timestep(end); % size of smallest timestep
         
             %%% (2) load reference solution %%%
         
-            [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, gridsize, L_s1, L_s2);
+            [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, gridsize, K, L_s1, L_s2, utility1, utility2);
             u_Nsq = reshape( u_n(:,end) , gridsize, gridsize);
             measure1 = NaN( length(timestep) , 2 );
             measure2 = measure1;
@@ -185,7 +234,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 dt = timestep(i); % size of comparison timestep
         
                 %%% (2) load solution %%%
-                [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, gridsize, L_s1, L_s2);
+                [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, gridsize, K, L_s1, L_s2, utility1, utility2);
                 u_i = reshape( u_n(:,end) , gridsize, gridsize);
         
                 %%% (3) error analysis %%%
@@ -203,7 +252,6 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             end
         case 'spatial'
             
-            L_s2 = utility1;
             dt = timestep;
             %%% (1) make fine grid %%%
             N_fine = gridsize(end); % number of grid points for finest grid
@@ -215,7 +263,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
         
             %%% (2) load fine solution %%%
         
-            [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, N_fine, L_s1, L_s2);
+            [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, N_fine, K, L_s1, L_s2, utility1, utility2);
             u_Nsq = reshape( u_n(:,end) , N_fine, N_fine);
             measure1 = NaN( length(gridsize) , 2 );
             measure2 = measure1;
@@ -245,7 +293,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 [ x1_coarse , x2_coarse ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
         
                 %%% (2) load solution %%%
-                [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, N_coarse, L_s1, L_s2);
+                [u_n, ~, time_n] = load_2DKSsolution('time_evolution', control, dt, T, N_coarse, K, L_s1, L_s2, utility1, utility2);
                 
                 u_nsq = reshape( u_n(:,end) , N_coarse, N_coarse);
                 u_i = interp2( x1_coarse , x2_coarse, u_nsq, x1_fine , x2_fine); % interpolate coarse grid to compatible size

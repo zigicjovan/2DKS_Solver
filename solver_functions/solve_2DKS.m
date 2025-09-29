@@ -1,4 +1,4 @@
-function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,utility1,utility2)
+function [ v_out , u_out , utilityout ] = solve_2DKS(IC,solver,N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,utility1,utility2)
 
 %{ 
 Output:
@@ -34,8 +34,8 @@ u_n: solution vector for each time step in Physical space
     % reshape
     k1vecN = k1_n(:);
     k2vecN = k2_n(:);
-    K = k1_l.^2 + k2_l.^2;                                      % for 2nd order linear term (Laplacian) 
-    kvecl2 = K(:);
+    Klap = k1_l.^2 + k2_l.^2;                                   % for 2nd order linear term (Laplacian) 
+    kvecl2 = Klap(:);
     KK = (k1_l.^2 + k2_l.^2).^2;                                % for 4th order linear term (bi-Laplacian)
     kvecl4 = KK(:);                           
     
@@ -61,51 +61,10 @@ u_n: solution vector for each time step in Physical space
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
         case 'sc1'
             u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 'ef'
-            if L_s1 < 1
-                kp1 = 1;
-                kp2 = 0;
-                mag = 1;
-            elseif L_s1 < 2
-                kp1 = 1;
-                kp2 = 0;
-                mag = 1e-14;
-            elseif L_s1 < 3
-                kp1 = 1;
-                kp2 = 1;
-                mag = 1e-14;
-            elseif L_s1 < 4
-                kp1 = 2;
-                kp2 = 1;
-                mag = 1e-14;
-            elseif L_s1 < 10
-                kp1 = 3;
-                kp2 = 2;
-                mag = 1e-14;
-            elseif L_s1 > 10
-                kp1 = 6;
-                kp2 = 4;
-                mag = 1e-14;
-            end
-            u_0 = mag*( cos( (kp1*L_x1*x1 + kp2*L_x2*x2) ) + cos( (kp1*L_x1*x1 + kp2*L_x2*x2) ) );
-        case 's1n1'
-            u_0 = 1e-1*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
-        case 's1n5'
-            u_0 = 1e-5*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
-        case 's1n10'
-            u_0 = 1e-10*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's1n14'
             u_0 = 1e-14*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's30'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
-        case 's30n1'
-            u_0 = 1e-1*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
-        case 's30n5'
-            u_0 = 1e-5*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
-        case 's30n10'
-            u_0 = 1e-10*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
-        case 's30n14'
-            u_0 = 1e-14*(sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 ));
         case 'tg1'
             u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'tg30'
@@ -120,22 +79,18 @@ u_n: solution vector for each time step in Physical space
             u_0 = 1e-14*(2*rand(N)-ones(N));
         case 'noise4'
             u_0 = 1e-4*(2*rand(N)-ones(N));
-        case 'noise2'
-            u_0 = 1e-2*(2*rand(N)-ones(N));
         case 'mn5'
             u_0 = 1e-5*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
                                  sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
                                  sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
-        case 'mn10'
-            u_0 = 1e-10*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
-                                  sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
-                                  sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
-        case 'mn14'
-            u_0 = 1e-14*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
-                                  sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
-                                  sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
     end
 
+    % set initial L^2 energy magnitude
+    u_0_mag = sqrt(sum( u_0(:) .* conj(u_0(:)) )*(L1*L2)/N^2);              % compute norm of IC
+    if K > 0 
+        u_0 = K*u_0/u_0_mag;                                                    % set norm of IC equal to K
+    end
+    
     % perturbation function for adjoint calculus
     switch utility2 
         case 's'
@@ -258,7 +213,7 @@ u_n: solution vector for each time step in Physical space
                 if (Ntime_save > Ntime_save_max) && (mod(i,Ntime_save_max) == 0) && (i ~= Ntime)
                     currentT = i/Ntime*T;
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
                     if (Ntime - i) < Ntime_save_max
                         fullsave = 0;
                         Ntime_save_remaining = Ntime - i;
@@ -274,15 +229,15 @@ u_n: solution vector for each time step in Physical space
                 elseif (Ntime_save > Ntime_save_max) && (i == Ntime)
                     time = toc;
                     if fullsave == 1
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
                     else 
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save_remaining, utility2); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save_remaining, utility2); % save solution to machine
                     end
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                 elseif i == Ntime
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, Ntime_save, utility2); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save, utility2); % save solution to machine
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                     utilityout = u_n(:,1);
@@ -345,7 +300,7 @@ u_n: solution vector for each time step in Physical space
             if Ntime_residual == 0
                 Ntime_residual = Ntime_save_max;
             end
-            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_residual, utility2);
+            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_residual, utility2);
             count = 0;
             for i = Ntime-1:-1:1
                 v_fwdstep = v_fwd(:,Ntime_residual-count);
@@ -387,14 +342,14 @@ u_n: solution vector for each time step in Physical space
                     time = toc;
                     v_n(:,1) = v_step;
                     u_n(:,1) = real(ifft2(v_n(:,1)));
-                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, L_s1, L_s2, 2, utility2); % save solution to machine
+                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, 2, utility2); % save solution to machine
                     v_out = v_12(:);
                     u_out = u_1(:);
                 elseif mod(count,Ntime_residual) == (Ntime_residual - 1)
                     Ntime_residual = Ntime_save_max;
                     count = 0;
                     currentT = i/Ntime*T;
-                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_residual, utility2);
+                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_residual, utility2);
                 else
                     count = count + 1;                    
                 end

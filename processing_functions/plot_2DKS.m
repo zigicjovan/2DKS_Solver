@@ -1,4 +1,4 @@
-function plot_2DKS(save_each, solplot, IC, N, dt, T, L_s1, L_s2, Ntime_save_max, utility1, utility2)
+function plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, utility2)
 
 if not(isfolder([pwd  '/data/normL2' ]))                                           % create local directories for data storage
     mkdir([pwd  '/data/normL2' ])
@@ -25,7 +25,13 @@ if not(isfolder([pwd  '/data/normL2' ]))                                        
     addpath([pwd  '/media/kappa' ]);
 end
 
+parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+optparfiglist = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+originalIC = utility1;
 tol = utility2;
+optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
+
 % number of timesteps
 time1 = ceil(T/dt); 
 time2 = ceil(time1/save_each);
@@ -60,7 +66,6 @@ x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N );
 
 switch IC
     case {'optimized'}
-        originalIC = utility1;
         % compute L2 norm and Fourier mode evolution
         normL2_og = NaN(Ntime,1);
         v_mean_og = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
@@ -69,14 +74,14 @@ switch IC
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
-                [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, L_s1, L_s2, Ntime, 0);
+                [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime, 0);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
-                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, L_s1, L_s2, Ntime_save_max, 0);
+                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, 0);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
-                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, L_s1, L_s2, Ntime_remaining, 0);
+                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, 0);
                 end
             end
             
@@ -126,14 +131,14 @@ switch solplot
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
                 end
             end
             
@@ -172,24 +177,18 @@ switch solplot
             normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
         end
         
-        normL2data_file = [pwd '/data/normL2/normL2_' IC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-        normL2deriv_file = [pwd '/data/normL2_t/normL2_' IC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-        spectrum_file = [pwd '/data/spectrum/spectrum_' IC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
+        normL2data_file = [pwd '/data/normL2/normL2_' parameterlist '.dat'];
+        normL2deriv_file = [pwd '/data/normL2_t/normL2_' parameterlist '.dat'];
+        spectrum_file = [pwd '/data/spectrum/spectrum_' parameterlist '.dat'];
         switch IC
             case {'optimized'}
-                normL2data_file = [pwd '/data/normL2/normL2_' IC '_' originalIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
-                normL2deriv_file = [pwd '/data/normL2_t/normL2_' IC '_' originalIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
-                spectrum_file = [pwd '/data/spectrum/spectrum_' IC '_' originalIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '.dat'];
+                normL2data_file = [pwd '/data/normL2/normL2_' optparameters '.dat'];
+                normL2deriv_file = [pwd '/data/normL2_t/normL2_' optparameters '.dat'];
+                spectrum_file = [pwd '/data/spectrum/spectrum_' optparameters '.dat'];
         end
-        writematrix(normL2, normL2data_file,'Delimiter','tab');
-        writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
-        writematrix(v_mean, spectrum_file,'Delimiter','tab');
+        writematrix(normL2, normL2data_file);
+        writematrix(normL2_t, normL2deriv_file);
+        writematrix(v_mean, spectrum_file);
 end
 
 switch solplot
@@ -215,28 +214,26 @@ switch solplot
                 frames = 100;
         end
         
-        filename = [pwd '/media/movies/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_frames_' num2str(frames) '.gif'];
+        filename = [pwd '/media/movies/phys_' parameterlist '_frames_' num2str(frames) '.gif'];
 
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/movies/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_frames_' num2str(frames) '_tol_' num2str(tol) '.gif'];
+                filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
         end
 
         for i = 1 : ceil(Ntime/frames) : Ntime
         
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
                     currentT = frameovermax*Ntime_save_max/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
                 end
             end
 
@@ -278,7 +275,7 @@ switch solplot
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex');
-            ylabel('$|| \phi(t;\varphi) ||$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
             xlim([0 T])
             ylim([min(normL2) max(normL2)+1e-1])
             title("Evolution of $L^2$ norm",'Interpreter','latex')
@@ -295,10 +292,10 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(currentT,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'];
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(currentT,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'];
+                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
@@ -342,18 +339,18 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Evolution of Fourier spectrum','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
         %legend("Fourier band", 'Location','southeast','NumColumns',9,'Interpreter','latex')
         %frame = getframe(h);
         %im = frame2im(frame);
-        filename = [pwd '/media/energy/wavenumberevol_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') ];
+        filename = [pwd '/media/energy/wavenumberevol_' parameterlist ];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/energy/wavenumberevol_' IC '_' originalIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '_tol_' num2str(tol) ];
+                filename = [pwd '/media/energy/wavenumberevol_' optparameters ];
         end
         %imwrite(im,filename,'png')
         saveas(h,[filename '.fig'])
@@ -365,24 +362,25 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$||{\phi(t;\varphi)}||_{L^2}$','Interpreter','latex');
+        ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Evolution of $L^2$ norm','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
-        filename = [pwd '/media/energy/normL2_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') ];
+        filename = [pwd '/media/energy/normL2_' parameterlist ];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/energy/normL2_' IC '_' originalIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '_tol_' num2str(tol) ];
+                filename = [pwd '/media/energy/normL2_' optparameters ];
+            otherwise
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
         end
-        saveas(h,[filename '.fig'])
-        exportgraphics(h,[filename '.pdf'])
 
         %{
         % L2 norm time derivative plot
@@ -391,7 +389,7 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$\frac{d}{dt} ||{\phi(t)}||_{L^2}$','Interpreter','latex');
+        ylabel('$\frac{d}{dt} \| {\phi(t)} \|_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
@@ -405,9 +403,7 @@ switch solplot
         switch IC 
             case {'optimized'}
                 
-                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, L_s1, L_s2, tol, originalIC);
-
-                optfilename = [ IC '_' originalIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '_tol_' num2str(tol) ];
+                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
 
                 % L2 norm plot
                 h = figure;
@@ -418,15 +414,15 @@ switch solplot
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Time $t$','Interpreter','latex'); 
                 xlim([0 T])
-                ylabel('$||{\phi(t;\varphi)}||_{L^2}$','Interpreter','latex');
+                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
                 title('Evolution of optimized $L^2$ norm','Interpreter','latex')
-                subtitle(['$L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                legend('$\phi(t,\varphi^{(0)})$','$\phi(t,\widetilde{\varphi})$','Interpreter','latex','Location','northwest')
-                filename = [pwd '/media/optimization/normL2comp_' optfilename];
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\widetilde{\varphi})$','Interpreter','latex','Location','northwest')
+                filename = [pwd '/media/optimization/normL2comp_' optparameters];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -442,9 +438,9 @@ switch solplot
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})=||{\phi^{(n)}(T)}||^2_{L^2}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jhistory_' optfilename ];
+                title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jhistory_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -460,9 +456,9 @@ switch solplot
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})=||{\phi^{(n)}(T)}||^2_{L^2}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jchange_' optfilename ];
+                title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jchange_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -479,8 +475,8 @@ switch solplot
                 set(gcf,'color','white')
                 set(gca,'color','white')    
                 title('Optimal step-size $\tau^{(n)}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/stepsize_' optfilename ];
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/stepsize_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -491,14 +487,14 @@ switch solplot
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
                 xlim([1 length(plotdata)])
-                ylabel('$||\varphi^{(n)}||^2_{L^2}$','Interpreter','latex');
+                ylabel('$\| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of initial condition magnitude $K=||\varphi^{(n)}||^2_{L^2}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/initialK_' optfilename ];
+                title('Evolution of initial condition magnitude $K= \| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/initialK_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -509,14 +505,14 @@ switch solplot
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
                 xlim([1 length(plotdata)])
-                ylabel('$||\nabla \mathcal{J}_T(\varphi^{(n)})||^2_{L^2}$','Interpreter','latex');
+                ylabel('$\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of objective gradient magnitude $||\nabla \mathcal{J}_T(\varphi^{(n)})||^2_{L^2}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jgradient_' optfilename ];
+                title('Evolution of objective gradient magnitude $\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jgradient_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -527,14 +523,14 @@ switch solplot
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
                 xlim([1 length(plotdata)])
-                ylabel('$||\beta^{(n)}||^2_{L^2}$','Interpreter','latex');
+                ylabel('$\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of momentum magnitude $||\beta^{(n)}||^2_{L^2}$','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/momentumsize_' optfilename ];
+                title('Evolution of momentum magnitude $\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/momentumsize_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -555,8 +551,8 @@ switch solplot
                 set(gcf,'color','white')
                 set(gca,'color','white')    
                 title('Evolution of Brent''s method objective functional evaluation','Interpreter','latex')
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/linesearch_' optfilename ];
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/linesearch_' optparameters ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -587,19 +583,17 @@ switch solplot
         colormap(redblue)
         view(3);
         title('Initial state','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
         %{
         % Save image
-        filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial'];
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_initial'];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol)  '_initial'];
+                filename = [pwd '/media/figures/state/phys_' optparameters  '_initial'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -607,12 +601,10 @@ switch solplot
         % contour plot
         view(2);
         % Save image
-        filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_initial_contour'];
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol)  '_initial_contour'];
+                filename = [pwd '/media/figures/state/phys_' optparameters '_initial_contour'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -638,19 +630,17 @@ switch solplot
         set(gca,'color','white') 
         colormap(redblue)
         title('Terminal state','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
-                subtitle(['$\varphi = \widetilde{\varphi}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
         %{
         % Save image
-        filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal'];
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal'];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '_terminal'];
+                filename = [pwd '/media/figures/state/phys_' optparameters '_terminal'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -658,12 +648,10 @@ switch solplot
         % contour plot
         view(2);
         % Save image
-        filename = [pwd '/media/figures/state/phys_' IC '_N_' num2str(N) ...
-            '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_terminal_contour'];
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/figures/state/phys_' IC '_' originalIC '_N_' num2str(N) ...
-                    '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '_tol_' num2str(tol) '_terminal_contour'];
+                filename = [pwd '/media/figures/state/phys_' optparameters '_terminal_contour'];
         end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
@@ -686,12 +674,11 @@ switch solplot
         set(gcf,'color','white')
         set(gca,'color','white')    
         title('Kappa difference test','Interpreter','latex')
-        subtitle(['$\varphi = \varphi_{' IC '}, \varphi'' = \varphi_{' pertIC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.0f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-        filename = [pwd '/media/kappa/kappaerr_' IC '_p' pertIC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
+        subtitle(['$\varphi'' = \varphi_{' pertIC '}$, ' parfiglist],'Interpreter','latex','FontSize',14)
+        filename = [pwd '/media/kappa/kappaerr_p' pertIC '_' parameterlist '.pdf'];
         exportgraphics(h,filename)
 
-        kappa_file = [pwd '/data/kappa/kappa_' IC '_p' pertIC '_N_' num2str(N) '' ...
-                '_T_' num2str(T) '_dt_' num2str(dt) '_Ls1_' num2str(L_s1,'%.3f') '_Ls2_' num2str(L_s2,'%.3f') '.dat'];
-        writematrix(kappaerror, kappa_file,'Delimiter','tab');
+        kappa_file = [pwd '/data/kappa/kappa_p' pertIC '_' parameterlist '.dat'];
+        writematrix(kappaerror, kappa_file);
 
 end

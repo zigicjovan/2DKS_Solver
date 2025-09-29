@@ -1,4 +1,4 @@
-function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max)
+function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max)
 
     if not(isfolder([pwd  '/data/kappa' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/kappa' ]);
@@ -18,7 +18,7 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
     L2 = 2*pi*L_s2;
     J_init = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                          % initial objective functional (L^2 inner product of terminal forward state)        
     disp(['Solving adjoint problem for pertIC = ' pertIC])
-    [~, u_adjIC, u_pertIC] = solve_2DKS(IC,'backward',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,pertIC);    % solve adjoint equation
+    [~, u_adjIC, u_pertIC] = solve_2DKS(IC,'backward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,pertIC);    % solve adjoint equation
     toc
     gat_riesz = sum( u_adjIC .* conj(u_pertIC) )*(L1*L2)/N^2;                               % kappa test denominator 
     rieszlist(testcounter,1) = abs(gat_riesz);                                              % save kappa test denominator values
@@ -26,13 +26,13 @@ function [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testco
     disp('Solving perturbed forward-time problems...')
     for i = 1:length(epscheck)   
         eps = epscheck(i);                                                                  % define perturbation 
-        [ ~ , u_pertTC ] = solve_2DKS(IC,'kappa',N,L_s1,L_s2,dt,T,save_each,Ntime_save_max,eps,pertIC);    % solve perturbed forward equation
+        [ ~ , u_pertTC ] = solve_2DKS(IC,'kappa',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,eps,pertIC);    % solve perturbed forward equation
         J_pert(i,1) = sum( u_pertTC .* conj(u_pertTC) )*(L1*L2)/N^2;                        % perturbed objective functional
         gateaux_deriv(i,1) = (J_pert(i,1) - J_init)/eps;                                    % kappa test numerator 
         kappa(i,1) = gateaux_deriv(i,1)/gat_riesz;                                          % kappa test numerator 
         toc
     end
-    plot_2DKS(save_each, 'kappa', IC, N, dt, T, L_s1, L_s2,Ntime_save_max,kappa,pertIC);    % save/inspect kappa test figure
+    plot_2DKS(save_each, 'kappa', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,kappa,pertIC);    % save/inspect kappa test figure
     kappalist(:,testcounter) = kappa;                                                       % save kappa test values
     close all                                                                               % close any open figures
     kappalist_file = [pwd '/data/kappa/kappalist_' IC '_p' pertIC '_N_' num2str(N) '' ...
