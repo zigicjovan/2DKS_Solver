@@ -5,19 +5,16 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
         addpath([pwd  '/media/kappa' ]);
     end
     
-    parameterlist = ['optimized_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-    %originalIC = utility1;
-    %tol = utility2;
-    %optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
-    Jinitdata = utility1;
-    Joptdata = utility2;
-
     switch testcase
         case 'optimization'
+            Jinitdata = utility1;
+            Joptdata = utility2;
+            
             Klist = unique(Joptdata(:,1));
             Llist = unique(Joptdata(:,2));
             Tlist = unique(Joptdata(:,3));
-            legendlist = cell(1,2*length(Klist)*length(Llist));
+            %legendlist = cell(1,2*length(Klist)*length(Llist));
+            legendlist = cell(1,length(Klist)*length(Llist));
 
             for IC_i = 1:length(control)
                 IC = strjoin(control(IC_i));
@@ -31,7 +28,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 set(gcf,'Position',[100 100 1200 900])
                 xlabel('Time Window $T$','Interpreter','latex'); 
                 xlim([Tlist(1) Tlist(end)])
-                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+                ylabel('$\| {\phi(T;\varphi)} \|_{L^2}$','Interpreter','latex');
                 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
                 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
                 hold on
@@ -46,20 +43,62 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                         Tstart = (Tcounter-1)*length(Tlist) + 1;
                         Tend = Tstart + length(Tlist) - 1;       
                         plot(Joptdata(Tstart:Tend,3),Joptdata(Tstart:Tend,3+IC_i),'Marker','o')               
-                        plot(Jinitdata(Tstart:Tend,3),Jinitdata(Tstart:Tend,3+IC_i),'Marker','x')
-                        legendlist(2*Tcounter-1) = {['$\widetilde{\varphi}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
-                        legendlist(2*Tcounter) = {['$\varphi_{' IC '}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
+                        %plot(Jinitdata(Tstart:Tend,3),Jinitdata(Tstart:Tend,3+IC_i),'Marker','x')
+                        legendlist(Tcounter) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}~~$']};
+                        %legendlist(2*Tcounter-1) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}$']};
+                        %legendlist(2*Tcounter) = {['$\| \phi(T;\varphi_{' IC '}) \|_{L^2}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
                         
                     end
                 end
-                legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2)
+                legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',3,'Box','off')
                 hold off
                 parameterlist = [IC '_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.2f') '_' num2str(Tlist(end),'%.2f') ];
                 filename = [pwd '/media/optimization/branches_' parameterlist ];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
             end
+
+            legendlist = cell(1,length(Klist)*length(Llist));
+            for IC_i = 1:length(control)
+                IC = strjoin(control(IC_i));
+                Tcounter = 0;
+
+                h = figure;
+                parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', \| \varphi \|_{L^2} = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white') 
+                set(gcf,'Position',[100 100 1200 900])
+                xlabel('Time Window $T$','Interpreter','latex'); 
+                xlim([Tlist(1) Tlist(end)])
+                ylabel('$\| {\phi(T;\varphi)} \|_{L^2}$','Interpreter','latex');
+                title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+                subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+                hold on
+
+                for K_i = 1:length(Klist)
+                    K = Klist(K_i);
+                    for L_i = 1:length(Llist)
+                        L_s1 = Llist(L_i);
+                        L_s2 = Llist(L_i);
+                        Tcounter = Tcounter + 1;
+
+                        Tstart = (Tcounter-1)*length(Tlist) + 1;
+                        Tend = Tstart + length(Tlist) - 1;       
+                        Jdiffdata = Joptdata(Tstart:Tend,3+IC_i) - Jinitdata(Tstart:Tend,3+IC_i);
+                        plot(Joptdata(Tstart:Tend,3),Jdiffdata,'Marker','o')               
+                        legendlist(Tcounter) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) - \phi(T;\varphi_{' IC '}) \|_{L^2}~~$']};
+                    end
+                end
+                legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
+                hold off
+                parameterlist = [IC '_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.2f') '_' num2str(Tlist(end),'%.2f') ];
+                filename = [pwd '/media/optimization/branchdiffs_' parameterlist ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+            end
         case 'kappa'
+            parameterlist = ['optimized_N_' num2str(gridsize) '_dt_' num2str(timestep) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
             measure1 = 0;
             measure2 = 0;
             measure3 = 0;
@@ -144,7 +183,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             l2norms_mode  = gridsize;
             l2norms_avg = utility1;
     
-            figure
+            h = figure;
             plot(L_scale,l2norms_mode(:,1),'r-x')
             hold on
             try
@@ -176,20 +215,22 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 legendcell(i) = {['$\check{\phi}^{L^2}_{[0,' num2str(T) ']}(\varphi_{' strjoin(IC(i),'') '})$']};
                 legendcell(length(IC) + i) = {['$\bar{\phi}^{L^2}_{[' num2str(T/2) ',' num2str(T) ']}(\varphi_{' strjoin(IC(i),'') '})$']};
             end
-            legend(legendcell,'Location','northwest','Interpreter','latex')
-            legend('boxoff')
+            legend(legendcell,'Location','northwest','Interpreter','latex','Box','off')
             hold off
+            filename = [pwd '/media/kappa/modalvarphi' ];
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
     
-            figure
+            h = figure;
             plot(L_scale,l2norms_mode(:,end),'r-*')
             hold on
             plot(L_scale,l2norms_avg(:,end),'b-o')
             for i = 1:length(L_target)
-                xl = xline(L_target(i),'--',{num2str(L_target(i),'%.3f')});
+                xl = xline(L_target(i),'--',{num2str(L_target(i),'%.2f')});
                 xl.LabelVerticalAlignment = 'top';
                 xl.LabelHorizontalAlignment = 'left';
             end
-            title(['Difference in values for ${IC} = \{ ' strjoin(IC(1),'') ',' strjoin(IC(2),'') ' \}$ within $T = ' num2str(T) '$'],'Interpreter','latex')
+            title(['Difference in values for $\varphi_{' strjoin(IC(1)) '}$ and $\varphi_{' strjoin(IC(2)) '}$ within $T = ' num2str(T) '$'],'Interpreter','latex')
             fontsize(12,"points")
             set(gca,'fontsize', 16) 
             set(gcf,'color','white')
@@ -198,7 +239,10 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             legendcell = cell(1,2);
             legendcell(1) = {['$| \check{\phi}^{L^2}_{[0,' num2str(T) ']}(\varphi_{' strjoin(IC(1),'') '}) - \check{\phi}^{L^2}_{[0,' num2str(T) ']}(\varphi_{' strjoin(IC(2),'') '}) |$' ]};
             legendcell(2) = {['$| \bar{\phi}^{L^2}_{[' num2str(T/2) ',' num2str(T) ']}(\varphi_{' strjoin(IC(1),'') '}) - \bar{\phi}^{L^2}_{[' num2str(T/2) ',' num2str(T) ']}(\varphi_{' strjoin(IC(2),'') '}) |$' ]};
-            legend(legendcell,'Location','northwest','Interpreter','latex')
+            legend(legendcell,'Location','northwest','Interpreter','latex','Box','off')
+            filename = [pwd '/media/kappa/modalvarphi_diff' ];
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
     
             measure1 = 0;
             measure2 = 0;
