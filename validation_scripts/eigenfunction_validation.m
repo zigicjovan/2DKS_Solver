@@ -1,4 +1,4 @@
-function [match_score,ampstars,modes] = validation_script(u_IC_opt, L_s1, N, T, IC, type)
+function [match_score,ampstars,modes] = eigenfunction_validation(u_IC_opt, L_s1, N, T, IC, type)
 
     L_s2 = L_s1;
     

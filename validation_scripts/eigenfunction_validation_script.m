@@ -18,6 +18,6 @@ T = timewindow(1);                              % length of simulation time wind
 IC = strjoin(initialcondition(1),'');           % initial condition
 
 u_IC_opt = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0);
-[match_scored,ampstarsd,modesd] = validation_script(u_IC_opt,L_s1, N, T,IC,'dominant');
-%[match_scorea,ampstarsa,modesa] = validation_script(u_IC_opt,L_s1, N, T,IC,'active');
-%[match_scoref,ampstarsf,modesf] = validation_script(u_IC_opt,L_s1, N, T,IC,'full');
+[match_scored,ampstarsd,modesd] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'dominant');
+[match_scorea,ampstarsa,modesa] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'active');
+[match_scoref,ampstarsf,modesf] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'full');

@@ -12,7 +12,7 @@ tol = 1e-10;                                    % set optimization tolerance cri
 
 %%% choose parameter testing ranges %%%
 initialKmagnitude = 0;%1e0;                        % initial L^2 energy magnitudes
-L_scale = sqrt(32);%1.06;                        % domain sizes
+L_scale = [sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26)];%1.06;                        % domain sizes
 timewindow = 30;%logspace(-1,log10(50),20);         % time windows
 initialcondition = {'noise4'};%{'s1','stg1','s30','stg30'}; % initial conditions
 
@@ -274,6 +274,9 @@ for energy_i = 1 : length(initialKmagnitude)
                         %}                        
                         close all
                         %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine
+                        [match_scored,ampstarsd,modesd] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'dominant');
+                        [match_scorea,ampstarsa,modesa] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'active');
+                        [match_scoref,ampstarsf,modesf] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'full');
                 end
             end
         end
