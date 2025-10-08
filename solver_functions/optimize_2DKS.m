@@ -56,18 +56,10 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         projGradJ_cur = GradJ - (angleGradJ/manifold_size).*(u_IC);                                     % current projected objective gradient
         if iter > rcgIter
             updateterm_size = sum( update_term .* conj(update_term) )*(L1*L2)/N^2;                      % old update term size
-            %{
-            angleDir_old = sum( u_IC .* conj(dir_old) )*(L1*L2)/N^2;                                    % angle with old direction
-            angleprojGradJ_old = sum( u_IC .* conj(projGradJ_old) )*(L1*L2)/N^2;                    % angle with old projected gradient
-            vectransport = (dir_old - (angleDir_old/manifold_size).*(u_IC))/sqrt(manifold_size);              % current vector transport operator
-            transportprojGradJ_old = (projGradJ_old - (angleprojGradJ_old/manifold_size).*(u_IC))/sqrt(manifold_size); % transport old projected gradient 
-            %}
-            %
             angleDir_old = sum( update_term .* conj(dir_old) )*(L1*L2)/N^2;                                    % angle with old direction
             angleprojGradJ_old = sum( update_term .* conj(projGradJ_old) )*(L1*L2)/N^2;                    % angle with old projected gradient
             vectransport = (dir_old - (angleDir_old/updateterm_size).*(update_term))/sqrt(updateterm_size)*sqrt(manifold_size);              % current vector transport operator
             transportprojGradJ_old = (projGradJ_old - (angleprojGradJ_old/updateterm_size).*(update_term))/sqrt(updateterm_size)*sqrt(manifold_size); % transport old projected gradient 
-            %}
             diff_projGradJ = projGradJ_cur - transportprojGradJ_old;                                    % momentum parameter term
             diff_projGradJ_size = sum( projGradJ_cur .* conj(diff_projGradJ) )*(L1*L2)/N^2;             % momentum parameter numerator
             projGradJ_old_size = sum( projGradJ_old .* conj(projGradJ_old) )*(L1*L2)/N^2;               % momentum parameter denominator
@@ -79,7 +71,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         elseif iter == 1
             IC = 'optimized';                                                                           % set IC to optimized
             J_change(1,1) = NaN;                                                                        % fix initial change in objective functional value 
-            step_size = 1e-7;%(angleGradJ/GradJ_size);                                                  % initialize current step-size
+            step_size = angleGradJ/GradJ_size;                                                  % initialize current step-size
             stepsize_history(iter,1) = step_size;                                                       % store optimization step size
             diagnostics_history(1,:) = [J_history(1,1), J_change(1,1), stepsize_history(1,1)...
                 manifold_history(1,1), time_history(1,1), gradJsize_history(1,1),...
@@ -93,6 +85,9 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
             dir_cur = projGradJ_cur;                                                                      % reset accumulated momentum after modulo 20 iterations
         end
         [step_size,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_size,IC,N,K,L_s1,L_s2,dt,T,Ntime_save_max,originalIC); % current step-size via Brent's method
+        if step_size == 0
+            step_size = angleGradJ/GradJ_size; 
+        end
         disp(['Solved optimal step-size problem after ' num2str(iter_search) ' iterations at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
         linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search
         update_term = u_IC + ( step_size .* dir_cur );                                                  % retraction operator term

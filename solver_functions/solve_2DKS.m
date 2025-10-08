@@ -61,8 +61,6 @@ u_n: solution vector for each time step in Physical space
             u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
         case 'sc1'
             u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 's1n14'
-            u_0 = 1e-14*(sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 ));
         case 's30'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
         case 'tg1'
@@ -114,7 +112,7 @@ u_n: solution vector for each time step in Physical space
             v_0 = fft2(u_0);            % FFT of physical initial condition
             v_out = 0;
             u_out = 0;
-            utilityout = 0;
+            utilityout = u_0(:);
         case 'kappa'
             eps = utility1;            % perturbation magnitude for kappa test
             u_0 = u_0 + eps*u_pert;     % perturbed initial condition
@@ -235,12 +233,11 @@ u_n: solution vector for each time step in Physical space
                     end
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
-                elseif i == Ntime
+                elseif i == Ntime % only reached for single-file evolution data
                     time = toc;
                     save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save, utility2); % save solution to machine
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
-                    utilityout = u_n(:,1);
                 end
             end
         case {'kappa'}                                                                % Solve vectorized equation by IMEXRK4 method

@@ -4,17 +4,17 @@ tic
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 continuation = 'off';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
-optmethod = 'RCG';                               % RCG, RG, or RCGd5 (start after 5th iter)
+optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 timestep = .005;                                % time-step sizes
 gridsize = 48;                                  % grid sizes
 tol = 1e-10;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 0;%1e0;                        % initial L^2 energy magnitudes
-L_scale = [sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26)];%1.06;                        % domain sizes
-timewindow = 30;%logspace(-1,log10(50),20);         % time windows
-initialcondition = {'noise4'};%{'s1','stg1','s30','stg30'}; % initial conditions
+initialKmagnitude = 1;                        % initial L^2 energy magnitudes
+L_scale = 1.02:.02:1.1;                        % domain sizes
+timewindow = [ logspace(-1,log10(50),20), 75:25:150 ];         % time windows
+initialcondition = {'stg1'}; % initial conditions
 
 %timewindow = timewindow(17);
 %[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
@@ -31,6 +31,12 @@ IC = strjoin(initialcondition(1),'');           % initial condition
 dt = timestep(1);                               % length of time-step
 N = gridsize(1);                                % number of grid points
 save_each = 1;                                  % number of iterations between saved timepoints - 1/dt to save each 1 T
+switch optmethod
+    case 'RCG'
+        RCGon = 1;                              % RCG switch for media files
+    otherwise
+        RCGon = 0;
+end
 
 numberoftests = length(initialcondition)*length(initialKmagnitude)*length(timewindow)*length(L_scale);
 testcounter = 0;
@@ -192,7 +198,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                 tic
                                 [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
                                 time = toc;
-                                disp([num2str(floor(toc/3600)) 'h' num2str(floor(toc/60)) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
+                                disp([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
                         end
                 end
                 pause(1)
@@ -207,10 +213,10 @@ for energy_i = 1 : length(initialKmagnitude)
                             l2norms_opt = NaN(T/dt,numberoftests);
                         end
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, K, L_s1, L_s2, 0);                   % load solution
-                        [u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, K, L_s1, L_s2, 0, 0);                       % load solution
-                        l2norms_guess(1:size(u_normL2,1),testcounter) = u_normL2;
-                        %[u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, K, L_s1, L_s2, 0, IC);                       % load solution
-                        %l2norms_opt(1:size(u_normL2,1),testcounter) = u_normL2;
+                        %[u_normL2, ~] = load_2DKSsolution('normL2', IC, dt, T, N, K, L_s1, L_s2, 0, 0);                       % load solution
+                        %l2norms_guess(1:size(u_normL2,1),testcounter) = u_normL2;
+                        [u_normL2, ~] = load_2DKSsolution('normL2', 'optimized', dt, T, N, K, L_s1, L_s2, tol, IC);                       % load solution
+                        l2norms_opt(1:size(u_normL2,1),testcounter) = u_normL2;
                         u_normL2rd = round(u_normL2,1);
                         l2norms_mode(domain_i,param_i) = mode(u_normL2rd);
                         l2norms_avg(domain_i,param_i) = mean(u_normL2(ceil(end/2):end,1));
@@ -225,17 +231,19 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
                         %plot_2DKS(save_each, 'norms', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
-                        disp([num2str(floor(toc/3600)) 'h' num2str(floor(toc/60)) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
+                        disp([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
                         close all                                                                                                         % close any open figures
                     case {'plotOptIC'}                
-                        %plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);   
-                        %
-                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC ,tol);
+                        plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]); 
+                        %{
+                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol); 
+                        plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,100);
+                        plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,100); 
                         plot_2DKS(save_each, 'initial', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
                         plot_2DKS(save_each, 'terminal', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
                         plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        %}        
+                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
+                        %}
                         close all
                     case 'kappa' 
                         %pertIC = IC;
@@ -248,8 +256,20 @@ for energy_i = 1 : length(initialKmagnitude)
                         delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,0);
                     case 'optimize' 
                         [J_opt, J_history , v_TC_opt , u_IC_opt] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
+                        if (J_opt - J_history(1))/J_history(1) < tol || J_opt < K
+                            optmethod = 'RG';
+                            [J_opt_RG, J_history_RG , v_TC_opt_RG , u_IC_opt_RG] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
+                            if J_opt_RG > J_opt
+                                J_opt = J_opt_RG;
+                                J_history = J_history_RG;
+                                v_TC_opt = v_TC_opt_RG;
+                                u_IC_opt = u_IC_opt_RG;
+                                RCGon = 0;
+                            end
+                            optmethod = 'RCG';
+                        end
                         IC = strjoin(initialcondition(param_i),'');
-                        disp([num2str(floor(toc/3600)) 'h' num2str(floor(toc/60)) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
+                        disp([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
                         disp(['Solved optimization problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                         disp(['Initial objective functional value: ' num2str(J_history(1,1))])
                         disp(['Optimal objective functional value: ' num2str(J_history(end,1))])
@@ -264,25 +284,19 @@ for energy_i = 1 : length(initialKmagnitude)
                         Jinitdata(testrow,param_i+3) = J_history(1,1);
                         Joptdata(testrow,param_i+3) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, 1, tol); % save solution to machine
-                        %{
-                        plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC ,tol);
-                        plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0); 
-                        plot_2DKS(save_each, 'initial', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'terminal', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        %}                        
+                        plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
                         close all
-                        %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine
-                        [match_scored,ampstarsd,modesd] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'dominant');
-                        [match_scorea,ampstarsa,modesa] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'active');
-                        [match_scoref,ampstarsf,modesf] = eigenfunction_validation(u_IC_opt,L_s1, N, T,IC,'full');
+                        %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine 
                 end
             end
         end
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
                 %plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
+            case 'optimize'
+                rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
+                rowend = testcounter/(length(initialcondition));
+                save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
         end
     end
 end

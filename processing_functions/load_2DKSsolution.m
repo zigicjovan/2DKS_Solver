@@ -26,37 +26,31 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file2 = readmatrix(four_file);
             file3 = readmatrix(time_file);
         case 'normL2'
-            try
-                norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
-                switch IC
-                    case 'optimized'
-                        norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '.dat'];
-                end
-                file1 = readmatrix(norm_file);
-            catch
-                norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
-                switch IC
-                    case 'optimized'
-                        norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '.dat'];
-                end
-                file1 = readmatrix(norm_file);
-            end
-            file2 = 0;
-            file3 = 0;
-        case 'normL2_t'
+            tol = utility1;
             norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
             switch IC
                 case 'optimized'
-                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '.dat'];
+                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
+            end
+            file1 = readmatrix(norm_file);
+            file2 = 0;
+            file3 = 0;
+        case 'normL2_t'
+            tol = utility1;
+            norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+            switch IC
+                case 'optimized'
+                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
             end         
             file1 = readmatrix(norm_file);
             file2 = 0;
             file3 = 0;
         case 'spectrum'
+            tol = utility1;
             norm_file = [pwd '/data/' foldername '/spectrum_' parameterlist '.dat'];
             switch IC
                 case 'optimized'
-                    norm_file = [pwd '/data/' foldername '/spectrum_' originalIC '_' parameterlist '.dat'];
+                    norm_file = [pwd '/data/' foldername '/spectrum_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
             end            
             file1 = readmatrix(norm_file);
             file2 = 0;

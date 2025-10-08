@@ -29,8 +29,16 @@ parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') 
 parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 optparfiglist = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 originalIC = utility1;
-tol = utility2;
-optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
+tol = utility2(1);
+if length(utility2) > 1
+    if utility2(2) == 1
+        optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) '_RCG' ];
+    elseif utility2(2) == 0
+        optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) '_RG' ];
+    end
+else
+    optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
+end
 
 % number of timesteps
 time1 = ceil(T/dt); 
@@ -105,13 +113,13 @@ switch IC
             end
                 
             if i == 1
-                %u_IC_og = u_og(:,1);
+                u_IC_og = u_og(:,1);
             elseif i == Ntime
-                %u_TC_og = u_og(:,end);
+                u_TC_og = u_og(:,end);
             end
 
         end
-        %v_mean_og = v_mean_og(2:end,:);
+        v_mean_og = v_mean_og(2:end,:);
         
         % L2 norm time derivative computation
         normL2_t_og = NaN(Ntime-1,1);
@@ -122,7 +130,7 @@ switch IC
 end
 
 switch solplot
-    case {'norms','gif','diagnostics','initial','terminal'}
+    case {'norms','gif','diagnostics','initial','terminal','optdiag'}
         % compute L2 norm and Fourier mode evolution
         normL2 = NaN(Ntime,1);
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
@@ -203,8 +211,8 @@ switch solplot
         set(gca,'color','white')
 
         Ntime_remaining = Ntime;
-        if utility2 > 0
-            frames = utility2;
+        if utility2(end) > 0
+            frames = utility2(end);
         else
             frames = Ntime;
         end
@@ -221,8 +229,11 @@ switch solplot
                 filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
         end
 
-        for i = 1 : ceil(Ntime/frames) : Ntime
+        for i = 1 : ceil(Ntime/frames) : Ntime+1
         
+            if i == Ntime + 1
+                i = Ntime;
+            end
             if Ntime < Ntime_save_max && i == 1
                 [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
             else
@@ -283,12 +294,12 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
-            semilogy(v_mean(:,i),".")
+            semilogy(v_mean(:,i),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             title("Energy spectrum",'Interpreter','latex')
             xlim([1 size(v_mean,1)])
-            ylim([1e-15 max(v_mean(1,:))])
+            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
@@ -332,7 +343,7 @@ switch solplot
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylim([1e-15 max(v_mean(1,:))+1e5 ])
+        ylim([1e-20 max(v_mean(1,:))+1e5 ])
         ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
@@ -353,6 +364,58 @@ switch solplot
                 filename = [pwd '/media/energy/wavenumberevol_' optparameters ];
         end
         %imwrite(im,filename,'png')
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        % Wavenumber IC plot
+        h = figure;
+        semilogy(v_mean(:,1),"o--")
+        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        xlim([1 size(v_mean,1)])
+        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+        set(gcf,'Position',[100 100 900 750])
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Initial Fourier spectrum','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        filename = [pwd '/media/energy/spectrumIC_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/spectrumIC_' optparameters ];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        % Wavenumber TC plot
+        h = figure;
+        semilogy(v_mean(:,end),"o--")
+        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        xlim([1 size(v_mean,1)])
+        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+        set(gcf,'Position',[100 100 900 750])
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Terminal Fourier spectrum','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        filename = [pwd '/media/energy/spectrumTC_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/spectrumTC_' optparameters ];
+        end
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
 
@@ -680,5 +743,686 @@ switch solplot
 
         kappa_file = [pwd '/data/kappa/kappa_p' pertIC '_' parameterlist '.dat'];
         writematrix(kappaerror, kappa_file);
+    case 'optdiag'
+        
+        %% opt gif
+        figure;
+        set(gcf,'Position',[100 100 900 750])
+        axis tight manual % this ensures that getframe() returns a consistent size
+        
+
+        set(gcf,'color','white')
+        set(gca,'color','white')
+
+        Ntime_remaining = Ntime;
+        if utility2(end) > 0
+            frames = utility2(end);
+        else
+            frames = Ntime;
+        end
+        frameovermax = 0;
+        switch IC 
+            case {'optimized'}
+                frames = 100;
+        end
+        
+        filename = [pwd '/media/movies/phys_' parameterlist '_frames_' num2str(frames) '.gif'];
+
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
+        end
+
+        for i = 1 : ceil(Ntime/frames) : Ntime+1
+        
+            if i == Ntime + 1
+                i = Ntime;
+            end
+            if Ntime < Ntime_save_max && i == 1
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+            else
+                if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    currentT = frameovermax*Ntime_save_max/Ntime*T;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                end
+            end
+
+            currentT = (i-1)/(Ntime-1)*T;
+
+            if mod(i,Ntime_save_max) ~= 0
+                imod = mod(i,Ntime_save_max);
+            else
+                imod = Ntime_save_max;
+            end
+
+            subplot(2,2,1);
+            % Draw surface plot
+            u_i = reshape( u_n(:,imod) , [ N , N ] );
+            surfc(x1pi,x2pi,u_i);
+            xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+            view(3);
+            drawnow
+
+            subplot(2,2,2);
+            % Draw surface plot
+            u_i2x = [ u_i , u_i ; u_i, u_i];
+            surfc(x12x,x22x,u_i2x);
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+            xline(L_s1,'--');
+            yline(L_s2,'--');
+            view(2);
+            drawnow
+
+            subplot(2,2,3);
+            semilogy(timewindow,normL2,'b')
+            hold on
+            xline(currentT,'-');
+            hold off
+            xlabel('Time $t$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
+            xlim([0 T])
+            ylim([min(normL2) max(normL2)+1e-1])
+            title("Evolution of $L^2$ norm",'Interpreter','latex')
+            %legend('L^{2} norm','Location','southeast')
+            set(gca,'fontsize', 12) 
+        
+            subplot(2,2,4);
+            semilogy(v_mean(:,i),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            title("Energy spectrum",'Interpreter','latex')
+            xlim([1 size(v_mean,1)])
+            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            set(gca,'fontsize', 12) 
+        
+            title1 = 'Forward-time 2DKS solution';
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            switch IC 
+                case {'optimized'}
+                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            end
+            sgtitle({title1, title2},'Interpreter','latex');
+
+            if i == 1
+                gif(filename)
+            else
+                gif
+            end
+        
+        end
+
+        %% diagnostics
+        % Wavenumber evolution plot
+        timewindow = linspace(0,T,Ntime);
+        h = figure;
+        semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
+        hold on;
+        for i = 2:size(v_mean,1)
+            semilogy(timewindow,v_mean(i,:),'LineWidth',0.1,'Marker','.')
+        end
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Time $t$','Interpreter','latex'); 
+        xlim([0 T])
+        ylim([1e-20 max(v_mean(1,:))+1e5 ])
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Evolution of Fourier spectrum','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        %legend("Fourier band", 'Location','southeast','NumColumns',9,'Interpreter','latex')
+        %frame = getframe(h);
+        %im = frame2im(frame);
+        filename = [pwd '/media/energy/wavenumberevol_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/wavenumberevol_' optparameters ];
+        end
+        %imwrite(im,filename,'png')
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        % Wavenumber IC plot
+        h = figure;
+        semilogy(v_mean(:,1),"o--")
+        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        xlim([1 size(v_mean,1)])
+        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+        set(gcf,'Position',[100 100 900 750])
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Initial Fourier spectrum','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        filename = [pwd '/media/energy/spectrumIC_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/spectrumIC_' optparameters ];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        % Wavenumber TC plot
+        h = figure;
+        semilogy(v_mean(:,end),"o--")
+        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+        xlim([1 size(v_mean,1)])
+        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+        set(gcf,'Position',[100 100 900 750])
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Terminal Fourier spectrum','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        filename = [pwd '/media/energy/spectrumTC_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/spectrumTC_' optparameters ];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        % L2 norm plot
+        h = figure;
+        semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+        set(gcf,'Position',[100 100 900 750])
+        xlabel('Time $t$','Interpreter','latex'); 
+        xlim([0 T])
+        ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white')    
+        title('Evolution of $L^2$ norm','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        filename = [pwd '/media/energy/normL2_' parameterlist ];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/energy/normL2_' optparameters ];
+            otherwise
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+        end
+
+        switch IC 
+            case {'optimized'}
+                
+                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
+
+                % L2 norm plot
+                h = figure;
+                semilogy(timewindow,normL2_og,'LineWidth',0.5,'Marker','.')
+                hold on
+                semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+                hold off
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Time $t$','Interpreter','latex'); 
+                xlim([0 T])
+                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of optimized $L^2$ norm','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\widetilde{\varphi})$','Interpreter','latex','Location','northwest')
+                filename = [pwd '/media/optimization/normL2comp_' optparameters];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % J history plot
+                plotdata = diagnostics(:,1);
+                h = figure;
+                plot(plotdata,'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jhistory_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % J change plot
+                plotdata = diagnostics(:,2);
+                h = figure;
+                semilogy(plotdata,'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\frac{\mathcal{J}_T(\varphi^{(n+1)}) - \mathcal{J}_T(\varphi^{(n)})}{\mathcal{J}_T(\varphi^{(n)})}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jchange_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % stepsize plot
+                plotdata = diagnostics(:,3);
+                h = figure;
+                semilogy(abs(plotdata),'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\tau^{(n)}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Optimal step-size $\tau^{(n)}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/stepsize_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % manifold plot
+                plotdata = diagnostics(:,4);
+                h = figure;
+                semilogy(plotdata,'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of initial condition magnitude $K= \| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/initialK_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % gradient magnitude plot
+                plotdata = diagnostics(:,6);
+                h = figure;
+                semilogy(plotdata,'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of objective gradient magnitude $\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/Jgradient_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % momentum magnitude plot
+                plotdata = diagnostics(:,7);
+                h = figure;
+                semilogy(plotdata,'r-*')
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of momentum magnitude $\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/momentumsize_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                % line search plot
+                h = figure;
+                semilogy(linesearchJ(:,1))
+                hold on
+                for iter = 2:(length(plotdata)-1)
+                    semilogy(linesearchJ(:,iter))
+                end
+                hold off
+                set(gcf,'Position',[100 100 900 750])
+                xlabel('Iteration number $n$','Interpreter','latex'); 
+                xlim([1 length(plotdata)])
+                ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
+                fontsize(12,"points")
+                set(gca,'fontsize', 16) 
+                set(gcf,'color','white')
+                set(gca,'color','white')    
+                title('Evolution of Brent''s method objective functional evaluation','Interpreter','latex')
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                filename = [pwd '/media/optimization/linesearch_' optparameters ];
+                saveas(h,[filename '.fig'])
+                exportgraphics(h,[filename '.pdf'])
+
+                close all
+
+                disp(['Optimization loop computation time: ' num2str(diagnostics(length(plotdata),5)) ])
+        end
+
+        %% opt initial
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        set(gcf,'Position',[100 100 900 750])
+        
+
+        % inspect physical solution 
+        u_T = reshape( u_IC , [ N , N ] );
+
+        % surface plot
+        surfc(x1,x2,u_T); 
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+        shading interp
+        pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white') 
+        colormap(redblue)
+        view(3);
+        title('Initial state','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        %{
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_initial'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters  '_initial'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+        %}
+        % contour plot
+        view(2);
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters '_initial_contour'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        %% opt terminal
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        set(gcf,'Position',[100 100 900 750])
+
+        % inspect physical solution
+        u_T = reshape( u_TC , [ N , N ] );
+
+        % surface plot
+        surfc(x1,x2,u_T); 
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+        shading interp
+        pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+        view(3);
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white') 
+        colormap(redblue)
+        title('Terminal state','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+        %{
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters '_terminal'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+        %}
+        % contour plot
+        view(2);
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters '_terminal_contour'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        %% finish opt plots
+        IC = originalIC;
+        parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+        parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+
+        %% orig initial
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        set(gcf,'Position',[100 100 900 750])
+
+        % inspect physical solution 
+        u_T = reshape( u_IC_og , [ N , N ] );
+
+        % surface plot
+        surfc(x1,x2,u_T); 
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+        shading interp
+        pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white') 
+        colormap(redblue)
+        view(3);
+        title('Initial state','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+
+        % contour plot
+        view(2);
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters '_initial_contour'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        %% orig terminal
+        h = figure;
+        axis tight manual % this ensures that getframe() returns a consistent size
+        set(gcf,'Position',[100 100 900 750])
+
+        % inspect physical solution
+        u_T = reshape( u_TC_og , [ N , N ] );
+
+        % surface plot
+        surfc(x1,x2,u_T); 
+        xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+        shading interp
+        pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+        view(3);
+        fontsize(12,"points")
+        set(gca,'fontsize', 16) 
+        set(gcf,'color','white')
+        set(gca,'color','white') 
+        colormap(redblue)
+        title('Terminal state','Interpreter','latex')
+        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+        switch IC 
+            case {'optimized'}
+                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+        end
+
+        % contour plot
+        view(2);
+        % Save image
+        filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/figures/state/phys_' optparameters '_terminal_contour'];
+        end
+        saveas(h,[filename '.fig'])
+        exportgraphics(h,[filename '.pdf'])
+
+        %% orig gif
+        figure;
+        set(gcf,'Position',[100 100 900 750])
+        axis tight manual % this ensures that getframe() returns a consistent size
+
+        set(gcf,'color','white')
+        set(gca,'color','white')
+
+        Ntime_remaining = Ntime;
+        if utility2(end) > 0
+            frames = utility2(end);
+        else
+            frames = Ntime;
+        end
+        frameovermax = 0;
+        switch IC 
+            case {'optimized'}
+                frames = 100;
+        end
+        
+        filename = [pwd '/media/movies/phys_' parameterlist '_frames_' num2str(frames) '.gif'];
+
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
+        end
+
+        for i = 1 : ceil(Ntime/frames) : Ntime+1
+        
+            if i == Ntime + 1
+                i = Ntime;
+            end
+            if Ntime < Ntime_save_max && i == 1
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+            else
+                if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    currentT = frameovermax*Ntime_save_max/Ntime*T;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                end
+            end
+
+            currentT = (i-1)/(Ntime-1)*T;
+
+            if mod(i,Ntime_save_max) ~= 0
+                imod = mod(i,Ntime_save_max);
+            else
+                imod = Ntime_save_max;
+            end
+
+            subplot(2,2,1);
+            % Draw surface plot
+            u_i = reshape( u_n(:,imod) , [ N , N ] );
+            surfc(x1pi,x2pi,u_i);
+            xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+            view(3);
+            drawnow
+
+            subplot(2,2,2);
+            % Draw surface plot
+            u_i2x = [ u_i , u_i ; u_i, u_i];
+            surfc(x12x,x22x,u_i2x);
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
+            shading(gca,'interp')
+            colormap(redblue)
+            pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+            xline(L_s1,'--');
+            yline(L_s2,'--');
+            view(2);
+            drawnow
+
+            subplot(2,2,3);
+            semilogy(timewindow,normL2_og,'b')
+            hold on
+            xline(currentT,'-');
+            hold off
+            xlabel('Time $t$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
+            xlim([0 T])
+            ylim([min(normL2_og) max(normL2_og)+1e-1])
+            title("Evolution of $L^2$ norm",'Interpreter','latex')
+            %legend('L^{2} norm','Location','southeast')
+            set(gca,'fontsize', 12) 
+        
+            subplot(2,2,4);
+            semilogy(v_mean_og(:,i),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            title("Energy spectrum",'Interpreter','latex')
+            xlim([1 size(v_mean_og,1)])
+            ylim([ 1e-20 max(v_mean_og(1,:))+1e5 ])
+            set(gca,'fontsize', 12) 
+        
+            title1 = 'Forward-time 2DKS solution';
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            switch IC 
+                case {'optimized'}
+                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            end
+            sgtitle({title1, title2},'Interpreter','latex');
+
+            if i == 1
+                gif(filename)
+            else
+                gif
+            end
+        
+        end
 
 end
