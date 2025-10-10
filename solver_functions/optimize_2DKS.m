@@ -71,7 +71,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         elseif iter == 1
             IC = 'optimized';                                                                           % set IC to optimized
             J_change(1,1) = NaN;                                                                        % fix initial change in objective functional value 
-            step_size = angleGradJ/GradJ_size;                                                  % initialize current step-size
+            step_size = 1e5;%angleGradJ/GradJ_size;                                                  % initialize current step-size
             stepsize_history(iter,1) = step_size;                                                       % store optimization step size
             diagnostics_history(1,:) = [J_history(1,1), J_change(1,1), stepsize_history(1,1)...
                 manifold_history(1,1), time_history(1,1), gradJsize_history(1,1),...

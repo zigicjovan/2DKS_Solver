@@ -23,8 +23,8 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
                 parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.2f') '_' num2str(Tlist(end),'%.2f') ];
                 Jinit_file = [pwd '/data/' foldername '/Jinit_' parameterlist '.dat'];
                 Jopt_file = [pwd '/data/' foldername '/Jopt_' parameterlist '.dat'];  
-                writematrix([measure1(:,1:3),measure1(:,3+IC_i)], Jinit_file); 
-                writematrix([measure2(:,1:3),measure2(:,3+IC_i)], Jopt_file);
+                writematrix([measure1(:,1:3),measure1(:,3+IC_i)], Jinit_file,'Delimiter','tab'); 
+                writematrix([measure2(:,1:3),measure2(:,3+IC_i)], Jopt_file,'Delimiter','tab');
             end
         case 'energygrowth'
             L_scale = dt;
@@ -32,20 +32,20 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
                 num2str(T) '_start_' num2str(L_scale(1)) '_end_' num2str(L_scale(end)) '_target_' num2str(L_s1) '.dat'];
             l2avg_file = [pwd '/data/' foldername '_measures/L2avg_' strjoin(IC(1),'') '_compare' num2str(length(IC)) '_T_' ...
                 num2str(T) '_start_' num2str(L_scale(1)) '_end_' num2str(L_scale(end)) '_target_' num2str(L_s1) '.dat'];
-            writematrix(measure1, l2mode_file);            
-            writematrix(measure2, l2avg_file);
+            writematrix(measure1, l2mode_file,'Delimiter','tab');            
+            writematrix(measure2, l2avg_file,'Delimiter','tab');
         case 'spatial'
             l2_file = [pwd '/data/' foldername '_measures/L2_' parameterlist '.dat'];
             inf_file = [pwd '/data/' foldername '_measures/LInf_' parameterlist '.dat'];  
             comptime_file = [pwd '/data/' foldername '_measures/comptime_' parameterlist '.dat'];
-            writematrix(measure1, l2_file); 
-            writematrix(measure2, inf_file);
-            writematrix(measure3, comptime_file);
+            writematrix(measure1, l2_file,'Delimiter','tab'); 
+            writematrix(measure2, inf_file,'Delimiter','tab');
+            writematrix(measure3, comptime_file,'Delimiter','tab');
         case 'temporal'    
             l2_file = [pwd '/data/' foldername '_measures/L2_' parameterlist '.dat'];
             inf_file = [pwd '/data/' foldername '_measures/LInf_' parameterlist '.dat'];
             comptime_file = [pwd '/data/' foldername '_measures/comptime_' parameterlist '.dat'];
-            writematrix(measure1, l2_file);      
-            writematrix(measure2, inf_file);
-            writematrix(measure3, comptime_file);
+            writematrix(measure1, l2_file,'Delimiter','tab');      
+            writematrix(measure2, inf_file,'Delimiter','tab');
+            writematrix(measure3, comptime_file,'Delimiter','tab');
     end

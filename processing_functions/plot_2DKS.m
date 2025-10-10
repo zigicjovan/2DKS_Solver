@@ -194,9 +194,9 @@ switch solplot
                 normL2deriv_file = [pwd '/data/normL2_t/normL2_' optparameters '.dat'];
                 spectrum_file = [pwd '/data/spectrum/spectrum_' optparameters '.dat'];
         end
-        writematrix(normL2, normL2data_file);
-        writematrix(normL2_t, normL2deriv_file);
-        writematrix(v_mean, spectrum_file);
+        writematrix(normL2, normL2data_file,'Delimiter','tab');
+        writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
+        writematrix(v_mean, spectrum_file,'Delimiter','tab');
 end
 
 switch solplot
@@ -742,7 +742,7 @@ switch solplot
         exportgraphics(h,filename)
 
         kappa_file = [pwd '/data/kappa/kappa_p' pertIC '_' parameterlist '.dat'];
-        writematrix(kappaerror, kappa_file);
+        writematrix(kappaerror, kappa_file,'Delimiter','tab');
     case 'optdiag'
         
         %% opt gif
@@ -827,14 +827,15 @@ switch solplot
             subplot(2,2,3);
             semilogy(timewindow,normL2,'b')
             hold on
+            semilogy(timewindow,normL2_og,'r--')
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex');
             ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
             xlim([0 T])
-            ylim([min(normL2) max(normL2)+1e-1])
-            title("Evolution of $L^2$ norm",'Interpreter','latex')
-            %legend('L^{2} norm','Location','southeast')
+            ylim([0.5*min([normL2;normL2_og]) 1.5*max([normL2;normL2_og]) ])
+            title("Evolution of optimized $L^2$ norm",'Interpreter','latex')
+            legend('$\tilde\varphi$','Interpreter','latex','Location','southeast')
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
@@ -843,7 +844,7 @@ switch solplot
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             title("Energy spectrum",'Interpreter','latex')
             xlim([1 size(v_mean,1)])
-            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            ylim([ 1e-20 1.5*max(max(v_mean)) ])
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';

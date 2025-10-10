@@ -6,7 +6,7 @@ function [result,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_siz
     ITMAX = 300; CGOLD = .381966; ZEPS = 10^(-10);
 
     iter_search = 0;                                                                            % initialize count of line search iterations
-    J_search = NaN(1000,1);                                                                     % initialize storage for objective functional history 
+    J_search = NaN(ITMAX,1);                                                                     % initialize storage for objective functional history 
     L1 = 2*pi*L_s1;                                                                             % dimension 1 length
     L2 = 2*pi*L_s2;                                                                             % dimension 2 length
     save_each = T/dt;                                                                           % save only final timestep for forward solver

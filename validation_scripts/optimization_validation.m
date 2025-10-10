@@ -66,8 +66,8 @@ exportgraphics(h,[filename '.pdf'])
 
 %% Extend branches by combining saved data files with current data file
 
-Jinitdata1 = load('Jinit_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_50.00.dat');
-Joptdata1 = load('Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_50.00.dat');
+Jinitdata1 = load([pwd '/data/optimization/Jinit_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+Joptdata1 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
 
 Jinitdatanew2 = [ Jinitdatanew(1:22,:) ; Jinitdata(1:2,:) ; ...
     Jinitdatanew(23:44,:) ; Jinitdata(3:4,:) ; ...
@@ -83,3 +83,51 @@ Joptdatanew2 = [ Joptdatanew(1:22,:) ; Joptdata(1:2,:) ; ...
 
 plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdatanew2, Joptdatanew2, IC, tol);
 save_measures('optimization', Jinitdatanew2, Joptdatanew2, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
+
+%% compare to s1 benchmark
+%Jinitdata_s1 = load([pwd '/data/optimization/Jinit_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+Joptdata_s1 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+
+%Jinitdata_stg1 = load([pwd '/data/optimization/Jinit_stg1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+Joptdata_stg1 = load([pwd '/data/optimization/Jopt_stg1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+
+Joptdata_stg30 = load([pwd '/data/optimization/Jopt_stg30_N_24_dt_0.005_K_1_NaN_L_1.10_NaN_T_75.00_NaN.dat']);
+
+Joptdata_noise = load([pwd '/data/optimization/Jopt_noise_N_24_dt_0.005_K_1_NaN_L_1.10_NaN_T_36.05_NaN.dat']);
+
+h = figure;
+
+plot(Joptdata_s1(1:24,3),Joptdata_s1(1:24,4),'b-*')
+hold on
+plot(Joptdata_stg1(1:24,3),Joptdata_stg1(1:24,4),'r--')
+plot(Joptdata_stg30(1:2,3),Joptdata_stg30(1:2,4),'k-o','LineWidth',2)
+plot(Joptdata_noise(1:2,3),Joptdata_noise(1:2,4),'g-o','LineWidth',2)
+
+plot(Joptdata_s1(25:48,3),Joptdata_s1(25:48,4),'b-*')
+plot(Joptdata_s1(49:72,3),Joptdata_s1(49:72,4),'b-*')
+plot(Joptdata_s1(73:96,3),Joptdata_s1(73:96,4),'b-*')
+plot(Joptdata_s1(97:120,3),Joptdata_s1(97:120,4),'b-*')
+
+plot(Joptdata_stg1(25:48,3),Joptdata_stg1(25:48,4),'r--')
+plot(Joptdata_stg1(49:72,3),Joptdata_stg1(49:72,4),'r--')
+plot(Joptdata_stg1(73:96,3),Joptdata_stg1(73:96,4),'r--')
+plot(Joptdata_stg1(97:120,3),Joptdata_stg1(97:120,4),'r--')
+
+set(gca,'fontsize', 16) 
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[100 100 1200 900])
+xlabel('Time Window $T$','Interpreter','latex'); 
+ylabel('$\| {\phi(T;\varphi)} \|_{L^2}$','Interpreter','latex');
+title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+parfiglistInterval = '$N = 48, {\Delta}t = 0.005, \| \varphi \|_{L^2} = [1.02, 1.10]$';
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
+legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
+legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
+legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
+legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
+hold off
+filename = [pwd '/media/optimization/branches_comp_s1_stg1' ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])

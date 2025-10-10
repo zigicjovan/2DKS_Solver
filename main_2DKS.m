@@ -4,19 +4,19 @@ tic
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 continuation = 'off';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
-optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
+optmethod = 'RG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 timestep = .005;                                % time-step sizes
-gridsize = 48;                                  % grid sizes
+gridsize = 16;                                  % grid sizes
 tol = 1e-10;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 1;                        % initial L^2 energy magnitudes
-L_scale = 1.02:.02:1.1;                        % domain sizes
-timewindow = [ logspace(-1,log10(50),20), 75:25:150 ];         % time windows
-initialcondition = {'stg1'}; % initial conditions
+initialKmagnitude = 1e-4;                        % initial L^2 energy magnitudes
+L_scale = [sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26)];                        % domain sizes
+timewindow = 30;%[ logspace(-1,log10(50),20), 75:25:150 ];         % time windows
+initialcondition = {'noise'}; % initial conditions
 
-%timewindow = timewindow(17);
+%timewindow = timewindow(18);
 %[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
 %[sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)];
 kappapert = {'stg30'};                          % perturbation functions
@@ -258,6 +258,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         [J_opt, J_history , v_TC_opt , u_IC_opt] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
                         if (J_opt - J_history(1))/J_history(1) < tol || J_opt < K
                             optmethod = 'RG';
+                            disp('RCG did not work, trying RG method...')
                             [J_opt_RG, J_history_RG , v_TC_opt_RG , u_IC_opt_RG] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
                             if J_opt_RG > J_opt
                                 J_opt = J_opt_RG;
@@ -287,13 +288,19 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
                         close all
                         %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine 
+                        switch optmethod
+                            case 'RCG'
+                                RCGon = 1;                              % RCG switch for media files
+                            otherwise
+                                RCGon = 0;
+                        end
                 end
             end
         end
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
                 %plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
-            case 'optimize'
+            case 'optimizeX'
                 rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
                 rowend = testcounter/(length(initialcondition));
                 save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
@@ -304,7 +311,7 @@ end
 switch run 
     case 'optimize'
         if numberoftests > 1
-            plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdata, Joptdata, IC, tol);
+            %plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdata, Joptdata, IC, tol);
         end
         save_measures('optimization', Jinitdata, Joptdata, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
     case 'energygrowthXX'     % designed for comparing two initial conditions only 
