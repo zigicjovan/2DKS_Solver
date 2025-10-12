@@ -4,19 +4,19 @@ tic
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 continuation = 'off';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
-optmethod = 'RG';                              % RCG, RG, or RCGd5 (start after 5th iter)
+optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 timestep = .005;                                % time-step sizes
-gridsize = 16;                                  % grid sizes
+gridsize = 32;                                  % grid sizes
 tol = 1e-10;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 1e-4;                        % initial L^2 energy magnitudes
-L_scale = [sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26)];                        % domain sizes
-timewindow = 30;%[ logspace(-1,log10(50),20), 75:25:150 ];         % time windows
-initialcondition = {'noise'}; % initial conditions
+initialKmagnitude = 1e0;                        % initial L^2 energy magnitudes
+L_scale = 1.02:.02:1.10;                        % domain sizes
+timewindow = [ logspace(-1,log10(50),20), 75:25:150 ];         % time windows
+initialcondition = {'stg1'}; % initial conditions
 
-%timewindow = timewindow(18);
+timewindow = timewindow(10:13);
 %[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
 %[sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)];
 kappapert = {'stg30'};                          % perturbation functions
@@ -300,7 +300,7 @@ for energy_i = 1 : length(initialKmagnitude)
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
                 %plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
-            case 'optimizeX'
+            case 'optimize'
                 rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
                 rowend = testcounter/(length(initialcondition));
                 save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);

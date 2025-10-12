@@ -27,7 +27,7 @@ end
 
 parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
 parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
-optparfiglist = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+optparfiglist = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 originalIC = utility1;
 tol = utility2(1);
 if length(utility2) > 1
@@ -306,7 +306,7 @@ switch solplot
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
@@ -484,7 +484,7 @@ switch solplot
                 set(gca,'color','white')    
                 title('Evolution of optimized $L^2$ norm','Interpreter','latex')
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\widetilde{\varphi})$','Interpreter','latex','Location','northwest')
+                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
                 filename = [pwd '/media/optimization/normL2comp_' optparameters];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
@@ -851,7 +851,7 @@ switch solplot
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
@@ -998,7 +998,7 @@ switch solplot
                 set(gca,'color','white')    
                 title('Evolution of optimized $L^2$ norm','Interpreter','latex')
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\widetilde{\varphi})$','Interpreter','latex','Location','northwest')
+                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
                 filename = [pwd '/media/optimization/normL2comp_' optparameters];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
@@ -1396,7 +1396,7 @@ switch solplot
             xlabel('Time $t$','Interpreter','latex');
             ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
             xlim([0 T])
-            ylim([min(normL2_og) max(normL2_og)+1e-1])
+            ylim([0.5*min(normL2_og) 1.5*max(normL2_og) ])
             title("Evolution of $L^2$ norm",'Interpreter','latex')
             %legend('L^{2} norm','Location','southeast')
             set(gca,'fontsize', 12) 
@@ -1407,14 +1407,14 @@ switch solplot
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             title("Energy spectrum",'Interpreter','latex')
             xlim([1 size(v_mean_og,1)])
-            ylim([ 1e-20 max(v_mean_og(1,:))+1e5 ])
+            ylim([ 1e-20 1.5*max(max(v_mean)) ])
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \widetilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 

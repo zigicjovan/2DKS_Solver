@@ -34,6 +34,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                  % current manifold (L^2 inner product of initial forward state)        
     J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                          % current objective functional (L^2 inner product of terminal forward state) 
     J_history(iter,1) = J_cur;                                                              % store objective functional history
+    disp(['Iteration ' num2str(iter) ' objective value: ' num2str(J_history(iter,1))])
     manifold_history(iter,1) = manifold_size;                                               % store manifold sizes
          
     dir_old = 0;                                                                            % initialize old direction
@@ -71,7 +72,8 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         elseif iter == 1
             IC = 'optimized';                                                                           % set IC to optimized
             J_change(1,1) = NaN;                                                                        % fix initial change in objective functional value 
-            step_size = 1e5;%angleGradJ/GradJ_size;                                                  % initialize current step-size
+            %step_size = 1e5;%angleGradJ/GradJ_size;                                                  % initialize current step-size
+            step_size = ((K*exp(0.25*T))^2 - J_cur) / J_cur;
             stepsize_history(iter,1) = step_size;                                                       % store optimization step size
             diagnostics_history(1,:) = [J_history(1,1), J_change(1,1), stepsize_history(1,1)...
                 manifold_history(1,1), time_history(1,1), gradJsize_history(1,1),...
