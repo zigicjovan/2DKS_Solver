@@ -33,24 +33,24 @@ function delete_2DKSsolution(foldername, IC, dt, T, N, K, L_s1, L_s2, Ntime_save
                 end
             catch
             end
-        case 'normL2'
+        case 'energyL2'
             try
-                norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+                norm_file = [pwd '/data/' foldername '/energyL2_' parameterlist '.dat'];
                 delete(norm_file);
             catch
-                norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+                norm_file = [pwd '/data/' foldername '/energyL2_' parameterlist '.dat'];
                 switch IC
                     case 'optimized'
-                        norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '.dat'];
+                        norm_file = [pwd '/data/' foldername '/energyL2_' originalIC '_' parameterlist '.dat'];
                 end
                 delete(norm_file);
             end
 
-        case 'normL2_t'
-            norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+        case 'energyL2_t'
+            norm_file = [pwd '/data/' foldername '/energyL2_' parameterlist '.dat'];
             switch IC
                 case 'optimized'
-                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '.dat'];
+                    norm_file = [pwd '/data/' foldername '/energyL2_' originalIC '_' parameterlist '.dat'];
             end
             delete(norm_file);
 

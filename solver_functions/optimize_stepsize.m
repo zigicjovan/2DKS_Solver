@@ -260,7 +260,11 @@ function [result,iter_search,J_search] = optimize_stepsize(dir_cur,u_IC,step_siz
     end
 
     result = X;
-    J_search = rmmissing(J_search);
+    if isnan(result)
+        result = 0;
+    end
+    %J_search = rmmissing(J_search);
+    J_search = J_search(1:iter_search,1);
     if isempty(J_search)
         disp('Step-size search failed.')
         J_search = result;

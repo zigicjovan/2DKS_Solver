@@ -39,9 +39,9 @@ for lscale = 1:numberoftests
     %for guess = 1:4
         counter = counter + 1;
         ell = L_scale(lscale);
-        pts = size(l2norms_opt,1);
-        yl = log(l2norms_opt(1:end,counter));
-        dx = linspace(0,T,pts);
+        pts = size(l2norms_opt,1); % /2 for half domain
+        yl = log(l2norms_opt(1:end,counter)); % (1:length/2,counter) for half domain
+        dx = linspace(0,T,pts); % T/2 for half domain
         xl = dx(1:end);
         J = [ ones(pts,1) , xl' ];
         x_fit = (J'*J)\J' * yl;
@@ -65,7 +65,7 @@ for lscale = 1:numberoftests
         end
         lamklist(counter,1) = max(max(lamk));
         lamfitlist(counter,1) = x_fit(2,1);
-        residlist(counter,1) = norm(abs(lamfitlist(counter,1)) - abs(lamklist(counter,1))) / norm(lamklist(counter,1));
+        residlist(counter,1) = abs(lamfitlist(counter,1) - lamklist(counter,1));
     %end
 end
 

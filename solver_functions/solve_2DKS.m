@@ -84,9 +84,9 @@ u_n: solution vector for each time step in Physical space
     end
 
     % set initial L^2 energy magnitude
-    u_0_mag = sqrt(sum( u_0(:) .* conj(u_0(:)) )*(L1*L2)/N^2);              % compute norm of IC
-    if K > 0 
-        u_0 = K*u_0/u_0_mag;                                                    % set norm of IC equal to K
+    u_0_mag = sqrt(sum( u_0(:) .* conj(u_0(:)) )*(L1*L2)/N^2);                  % compute norm of IC
+    if K ~= 0 
+        u_0 = sqrt(K)*(u_0/u_0_mag);                                                    % set norm of IC equal to K
     end
     
     % perturbation function for adjoint calculus

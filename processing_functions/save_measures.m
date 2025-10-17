@@ -8,7 +8,7 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
             end
     end
 
-    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T,'%.5f') ];
     %originalIC = utility1;
     %tol = utility2;
     %optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
@@ -20,7 +20,7 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
             Tlist = unique(measure1(:,3));
             for IC_i = 1:length(IC)
                 IC_cur = strjoin(IC(IC_i));
-                parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.2f') '_' num2str(Tlist(end),'%.2f') ];
+                parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.5f') '_' num2str(Tlist(end),'%.5f') ];
                 Jinit_file = [pwd '/data/' foldername '/Jinit_' parameterlist '.dat'];
                 Jopt_file = [pwd '/data/' foldername '/Jopt_' parameterlist '.dat'];  
                 writematrix([measure1(:,1:3),measure1(:,3+IC_i)], Jinit_file,'Delimiter','tab'); 

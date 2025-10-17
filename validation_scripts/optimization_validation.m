@@ -3,12 +3,14 @@
 rcg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.005_K_0_Ls1_1.41_Ls2_1.41_T_30_tol_1e-10_rcg.dat']);
 rg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.005_K_0_Ls1_1.41_Ls2_1.41_T_30_tol_1e-10.dat']);
 
+rcg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.001_K_0_Ls1_1.41_Ls2_1.41_T_10_tol_1e-10_rcg.dat']);
+
 h = figure;
 set(gcf,'color','white')
 set(gca,'color','white')  
-sgtitle('RCG vs. RG algorithm convergence for $K=10^{-4},\ell=\sqrt{2},T=30$','Interpreter','latex')
+sgtitle('RCG vs. RG algorithm convergence for $K=10^{-4},\ell=\sqrt{2},T=10$','Interpreter','latex')
 K = 1e-4;
-T = 30;
+T = 10;
 ell = sqrt(2);
 k1 = 1; k2 = 0;
 lam = (k1/ell)^2*(1-(k1/ell)^2) + (k2/ell)^2*(1-(k2/ell)^2) - 2*((k1*k2)/(ell*ell))^2;
@@ -17,7 +19,7 @@ subplot(2,2,1:2)
 semilogy(rg141(:,1),'r-o')
 hold on
 semilogy(rcg141(:,1),'b-x')
-yline((K*exp(lam*T))^2,'--','LineWidth',1)
+yline((K*exp(2*lam*T)),'--','LineWidth',1)
 ylim([rg141(1,1) 1.5*rcg141(end,1)])
 hold off
 legendlist(1) = {'RG'};
@@ -149,43 +151,104 @@ Joptdata_s1 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1
 %Jinitdata_stg1 = load([pwd '/data/optimization/Jinit_stg1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
 Joptdata_stg1 = load([pwd '/data/optimization/Jopt_stg1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
 
-Joptdata_stg30 = load([pwd '/data/optimization/Jopt_stg30_N_24_dt_0.005_K_1_NaN_L_1.10_NaN_T_75.00_NaN.dat']);
+Joptdata_noise = load([pwd '/data/optimization/Jopt_noise_N_32_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
 
-Joptdata_noise = load([pwd '/data/optimization/Jopt_noise_N_24_dt_0.005_K_1_NaN_L_1.10_NaN_T_36.05_NaN.dat']);
+Joptdata_stg30 = load([pwd '/data/optimization/Jopt_stg30_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_5.07_150.00.dat']);
 
 h = figure;
 
-plot(Joptdata_s1(1:24,3),Joptdata_s1(1:24,4),'b-*')
+plot(Joptdata_s1(14:24,3),Joptdata_s1(14:24,4),'b-','MarkerSize',5)
 hold on
-plot(Joptdata_stg1(1:24,3),Joptdata_stg1(1:24,4),'r--')
-plot(Joptdata_stg30(1:2,3),Joptdata_stg30(1:2,4),'k-o','LineWidth',2)
-plot(Joptdata_noise(1:2,3),Joptdata_noise(1:2,4),'g-o','LineWidth',2)
+plot(Joptdata_stg1(14:24,3),Joptdata_stg1(14:24,4),'r--','MarkerSize',5)
+plot(Joptdata_stg30(2:12,3),Joptdata_stg30(2:12,4),'kx','MarkerSize',7)
+plot(Joptdata_noise(14:24,3),Joptdata_noise(14:24,4),'go','MarkerSize',4)
 
-plot(Joptdata_s1(25:48,3),Joptdata_s1(25:48,4),'b-*')
-plot(Joptdata_s1(49:72,3),Joptdata_s1(49:72,4),'b-*')
-plot(Joptdata_s1(73:96,3),Joptdata_s1(73:96,4),'b-*')
-plot(Joptdata_s1(97:120,3),Joptdata_s1(97:120,4),'b-*')
+plot(Joptdata_s1(38:48,3),Joptdata_s1(38:48,4),'b-','MarkerSize',5)
+plot(Joptdata_s1(62:72,3),Joptdata_s1(62:72,4),'b-','MarkerSize',5)
+plot(Joptdata_s1(86:96,3),Joptdata_s1(86:96,4),'b-','MarkerSize',5)
+plot(Joptdata_s1(110:120,3),Joptdata_s1(110:120,4),'b-','MarkerSize',5)
 
-plot(Joptdata_stg1(25:48,3),Joptdata_stg1(25:48,4),'r--')
-plot(Joptdata_stg1(49:72,3),Joptdata_stg1(49:72,4),'r--')
-plot(Joptdata_stg1(73:96,3),Joptdata_stg1(73:96,4),'r--')
-plot(Joptdata_stg1(97:120,3),Joptdata_stg1(97:120,4),'r--')
+plot(Joptdata_stg1(38:48,3),Joptdata_stg1(38:48,4),'r--','MarkerSize',5)
+plot(Joptdata_stg1(62:72,3),Joptdata_stg1(62:72,4),'r--','MarkerSize',5)
+plot(Joptdata_stg1(86:96,3),Joptdata_stg1(86:96,4),'r--','MarkerSize',5)
+plot(Joptdata_stg1(110:120,3),Joptdata_stg1(110:120,4),'r--','MarkerSize',5)
+
+plot(Joptdata_stg30(14:24,3),Joptdata_stg30(14:24,4),'kx','MarkerSize',7)
+plot(Joptdata_stg30(26:36,3),Joptdata_stg30(26:36,4),'kx','MarkerSize',7)
+plot(Joptdata_stg30(38:48,3),Joptdata_stg30(38:48,4),'kx','MarkerSize',7)
+plot(Joptdata_stg30(50:60,3),Joptdata_stg30(50:60,4),'kx','MarkerSize',7)
+
+plot(Joptdata_noise(38:48,3),Joptdata_noise(38:48,4),'go','MarkerSize',4)
+plot(Joptdata_noise(62:72,3),Joptdata_noise(62:72,4),'go','MarkerSize',4)
+plot(Joptdata_noise(86:96,3),Joptdata_noise(86:96,4),'go','MarkerSize',4)
+plot(Joptdata_noise(110:120,3),Joptdata_noise(110:120,4),'go','MarkerSize',4)
+
+hold off
 
 set(gca,'fontsize', 16) 
 set(gcf,'color','white')
 set(gca,'color','white') 
 set(gcf,'Position',[100 100 1200 900])
 xlabel('Time Window $T$','Interpreter','latex'); 
-ylabel('$\| {\phi(T;\varphi)} \|_{L^2}$','Interpreter','latex');
+ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
-parfiglistInterval = '$N = 48, {\Delta}t = 0.005, \| \varphi \|_{L^2} = [1.02, 1.10]$';
+parfiglistInterval = '$N = 48, {\Delta}t = 0.005, K = 1, \ell = [1.02, 1.10]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
-legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
-legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
-legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
-legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
+legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
+legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
+legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
+legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
 legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
 hold off
-filename = [pwd '/media/optimization/branches_comp_s1_stg1' ];
+filename = [pwd '/media/optimization/branches_comp_4ic' ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])
+
+
+%% K branches
+Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
+Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.005_K_10_10_L_1.02_1.10_T_0.10_50.00.dat']);
+Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_100_100_L_1.02_1.10_T_0.10_15.00.dat']);
+
+h = figure;
+
+loglog(Joptdata_K0(1:24,3),Joptdata_K0(1:24,4),'r-o','MarkerSize',5)
+hold on
+loglog(Joptdata_K1(1:14,3),Joptdata_K1(1:14,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K2(1:16,3),Joptdata_K2(1:16,4),'g-o','MarkerSize',5)
+
+loglog(Joptdata_K0(25:48,3),Joptdata_K0(25:48,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K0(49:72,3),Joptdata_K0(49:72,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K0(73:96,3),Joptdata_K0(73:96,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K0(97:120,3),Joptdata_K0(97:120,4),'r-o','MarkerSize',5)
+
+loglog(Joptdata_K1(15:25,3),Joptdata_K1(15:25,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K1(26:36,3),Joptdata_K1(26:36,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K1(37:47,3),Joptdata_K1(37:47,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K1(48:58,3),Joptdata_K1(48:58,4),'b-o','MarkerSize',5)
+
+loglog(Joptdata_K2(17:32,3),Joptdata_K2(17:32,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K2(33:48,3),Joptdata_K2(33:48,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K2(49:64,3),Joptdata_K2(49:64,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K2(65:80,3),Joptdata_K2(65:80,4),'g-o','MarkerSize',5)
+
+hold off
+
+set(gca,'fontsize', 16) 
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[100 100 1200 900])
+xlabel('Time Window $T$','Interpreter','latex'); 
+ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
+title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+parfiglistInterval = '$N = 48, {\Delta}t = 0.005, \varphi^{(0)}=\varphi_{s1}, \ell = [1.02, 1.10]$';
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{0}~~~~~~~~$']};
+legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{1}~~~~~~~~$']};
+legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{2}~~~~~~~~$']};
+%legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
+legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
+
+filename = [pwd '/media/optimization/branches_comp_3K' ];
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])

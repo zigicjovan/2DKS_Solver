@@ -21,14 +21,14 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 Tcounter = 0;
 
                 h = figure;
-                parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', \| \varphi \|_{L^2} = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
+                parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', K = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white') 
                 set(gcf,'Position',[100 100 1200 900])
                 xlabel('Time Window $T$','Interpreter','latex'); 
                 xlim([Tlist(1) Tlist(end)])
-                ylabel('$\| {\phi(T;\varphi)} \|_{L^2}$','Interpreter','latex');
+                ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
                 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
                 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
                 hold on
@@ -42,10 +42,10 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
 
                         Tstart = (Tcounter-1)*length(Tlist) + 1;
                         Tend = Tstart + length(Tlist) - 1;       
-                        plot(Joptdata(Tstart:Tend,3),Joptdata(Tstart:Tend,3+IC_i),'Marker','o')               
+                        loglog(Joptdata(Tstart:Tend,3),Joptdata(Tstart:Tend,3+IC_i),'Marker','o')               
                         %plot(Jinitdata(Tstart:Tend,3),Jinitdata(Tstart:Tend,3+IC_i),'Marker','x')
-                        legendlist(Tcounter) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}~~$']};
-                        %legendlist(2*Tcounter-1) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}$']};
+                        legendlist(Tcounter) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}~~$']};
+                        %legendlist(2*Tcounter-1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) \|_{L^2}$']};
                         %legendlist(2*Tcounter) = {['$\| \phi(T;\varphi_{' IC '}) \|_{L^2}, \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', \ell_1 = ' num2str(L_s1,'%.2f') ', \ell_2 = ' num2str(L_s2,'%.2f') '$']};
                         
                     end
@@ -86,8 +86,8 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                         Tstart = (Tcounter-1)*length(Tlist) + 1;
                         Tend = Tstart + length(Tlist) - 1;       
                         Jdiffdata = Joptdata(Tstart:Tend,3+IC_i) - Jinitdata(Tstart:Tend,3+IC_i);
-                        plot(Joptdata(Tstart:Tend,3),Jdiffdata,'Marker','o')               
-                        legendlist(Tcounter) = {['$\| \phi(T;\widetilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) - \phi(T;\varphi_{' IC '}) \|_{L^2}~~$']};
+                        loglog(Joptdata(Tstart:Tend,3),Jdiffdata,'Marker','o')               
+                        legendlist(Tcounter) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(' num2str(L_s1,'%.2f') '),T}) - \phi(T;\varphi_{' IC '}) \|_{L^2}~~$']};
                     end
                 end
                 legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')

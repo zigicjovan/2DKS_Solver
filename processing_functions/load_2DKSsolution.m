@@ -25,22 +25,22 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file1 = readmatrix(phys_file);   
             file2 = readmatrix(four_file);
             file3 = readmatrix(time_file);
-        case 'normL2'
+        case 'energyL2'
             tol = utility1;
-            norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+            norm_file = [pwd '/data/' foldername '/energyL2_' parameterlist '.dat'];
             switch IC
                 case 'optimized'
-                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
+                    norm_file = [pwd '/data/' foldername '/energyL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
             end
             file1 = readmatrix(norm_file);
             file2 = 0;
             file3 = 0;
-        case 'normL2_t'
+        case 'energyL2_t'
             tol = utility1;
-            norm_file = [pwd '/data/' foldername '/normL2_' parameterlist '.dat'];
+            norm_file = [pwd '/data/' foldername '/energyL2_' parameterlist '.dat'];
             switch IC
                 case 'optimized'
-                    norm_file = [pwd '/data/' foldername '/normL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
+                    norm_file = [pwd '/data/' foldername '/energyL2_' originalIC '_' parameterlist '_tol_' num2str(tol) '.dat'];
             end         
             file1 = readmatrix(norm_file);
             file2 = 0;

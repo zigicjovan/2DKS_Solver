@@ -1,8 +1,8 @@
 function plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, utility2)
 
-if not(isfolder([pwd  '/data/normL2' ]))                                           % create local directories for data storage
-    mkdir([pwd  '/data/normL2' ])
-    mkdir([pwd  '/data/normL2_t' ]);
+if not(isfolder([pwd  '/data/energyL2' ]))                                           % create local directories for data storage
+    mkdir([pwd  '/data/energyL2' ])
+    mkdir([pwd  '/data/energyL2_t' ]);
     mkdir([pwd  '/data/spectrum' ]);
     mkdir([pwd  '/data/kappa' ]);
     mkdir([pwd  '/media' ]);
@@ -12,8 +12,8 @@ if not(isfolder([pwd  '/data/normL2' ]))                                        
     mkdir([pwd  '/media/figures' ]);
     mkdir([pwd  '/media/figures/state' ]);
     mkdir([pwd  '/media/kappa' ]);
-    addpath([pwd  '/data/normL2' ])
-    addpath([pwd  '/data/normL2_t' ]);
+    addpath([pwd  '/data/energyL2' ])
+    addpath([pwd  '/data/energyL2_t' ]);
     addpath([pwd  '/data/spectrum' ]);
     addpath([pwd  '/data/kappa' ]);
     addpath([pwd  '/media' ]);
@@ -26,8 +26,8 @@ if not(isfolder([pwd  '/data/normL2' ]))                                        
 end
 
 parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
-optparfiglist = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+optparfiglist = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 originalIC = utility1;
 tol = utility2(1);
 if length(utility2) > 1
@@ -74,8 +74,8 @@ x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N );
 
 switch IC
     case {'optimized'}
-        % compute L2 norm and Fourier mode evolution
-        normL2_og = NaN(Ntime,1);
+        % compute L2 energy and Fourier mode evolution
+        energyL2_og = NaN(Ntime,1);
         v_mean_og = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount_og = v_mean_og;
         Ntime_remaining = Ntime;
@@ -99,7 +99,7 @@ switch IC
                 imod = Ntime_save_max;
             end
             u_i = reshape( u_og(:,imod) , [ N , N ] );
-            normL2_og(i,1) = sqrt(sum( u_og(:,imod) .* conj(u_og(:,imod)) )*(L1*L2)/N^2);
+            energyL2_og(i,1) = (sum( u_og(:,imod) .* conj(u_og(:,imod)) )*(L1*L2)/N^2);
             v = fftshift(real(abs(fft2(u_i))));
             for j = 1:N
                 for k = 1:N
@@ -121,18 +121,18 @@ switch IC
         end
         v_mean_og = v_mean_og(2:end,:);
         
-        % L2 norm time derivative computation
-        normL2_t_og = NaN(Ntime-1,1);
+        % L2 energy time derivative computation
+        energyL2_t_og = NaN(Ntime-1,1);
         dt_save = T/(Ntime-1);
-        for i = 2:length(normL2_og)
-            normL2_t_og(i-1,1) = ( normL2_og(i,1) - normL2_og(i-1,1) ) / dt_save;
+        for i = 2:length(energyL2_og)
+            energyL2_t_og(i-1,1) = ( energyL2_og(i,1) - energyL2_og(i-1,1) ) / dt_save;
         end
 end
 
 switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
-        % compute L2 norm and Fourier mode evolution
-        normL2 = NaN(Ntime,1);
+        % compute L2 energy and Fourier mode evolution
+        energyL2 = NaN(Ntime,1);
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount = v_mean;
         Ntime_remaining = Ntime;
@@ -156,7 +156,7 @@ switch solplot
                 imod = Ntime_save_max;
             end
             u_i = reshape( u_n(:,imod) , [ N , N ] );
-            normL2(i,1) = sqrt(sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/N^2);
+            energyL2(i,1) = (sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/N^2);
             v = fftshift(real(abs(fft2(u_i))));
             for j = 1:N
                 for k = 1:N
@@ -178,24 +178,24 @@ switch solplot
         end
         v_mean = v_mean(2:end,:);
         
-        % L2 norm time derivative computation
-        normL2_t = NaN(Ntime-1,1);
+        % L2 energy time derivative computation
+        energyL2_t = NaN(Ntime-1,1);
         dt_save = T/(Ntime-1);
-        for i = 2:length(normL2)
-            normL2_t(i-1,1) = ( normL2(i,1) - normL2(i-1,1) ) / dt_save;
+        for i = 2:length(energyL2)
+            energyL2_t(i-1,1) = ( energyL2(i,1) - energyL2(i-1,1) ) / dt_save;
         end
         
-        normL2data_file = [pwd '/data/normL2/normL2_' parameterlist '.dat'];
-        normL2deriv_file = [pwd '/data/normL2_t/normL2_' parameterlist '.dat'];
+        energyL2data_file = [pwd '/data/energyL2/energyL2_' parameterlist '.dat'];
+        energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_' parameterlist '.dat'];
         spectrum_file = [pwd '/data/spectrum/spectrum_' parameterlist '.dat'];
         switch IC
             case {'optimized'}
-                normL2data_file = [pwd '/data/normL2/normL2_' optparameters '.dat'];
-                normL2deriv_file = [pwd '/data/normL2_t/normL2_' optparameters '.dat'];
+                energyL2data_file = [pwd '/data/energyL2/energyL2_' optparameters '.dat'];
+                energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_' optparameters '.dat'];
                 spectrum_file = [pwd '/data/spectrum/spectrum_' optparameters '.dat'];
         end
-        writematrix(normL2, normL2data_file,'Delimiter','tab');
-        writematrix(normL2_t, normL2deriv_file,'Delimiter','tab');
+        writematrix(energyL2, energyL2data_file,'Delimiter','tab');
+        writematrix(energyL2_t, energyL2deriv_file,'Delimiter','tab');
         writematrix(v_mean, spectrum_file,'Delimiter','tab');
 end
 
@@ -281,16 +281,16 @@ switch solplot
             drawnow
 
             subplot(2,2,3);
-            semilogy(timewindow,normL2,'b')
+            semilogy(timewindow,energyL2,'b')
             hold on
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex');
-            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex');
             xlim([0 T])
-            ylim([min(normL2) max(normL2)+1e-1])
-            title("Evolution of $L^2$ norm",'Interpreter','latex')
-            %legend('L^{2} norm','Location','southeast')
+            ylim([min(energyL2) max(energyL2)+1e-1])
+            title("Evolution of $L^2$ energy",'Interpreter','latex')
+            %legend('L^{2} energy','Location','southeast')
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
@@ -303,10 +303,10 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
@@ -419,47 +419,47 @@ switch solplot
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
 
-        % L2 norm plot
+        % L2 energy plot
         h = figure;
-        semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+        semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+        ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title('Evolution of $L^2$ norm','Interpreter','latex')
+        title('Evolution of $L^2$ energy','Interpreter','latex')
         subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
-        filename = [pwd '/media/energy/normL2_' parameterlist ];
+        filename = [pwd '/media/energy/energyL2_' parameterlist ];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/energy/normL2_' optparameters ];
+                filename = [pwd '/media/energy/energyL2_' optparameters ];
             otherwise
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
         end
 
         %{
-        % L2 norm time derivative plot
+        % L2 energy time derivative plot
         h = figure;
-        plot(timewindow(2:end),normL2_t)
+        plot(timewindow(2:end),energyL2_t)
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$\frac{d}{dt} \| {\phi(t)} \|_{L^2}$','Interpreter','latex');
+        ylabel('$\frac{d}{dt} \| {\phi(t)} \|^2_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title('Evolution of $L^2$ norm time derivative','Interpreter','latex')
+        title('Evolution of $L^2$ energy time derivative','Interpreter','latex')
         subtitle(['$\varphi = \varphi_{' IC '}, L_1 = 2\pi(' num2str(L_s1,'%.3f') '), L_2 = 2\pi(' num2str(L_s2,'%.3f') '), T = ' num2str(T,'%.1f') ', {\Delta}t = ' num2str(dt) ', N = ' num2str(N) '$'],'Interpreter','latex','FontSize',14)
-        normL2_t_file = [pwd '/media/energy/normL2_deriv_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
+        energyL2_t_file = [pwd '/media/energy/energyL2_deriv_' IC '_N' num2str(N) '_dt' num2str(dt) '_T' num2str(T) '_lX' num2str(L_s1,'%.3f') '_lY' num2str(L_s2,'%.3f') '.pdf'];
         exportgraphics(h,filename)
         %}
 
@@ -468,24 +468,24 @@ switch solplot
                 
                 [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
 
-                % L2 norm plot
+                % L2 energy plot
                 h = figure;
-                semilogy(timewindow,normL2_og,'LineWidth',0.5,'Marker','.')
+                semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
                 hold on
-                semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+                semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
                 hold off
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Time $t$','Interpreter','latex'); 
                 xlim([0 T])
-                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+                ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of optimized $L^2$ norm','Interpreter','latex')
+                title('Evolution of optimized $L^2$ energy','Interpreter','latex')
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
                 legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
-                filename = [pwd '/media/optimization/normL2comp_' optparameters];
+                filename = [pwd '/media/optimization/energyL2comp_' optparameters];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -745,6 +745,7 @@ switch solplot
         writematrix(kappaerror, kappa_file,'Delimiter','tab');
     case 'optdiag'
         
+        close all
         %% opt gif
         figure;
         set(gcf,'Position',[100 100 900 750])
@@ -825,16 +826,16 @@ switch solplot
             drawnow
 
             subplot(2,2,3);
-            semilogy(timewindow,normL2,'b')
+            semilogy(timewindow,energyL2,'b')
             hold on
-            semilogy(timewindow,normL2_og,'r--')
+            semilogy(timewindow,energyL2_og,'r--')
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex');
-            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex');
             xlim([0 T])
-            ylim([0.5*min([normL2;normL2_og]) 1.5*max([normL2;normL2_og]) ])
-            title("Evolution of optimized $L^2$ norm",'Interpreter','latex')
+            ylim([0.5*min([energyL2;energyL2_og]) 1.5*max([energyL2;energyL2_og]) ])
+            title("Evolution of optimized $L^2$ energy",'Interpreter','latex')
             legend('$\tilde\varphi$','Interpreter','latex','Location','southeast')
             set(gca,'fontsize', 12) 
         
@@ -848,10 +849,10 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
@@ -863,6 +864,7 @@ switch solplot
         
         end
 
+        close all
         %% diagnostics
         % Wavenumber evolution plot
         timewindow = linspace(0,T,Ntime);
@@ -951,27 +953,27 @@ switch solplot
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
 
-        % L2 norm plot
+        % L2 energy plot
         h = figure;
-        semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+        semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
         xlim([0 T])
-        ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+        ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
         set(gca,'color','white')    
-        title('Evolution of $L^2$ norm','Interpreter','latex')
+        title('Evolution of $L^2$ energy','Interpreter','latex')
         subtitle(parfiglist,'Interpreter','latex','FontSize',14)
         switch IC 
             case {'optimized'}
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
         end
-        filename = [pwd '/media/energy/normL2_' parameterlist ];
+        filename = [pwd '/media/energy/energyL2_' parameterlist ];
         switch IC
             case {'optimized'}
-                filename = [pwd '/media/energy/normL2_' optparameters ];
+                filename = [pwd '/media/energy/energyL2_' optparameters ];
             otherwise
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
@@ -982,24 +984,24 @@ switch solplot
                 
                 [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
 
-                % L2 norm plot
+                % L2 energy plot
                 h = figure;
-                semilogy(timewindow,normL2_og,'LineWidth',0.5,'Marker','.')
+                semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
                 hold on
-                semilogy(timewindow,normL2,'LineWidth',0.5,'Marker','.')
+                semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
                 hold off
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Time $t$','Interpreter','latex'); 
                 xlim([0 T])
-                ylabel('$\| {\phi(t;\varphi)} \|_{L^2}$','Interpreter','latex');
+                ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
                 fontsize(12,"points")
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
                 set(gca,'color','white')    
-                title('Evolution of optimized $L^2$ norm','Interpreter','latex')
+                title('Evolution of optimized $L^2$ energy','Interpreter','latex')
                 subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
                 legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
-                filename = [pwd '/media/optimization/normL2comp_' optparameters];
+                filename = [pwd '/media/optimization/energyL2comp_' optparameters];
                 saveas(h,[filename '.fig'])
                 exportgraphics(h,[filename '.pdf'])
 
@@ -1234,7 +1236,7 @@ switch solplot
         %% finish opt plots
         IC = originalIC;
         parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-        parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+        parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 
         %% orig initial
         h = figure;
@@ -1310,6 +1312,7 @@ switch solplot
         saveas(h,[filename '.fig'])
         exportgraphics(h,[filename '.pdf'])
 
+        close all
         %% orig gif
         figure;
         set(gcf,'Position',[100 100 900 750])
@@ -1389,16 +1392,16 @@ switch solplot
             drawnow
 
             subplot(2,2,3);
-            semilogy(timewindow,normL2_og,'b')
+            semilogy(timewindow,energyL2_og,'b')
             hold on
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex');
-            ylabel('$\| \phi(t;\varphi) \|$','Interpreter','latex');
+            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex');
             xlim([0 T])
-            ylim([0.5*min(normL2_og) 1.5*max(normL2_og) ])
-            title("Evolution of $L^2$ norm",'Interpreter','latex')
-            %legend('L^{2} norm','Location','southeast')
+            ylim([0.5*min(energyL2_og) 1.5*max(energyL2_og) ])
+            title("Evolution of $L^2$ energy",'Interpreter','latex')
+            %legend('L^{2} energy','Location','southeast')
             set(gca,'fontsize', 12) 
         
             subplot(2,2,4);
@@ -1411,10 +1414,10 @@ switch solplot
             set(gca,'fontsize', 12) 
         
             title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             switch IC 
                 case {'optimized'}
-                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', \| \varphi \|_{L^2} = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
+                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
             sgtitle({title1, title2},'Interpreter','latex');
 
