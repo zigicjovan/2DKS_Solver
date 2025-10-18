@@ -8,14 +8,14 @@ optfigs = 1;                                    % generate optimization diagnost
 continuation = 'off';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
-timestep = .001;                                % time-step sizes
-gridsize = 16;                                  % grid sizes
+timestep = .0025;                                % time-step sizes
+gridsize = 32;                                  % grid sizes
 tol = 1e-10;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 10^(-4);                        % initial L^2 energy magnitudes
-L_scale = 2.02;                        % domain sizes
-timewindow = logspace(-2,-1,3);         % time windows
+initialKmagnitude = 10^(2);                        % initial L^2 energy magnitudes
+L_scale = 1.02:.02:1.10;                        % domain sizes
+timewindow = logspace(-1.0,1.0,21);         % time windows
 initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
@@ -60,6 +60,7 @@ for energy_i = 1 : length(initialKmagnitude)
         L_s1 = L_scale(domain_i);                         % adjust length-scale parameter in dim 1
         L_s2 = L_s1;                                    % adjust length-scale parameter in dim 2
     
+        %% start window block
         for window_i = 1 : length(timewindow)
     
             T = timewindow(window_i);                    % adjust simulation time window
@@ -79,9 +80,11 @@ for energy_i = 1 : length(initialKmagnitude)
 
             for param_i = 1 : length(test_parameter)          % length('x') indicates 'x' testing
         
-                if T > 1
+                if window_i > length(timewindow)/2
                     Nfull = N;
+                    dtfull = dt;
                     %N = 2/3*N;
+                    %dt = 2*dt;
                 end
                 %%% set variable parameters %%%
                 switch run 
@@ -312,8 +315,9 @@ for energy_i = 1 : length(initialKmagnitude)
                             otherwise
                                 RCGon = 0;
                         end
-                        if T > 1
+                        if window_i > length(timewindow)/2
                             N = Nfull;
+                            dt = dtfull;
                         end
                 end
             end
@@ -326,6 +330,7 @@ for energy_i = 1 : length(initialKmagnitude)
                 rowend = testcounter/(length(initialcondition));
                 save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
         end
+        %% end window block
     end
 end
 
