@@ -23,8 +23,8 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
                 parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.5f') '_' num2str(Tlist(end),'%.5f') ];
                 Jinit_file = [pwd '/data/' foldername '/Jinit_' parameterlist '.dat'];
                 Jopt_file = [pwd '/data/' foldername '/Jopt_' parameterlist '.dat'];  
-                writematrix([measure1(:,1:3),measure1(:,3+IC_i)], Jinit_file,'Delimiter','tab'); 
-                writematrix([measure2(:,1:3),measure2(:,3+IC_i)], Jopt_file,'Delimiter','tab');
+                writematrix([measure1(:,1:3),measure1(:,IC_i+3)], Jinit_file,'Delimiter','tab'); 
+                writematrix([measure2(:,1:3),measure2(:,(IC_i-1)*3+4:(IC_i-1)*3+6)], Jopt_file,'Delimiter','tab');
             end
         case 'energygrowth'
             L_scale = dt;

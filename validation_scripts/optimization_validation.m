@@ -1,8 +1,6 @@
 %% RCG v RF eigenfunction validation
 
-rcg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.005_K_0_Ls1_1.41_Ls2_1.41_T_30_tol_1e-10_rcg.dat']);
-rg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.005_K_0_Ls1_1.41_Ls2_1.41_T_30_tol_1e-10.dat']);
-
+rg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.001_K_0_Ls1_1.41_Ls2_1.41_T_10_tol_1e-10_rg.dat']);
 rcg141 = load([pwd '/data/optimization/diagnostics_noise_optimized_N_16_dt_0.001_K_0_Ls1_1.41_Ls2_1.41_T_10_tol_1e-10_rcg.dat']);
 
 h = figure;
@@ -16,24 +14,24 @@ k1 = 1; k2 = 0;
 lam = (k1/ell)^2*(1-(k1/ell)^2) + (k2/ell)^2*(1-(k2/ell)^2) - 2*((k1*k2)/(ell*ell))^2;
 
 subplot(2,2,1:2)
-semilogy(rg141(:,1),'r-o')
+semilogy(rg141(:,1),'r-x')
 hold on
-semilogy(rcg141(:,1),'b-x')
+semilogy(rcg141(:,1),'b-o')
 yline((K*exp(2*lam*T)),'--','LineWidth',1)
 ylim([rg141(1,1) 1.5*rcg141(end,1)])
 hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
-legendlist(3) = {'$Ke^{\lambda^* T}$'};
+legendlist(3) = {'$Ke^{2\lambda^* T}$'};
 legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'Box','off','FontSize',14)
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
 
-subplot(2,2,3)
-semilogy(rg141(:,1),'r-o')
+subplot(2,2,3:4)
+semilogx(rg141(:,1),'r-x')
 hold on
-semilogy(rcg141(:,1),'b-x')
-ylim([.03260714 .03260725])
+semilogx(rcg141(:,1),'b-o')
+ylim([rcg141(3,1) rcg141(end,1)+1e-9])
 hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
@@ -41,14 +39,11 @@ legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'B
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
 
-
 subplot(2,2,4)
-semilogy(rg141(:,1),'r-o')
+semilogx(rg141(:,1),'r-x')
 hold on
-semilogy(rcg141(:,1),'b-x')
-%yline(rcg141(end,1),'--')
-%ylim([rcg141(end,1)-1e-8 rcg141(end,1)+1e-10])
-ylim([.032607236 .032607239])
+semilogx(rcg141(:,1),'b-o')
+ylim([rcg141(6,1)-1e-9 rg141(end,1)+1e-11])
 hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};

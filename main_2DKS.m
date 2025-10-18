@@ -4,7 +4,8 @@ tic
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
 restart = 1;                                    % binary switch to generate new test counters
-continuation = 'off';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
+optfigs = 1;                                    % generate optimization diagnostic figures 
+continuation = 'off';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 timestep = .001;                                % time-step sizes
@@ -13,9 +14,9 @@ tol = 1e-10;                                    % set optimization tolerance cri
 
 %%% choose parameter testing ranges %%%
 initialKmagnitude = 10^(-4);                        % initial L^2 energy magnitudes
-L_scale = sqrt(2);                        % domain sizes
-timewindow = 10;%logspace(-2,-1,3);         % time windows
-initialcondition = {'noise'}; % initial conditions
+L_scale = 2.02;                        % domain sizes
+timewindow = logspace(-2,-1,3);         % time windows
+initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
 %[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
@@ -45,8 +46,8 @@ if restart == 1
     testcounter = 0;
     testrow = 0;
     
-    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale),3+length(initialcondition));
-    Jinitdata = Joptdata;
+    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale),3+3*length(initialcondition));
+    Jinitdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale),3+1*length(initialcondition));
 end
 
 for energy_i = 1 : length(initialKmagnitude)
@@ -295,10 +296,14 @@ for energy_i = 1 : length(initialKmagnitude)
                         Jinitdata(testrow,3) = T;
                         Joptdata(testrow,3) = Jinitdata(testrow,3);
                         Jinitdata(testrow,param_i+3) = J_history(1,1);
-                        Joptdata(testrow,param_i+3) = J_history(end,1);
+                        Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, 1, tol); % save solution to machine
-                        plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
-                        %plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
+                        if optfigs == 1
+                            maxL2inT = plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
+                        else
+                            maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                     
+                        end
+                        Joptdata(testrow,(param_i-1)*3+5:(param_i-1)*3+6) = maxL2inT;  
                         close all
                         %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine 
                         switch optmethod

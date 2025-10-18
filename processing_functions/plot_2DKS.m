@@ -1,4 +1,4 @@
-function plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, utility2)
+function maxL2inT = plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, utility2)
 
 if not(isfolder([pwd  '/data/energyL2' ]))                                           % create local directories for data storage
     mkdir([pwd  '/data/energyL2' ])
@@ -184,6 +184,11 @@ switch solplot
         for i = 2:length(energyL2)
             energyL2_t(i-1,1) = ( energyL2(i,1) - energyL2(i-1,1) ) / dt_save;
         end
+
+        % max energy in time window
+        [ maxL2, maxL2index ] = max(energyL2);
+        maxL2time = timewindow(maxL2index);
+        maxL2inT = [ maxL2time , maxL2 ];
         
         energyL2data_file = [pwd '/data/energyL2/energyL2_' parameterlist '.dat'];
         energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_' parameterlist '.dat'];
