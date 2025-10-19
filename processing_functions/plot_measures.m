@@ -10,9 +10,10 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
             Jinitdata = utility1;
             Joptdata = utility2;
             
-            Klist = unique(Joptdata(:,1));
-            Llist = unique(Joptdata(:,2));
-            Tlist = unique(Joptdata(:,3));
+            Joptapprox = round(Joptdata,8);
+            Klist = unique(Joptapprox(:,1));
+            Llist = unique(Joptapprox(:,2));
+            Tlist = unique(Joptapprox(:,3));
             %legendlist = cell(1,2*length(Klist)*length(Llist));
             legendlist = cell(1,length(Klist)*length(Llist));
 
