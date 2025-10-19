@@ -31,7 +31,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     L1 = 2*pi*L_s1;                                                                         % dimension 1 length
     L2 = 2*pi*L_s2;                                                                         % dimension 2 length
 
-    fprintf('Iter \t J0 \t Adjoint solved \t Line-search \t Forward solved \t J1 \t J change \n ')
+    fprintf('Iter \t J0 \t Adjoint solved \t Line-search \t Forward solved \t J1 \t\t J change \n ')
     fprintf('----------------------------------------------------------------------------------------------------------\n')
 
     manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                  % current manifold (L^2 inner product of initial forward state)        

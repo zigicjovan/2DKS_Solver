@@ -3,19 +3,19 @@ tic
 
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
-restart = 1;                                    % binary switch to generate new test counters
+restart = 0;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
 continuation = 'off';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
-timestep = .0025;                                % time-step sizes
-gridsize = 32;                                  % grid sizes
+timestep = .001;                                % time-step sizes
+gridsize = 48;                                  % grid sizes
 tol = 1e-10;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 10^(2);                        % initial L^2 energy magnitudes
+initialKmagnitude = 10^(3);                        % initial L^2 energy magnitudes
 L_scale = 1.02:.02:1.10;                        % domain sizes
-timewindow = logspace(-1.0,1.0,21);         % time windows
+timewindow = logspace(-1.5,0.5,21);         % time windows
 initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
@@ -271,7 +271,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         [J_opt, J_history , v_TC_opt , u_IC_opt] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
                         switch continuation
                             case 'off'
-                                if (J_opt - J_history(1))/J_history(1) < tol || J_opt < K
+                                if (J_opt - J_history(1))/J_history(1) < tol
                                     optmethod = 'RG';
                                     disp('RCG did not work, trying RG method...')
                                     [J_opt_RG, J_history_RG , v_TC_opt_RG , u_IC_opt_RG] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
