@@ -31,10 +31,16 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     L1 = 2*pi*L_s1;                                                                         % dimension 1 length
     L2 = 2*pi*L_s2;                                                                         % dimension 2 length
 
+    fprintf('Iter \t J0 \t Adjoint solved \t Line-search \t Forward solved \t J1 \t J change \n ')
+    fprintf('----------------------------------------------------------------------------------------------------------\n')
+
     manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                  % current manifold (L^2 inner product of initial forward state)        
     J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                          % current objective functional (L^2 inner product of terminal forward state) 
     J_history(iter,1) = J_cur;                                                              % store objective functional history
-    disp(['Iteration ' num2str(iter) ' objective value: ' num2str(J_history(iter,1))])
+    fprintf(num2str(iter))
+    fprintf('\t')
+    fprintf(num2str(J_history(iter,1)))
+    fprintf('\t')
     manifold_history(iter,1) = manifold_size;                                               % store manifold sizes
          
     dir_old = 0;                                                                            % initialize old direction
@@ -51,7 +57,8 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     while (abs(J_change(iter,1)) > tol) && (iter <= maxiter)
 
         [~, GradJ] = solve_2DKS(IC,'backward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,v_TC,originalIC);        % current objective gradient via adjoint equation
-        disp(['Solved adjoint problem for iteration ' num2str(iter) ' at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf('\t\t')
         GradJ_size = sum( GradJ .* conj(GradJ) )*(L1*L2)/N^2;                                           % current objective gradient size
         angleGradJ = sum( u_IC .* conj(GradJ) )*(L1*L2)/N^2;                                            % angle with current objective gradient
         projGradJ_cur = GradJ - (angleGradJ/manifold_size).*(u_IC);                                     % current projected objective gradient
@@ -89,14 +96,16 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         if step_size == 0
             step_size = angleGradJ/GradJ_size; 
         end
-        disp(['Solved optimal step-size problem after ' num2str(iter_search) ' iterations at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf([num2str(iter_search) ', ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf('\t\t')
         linesearchJ_history(1:iter_search,iter) = J_search;                                             % store objective functional history from line search
         update_term = u_IC + ( step_size .* dir_cur );                                                  % retraction operator term
         retraction =  sqrt(manifold_history(1,1)) / sqrt(sum( update_term .* conj(update_term) )*(L1*L2)/N^2 );                   % retraction operator                                   
         u_IC = retraction .* update_term;                                                               % current initial forward state
         manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                          % current manifold (L^2 inner product of initial forward state) 
         [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);    % terminal forward state via forward equation
-        disp(['Solved forward problem for iteration ' num2str(iter) ' at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+        fprintf('\t\t')
         J_old = J_cur;                                                                                  % old objective functional
         J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                                  % current objective functional 
         iter = iter + 1;                                                                                % update iteration number
@@ -113,8 +122,14 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         diagnostics_history(iter,:) = [J_history(iter,1), J_change(iter,1), stepsize_history(iter,1)...
             manifold_history(iter,1), time_history(iter,1), gradJsize_history(iter,1),...
             momentumsize_history(iter,1)];
-        disp(['Iteration ' num2str(iter) ' objective value: ' num2str(J_history(iter,1))])
-        disp(['Iteration ' num2str(iter) ' objective value change: ' num2str(abs(J_change(iter,1)))])
+        fprintf(num2str(J_history(iter,1)))
+        fprintf('\t')
+        fprintf(num2str(abs(J_change(iter,1))))
+        fprintf('\n')
+        fprintf(num2str(iter))
+        fprintf('\t')
+        fprintf(num2str(J_history(iter,1)))
+        fprintf('\t')
     end
 
     J_history = rmmissing(J_history);
