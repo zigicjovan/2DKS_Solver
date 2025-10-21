@@ -3,27 +3,27 @@ tic
 
 %%% choose test settings %%%
 run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
-restart = 0;                                    % binary switch to generate new test counters
+restart = 1;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
 continuation = 'off';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
-timestep = .001;                                % time-step sizes
-gridsize = 48;                                  % grid sizes
-tol = 1e-10;                                    % set optimization tolerance critera
+timestep = 1e-5;                               % time-step sizes
+gridsize = 128;                                  % grid sizes
+tol = 1e-5;                                    % set optimization tolerance critera
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 10^(3);                        % initial L^2 energy magnitudes
-L_scale = 1.02:.02:1.10;                        % domain sizes
-timewindow = logspace(-1.5,0.5,21);         % time windows
+initialKmagnitude = 10^(5);                        % initial L^2 energy magnitudes
+L_scale = 1.02:.02:1.1;                        % domain sizes
+timewindow = logspace(-3.0,-2.0,11);         % time windows
 initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
-%[sqrt(3),sqrt(6),3,sqrt(13),sqrt(17),sqrt(19),sqrt(23),sqrt(29)];
-%[sqrt(2),2,sqrt(8),sqrt(10),4,sqrt(18),sqrt(20),sqrt(26),sqrt(32)];
-%[ logspace(-1,log10(50),20), 75:25:150 ];
-kappapert = {'stg30'};                          % perturbation functions
-L_target = [2.36,2.78];                         % domain sizes of interest
+switch run
+    case 'kappa'
+        kappapert = {'stg30'};                          % perturbation functions
+        L_target = [2.36,2.78];                         % domain sizes of interest
+end
 
 %%% choose default parameters %%%
 K = initialKmagnitude(1);                       % magnitude of initial condition L^2 energy, use K=0 for default IC norm
@@ -52,7 +52,10 @@ end
 
 for energy_i = 1 : length(initialKmagnitude)
 
-    %pertIC = strjoin(kappapert(energy_i),'');
+    switch run
+        case 'kappa'
+            pertIC = strjoin(kappapert(energy_i),'');
+    end
     K = initialKmagnitude(energy_i);                 % adjust initial L^2 energy magnitude
 
     for domain_i = 1 : length(L_scale)
@@ -143,7 +146,6 @@ for energy_i = 1 : length(initialKmagnitude)
                             case 'IC'
                                 try
                                     [ u_IC , ~ ] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0);
-                                    %u_TC = real(ifft2(v_TC));
                                     tic
                                     disp(['Continuing from loaded optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                                     solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
@@ -308,7 +310,6 @@ for energy_i = 1 : length(initialKmagnitude)
                         end
                         Joptdata(testrow,(param_i-1)*3+5:(param_i-1)*3+6) = maxL2inT;  
                         close all
-                        %[u_IC_opt,v_TC_opt] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0); % load solution from machine 
                         switch optmethod
                             case 'RCG'
                                 RCGon = 1;                              % RCG switch for media files
@@ -324,7 +325,7 @@ for energy_i = 1 : length(initialKmagnitude)
         end
         switch run 
             case 'kappa'    % designed for 5 or 10 tests only
-                %plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
+                plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
             case 'optimize'
                 rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
                 rowend = testcounter/(length(initialcondition));
@@ -332,17 +333,21 @@ for energy_i = 1 : length(initialKmagnitude)
         end
         %% end window block
     end
+    switch run 
+        case 'optimize'
+            if length(timewindow) > 1
+                plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdata, Joptdata, IC, tol);
+            end
+            save_measures('optimization', Jinitdata, Joptdata, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
+    end
 end
 
 switch run 
-    case 'optimize'
-        if numberoftests > 1
-            plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdata, Joptdata, IC, tol);
+    case 'energygrowth'     % designed for comparing two initial conditions only 
+        if exist('L_target','var')
+            plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, K, L_target, L_s2, l2norms_avg, length(timewindow), 0, 0);
+            save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, K, L_scale, T, L_target, 0);
         end
-        save_measures('optimization', Jinitdata, Joptdata, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
-    case 'energygrowthXX'     % designed for comparing two initial conditions only 
-        plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, K, L_target, L_s2, l2norms_avg, length(timewindow), 0, 0);
-        save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, K, L_scale, T, L_target, 0);
     case 'N'                % spatial convergence: error analysis and computational time
         [error_2,error_inf,comptime] = plot_measures('spatial', dt, IC, gridsize, T, K, L_s1, L_s2, L_s2, length(timewindow), 0, 0);
         save_measures('spatial', error_2, error_inf, comptime, IC, 0, dt, T, K, L_s1, L_s2);
