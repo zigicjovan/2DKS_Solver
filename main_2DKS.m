@@ -2,20 +2,21 @@
 tic
 
 %%% choose test settings %%%
-run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa', 'energygrowth'
+run = 'IC';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
 restart = 1;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
-continuation = 'off';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
+continuation = 'optIC';                           % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
-timestep = 1e-5;                               % time-step sizes
-gridsize = 128;                                  % grid sizes
-tol = 1e-5;                                    % set optimization tolerance critera
+timestep = 1e-4;                               % time-step sizes
+gridsize = 64;                                  % grid sizes
+tol = 1e-8;                                    % set optimization tolerance critera
+optT = 10^(-1.5);
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = 10^(5);                        % initial L^2 energy magnitudes
-L_scale = 1.02:.02:1.1;                        % domain sizes
-timewindow = logspace(-3.0,-2.0,11);         % time windows
+initialKmagnitude = 10^(4);                        % initial L^2 energy magnitudes
+L_scale = 1.1:.02:1.1;                        % domain sizes
+timewindow = logspace(2.0,2.0,1);         % time windows
 initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
@@ -34,6 +35,7 @@ IC = strjoin(initialcondition(1),'');           % initial condition
 dt = timestep(1);                               % length of time-step
 N = gridsize(1);                                % number of grid points
 save_each = 1;                                  % number of iterations between saved timepoints - 1/dt to save each 1 T
+
 switch optmethod
     case 'RCG'
         RCGon = 1;                              % RCG switch for media files
@@ -110,6 +112,23 @@ for energy_i = 1 : length(initialKmagnitude)
                 switch run 
                     case {'L','N','dt','IC','kappa','plotOptIC'} 
                         switch continuation
+                            case 'optIC' % choose which parameters define optimized initial data
+                                initIC = IC;
+                                optdt = dt;
+                                %optT = optT;
+                                optN = N;
+                                optK = K;
+                                optL_s1 = L_s1;
+                                optL_s2 = L_s2;
+                                opttol = tol; 
+                                [ u_IC , ~ ] = load_2DKSsolution('optimal', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, opttol, 0);
+                                tic
+                                disp(['Using chosen optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                                solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                IC = 'optimized';
+                                [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
+                                time = toc;
+                                disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
                             case 'forward'
                                 try 
                                     time1 = ceil(T/(dt*save_each));
