@@ -20,7 +20,8 @@ u_n: solution vector for each time step in Physical space
     x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
     x2_pts = L2*linspace( 0 , 1 - 1/N_x2 , N_x2 ); 
     [ x1 , x2 ] = meshgrid(x1_pts,x2_pts);                      % 2-dimensional grid
-    
+    dx = min(x1_pts(2)-x1_pts(1),x2_pts(2)-x2_pts(1));          % save minimum step for verifying CFL condition
+
     % fourier space domain for nonlinear term
     k1_n_pts = 2*pi/L1*[ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
     k2_n_pts = 2*pi/L2*[ 0 : N_x2/2-1 , 0 , -N_x2/2+1 : -1]; 
@@ -195,6 +196,7 @@ u_n: solution vector for each time step in Physical space
                 % save solution step to workspace
                 v_12 = reshape( v_1, [ N , N_x2 ] );
                 u_1 = real(ifft2(v_12));  
+                checkCFL(dx,dt,u_1);
                 v_step = v_1;
                 
                 if (save_each == 1) && (mod(i,Ntime_save_max) ~= 0)
@@ -273,6 +275,7 @@ u_n: solution vector for each time step in Physical space
                 % save solution step to workspace
                 v_12 = reshape( v_1, [ N , N_x2 ] );
                 u_1 = real(ifft2(v_12));
+                checkCFL(dx,dt,u_1);
                 v_step = v_1;
 
                 if i == Ntime
@@ -333,6 +336,7 @@ u_n: solution vector for each time step in Physical space
                 % save solution step to workspace
                 v_12 = reshape( v_1, [ N , N_x2 ] );
                 u_1 = real(ifft2(v_12));
+                checkCFL(dx,dt,u_1);
                 v_step = v_1;
 
                 if i == 1
