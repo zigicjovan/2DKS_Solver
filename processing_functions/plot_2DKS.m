@@ -208,7 +208,7 @@ switch solplot
     case 'gif'
 
         figure('Visible', 'off');
-        set(gcf,'Position',[100 100 900 750])
+        set(gcf,'Position',[100 100 1800 1500])
         axis tight manual % this ensures that getframe() returns a consistent size
         
 
@@ -751,7 +751,7 @@ switch solplot
         close all
         %% opt gif
         figure('Visible', 'off');
-        set(gcf,'Position',[100 100 900 750])
+        set(gcf,'Position',[100 100 1800 1500])
         axis tight manual % this ensures that getframe() returns a consistent size
         
 
@@ -1316,7 +1316,7 @@ switch solplot
         close all
         %% orig gif
         figure('Visible', 'off');
-        set(gcf,'Position',[100 100 900 750])
+        set(gcf,'Position',[100 100 1800 1500])
         axis tight manual % this ensures that getframe() returns a consistent size
 
         set(gcf,'color','white')
