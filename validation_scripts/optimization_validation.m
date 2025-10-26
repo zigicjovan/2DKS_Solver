@@ -13,7 +13,11 @@ ell = sqrt(2);
 k1 = 1; k2 = 0;
 lam = (k1/ell)^2*(1-(k1/ell)^2) + (k2/ell)^2*(1-(k2/ell)^2) - 2*((k1*k2)/(ell*ell))^2;
 
+<<<<<<< HEAD
 subplot(2,2,1:2)
+=======
+subplot(3,2,1:2)
+>>>>>>> a5f484f (Initial upload)
 semilogy(rg141(:,1),'r-x')
 hold on
 semilogy(rcg141(:,1),'b-o')
@@ -23,6 +27,7 @@ hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
 legendlist(3) = {'$Ke^{2\lambda^* T}$'};
+<<<<<<< HEAD
 legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'Box','off','FontSize',14)
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
@@ -39,18 +44,56 @@ legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'B
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
 
+=======
+legend(legendlist,'Interpreter','latex','Location','southeast','Orientation','horizontal','Box','off','FontSize',14)
+xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
+ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
+
+subplot(3,2,3:4)
+semilogx(rg141(:,1),'r-x')
+hold on
+semilogx(rcg141(:,1),'b-o')
+yline((K*exp(2*lam*T)),'--','LineWidth',1)
+ylim([rcg141(3,1)-1e-5 (K*exp(2*lam*T)+1e-5)])
+hold off
+legend(legendlist,'Interpreter','latex','Location','southeast','Orientation','horizontal','Box','off','FontSize',14)
+xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
+ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
+
+subplot(3,2,5:6)
+semilogx(rg141(:,1),'r-x')
+hold on
+semilogx(rcg141(:,1),'b-o')
+yline((K*exp(2*lam*T)),'--','LineWidth',1)
+ylim([rcg141(3,1) rcg141(end,1)+1e-9])
+hold off
+legend(legendlist,'Interpreter','latex','Location','southeast','Orientation','horizontal','Box','off','FontSize',14)
+xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
+ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
+
+%{
+>>>>>>> a5f484f (Initial upload)
 subplot(2,2,4)
 semilogx(rg141(:,1),'r-x')
 hold on
 semilogx(rcg141(:,1),'b-o')
+<<<<<<< HEAD
 ylim([rcg141(6,1)-1e-9 rg141(end,1)+1e-11])
+=======
+%ylim([rcg141(6,1)-1e-9 rg141(end,1)+1e-11])
+%ylim([rcg141(6,1)-1e-9 (K*exp(2*lam*T))+1e-11])
+>>>>>>> a5f484f (Initial upload)
 hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
 legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off','FontSize',14)
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 %ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
+<<<<<<< HEAD
 
+=======
+%}
+>>>>>>> a5f484f (Initial upload)
 filename = [pwd '/media/optimization/RCGvRG_lmax'];
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
@@ -189,10 +232,17 @@ ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
 parfiglistInterval = '$N = 48, {\Delta}t = 0.005, K = 1, \ell = [1.02, 1.10]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+<<<<<<< HEAD
 legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
 legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
 legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
 legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
+=======
+legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
+legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
+legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
+legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
+>>>>>>> a5f484f (Initial upload)
 legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
 hold off
 filename = [pwd '/media/optimization/branches_comp_4ic' ];
@@ -201,6 +251,7 @@ exportgraphics(h,[filename '.pdf'])
 
 
 %% K branches
+<<<<<<< HEAD
 Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
 Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.005_K_10_10_L_1.02_1.10_T_0.10_50.00.dat']);
 Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_100_100_L_1.02_1.10_T_0.10_15.00.dat']);
@@ -226,6 +277,46 @@ loglog(Joptdata_K2(17:32,3),Joptdata_K2(17:32,4),'g-o','MarkerSize',5)
 loglog(Joptdata_K2(33:48,3),Joptdata_K2(33:48,4),'g-o','MarkerSize',5)
 loglog(Joptdata_K2(49:64,3),Joptdata_K2(49:64,4),'g-o','MarkerSize',5)
 loglog(Joptdata_K2(65:80,3),Joptdata_K2(65:80,4),'g-o','MarkerSize',5)
+=======
+Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_24_dt_0.005_K_1_1_L_1.02_1.10_T_1.00000_100.00000.dat']);
+Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_10_10_L_1.02_1.10_T_0.31623_31.62278.dat']);
+Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_100_100_L_1.02_1.10_T_0.10000_10.00000.dat']);
+Joptdata_K3 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.001_K_1000_1000_L_1.02_1.10_T_0.03162_3.16228.dat']);
+Joptdata_K4 = load([pwd '/data/optimization/Jopt_s1_N_64_dt_0.0001_K_10000_10000_L_1.02_1.10_T_0.01000_0.10000.dat']);
+
+h = figure;
+
+loglog(Joptdata_K0(1:21,3),Joptdata_K0(1:21,4),'r-o','MarkerSize',5)
+hold on
+loglog(Joptdata_K0(22:42,3),Joptdata_K0(22:42,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K0(43:63,3),Joptdata_K0(43:63,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K0(64:84,3),Joptdata_K0(64:84,4),'k-o','MarkerSize',5)
+loglog(Joptdata_K0(85:105,3),Joptdata_K0(85:105,4),'m-o','MarkerSize',5)
+
+loglog(Joptdata_K1(1:21,3),Joptdata_K1(1:21,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K1(22:42,3),Joptdata_K1(22:42,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K1(43:63,3),Joptdata_K1(43:63,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K1(64:84,3),Joptdata_K1(64:84,4),'k-o','MarkerSize',5)
+loglog(Joptdata_K1(85:105,3),Joptdata_K1(85:105,4),'m-o','MarkerSize',5)
+
+loglog(Joptdata_K2(1:21,3),Joptdata_K2(1:21,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K2(22:42,3),Joptdata_K2(22:42,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K2(43:63,3),Joptdata_K2(43:63,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K2(64:84,3),Joptdata_K2(64:84,4),'k-o','MarkerSize',5)
+loglog(Joptdata_K2(85:105,3),Joptdata_K2(85:105,4),'m-o','MarkerSize',5)
+
+loglog(Joptdata_K3(1:21,3),Joptdata_K3(1:21,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K3(22:42,3),Joptdata_K3(22:42,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K3(43:63,3),Joptdata_K3(43:63,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K3(64:84,3),Joptdata_K3(64:84,4),'k-o','MarkerSize',5)
+loglog(Joptdata_K3(85:105,3),Joptdata_K3(85:105,4),'m-o','MarkerSize',5)
+
+loglog(Joptdata_K4(1:11,3),Joptdata_K4(1:11,4),'r-o','MarkerSize',5)
+loglog(Joptdata_K4(12:22,3),Joptdata_K4(12:22,4),'b-o','MarkerSize',5)
+loglog(Joptdata_K4(23:33,3),Joptdata_K4(23:33,4),'g-o','MarkerSize',5)
+loglog(Joptdata_K4(34:44,3),Joptdata_K4(34:44,4),'k-o','MarkerSize',5)
+loglog(Joptdata_K4(45:55,3),Joptdata_K4(45:55,4),'m-o','MarkerSize',5)
+>>>>>>> a5f484f (Initial upload)
 
 hold off
 
@@ -236,6 +327,7 @@ set(gcf,'Position',[100 100 1200 900])
 xlabel('Time Window $T$','Interpreter','latex'); 
 ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+<<<<<<< HEAD
 parfiglistInterval = '$N = 48, {\Delta}t = 0.005, \varphi^{(0)}=\varphi_{s1}, \ell = [1.02, 1.10]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
 legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{0}~~~~~~~~$']};
@@ -245,5 +337,148 @@ legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),
 legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
 
 filename = [pwd '/media/optimization/branches_comp_3K' ];
+=======
+parfiglistInterval = '$\varphi^{(0)}=\varphi_{s1}, K = \left[10^{0}, 10^{4}\right], \ell = [1.02, 1.10]$';
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legendlist(1) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(2) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.04),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(3) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.06),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(4) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.08),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(5) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.10),T}) \|^2_{L^2}~~~~~~~~$'};
+legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',3,'Box','off')
+
+filename = [pwd '/media/optimization/branches_comp_5K' ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])
+
+% long T optimized energy evolutions branches
+
+en102_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_1_Ls1_1.02_Ls2_1.02_T_100_tol_1e-08_RCG.dat']);
+en102_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.02_Ls2_1.02_T_100_tol_1e-10_RCG.dat']);
+en102_2 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_100_Ls1_1.02_Ls2_1.02_T_100_tol_1e-10_RCG.dat']);
+en102_3 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_48_dt_0.0005_K_1000_Ls1_1.02_Ls2_1.02_T_50_tol_1e-10_RCG.dat']);
+en102_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_Ls1_1.02_Ls2_1.02_T_5_tol_1e-08_RCG.dat']);
+
+en104_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_1_Ls1_1.04_Ls2_1.04_T_100_tol_1e-08_RCG.dat']);
+en104_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.04_Ls2_1.04_T_100_tol_1e-10_RCG.dat']);
+en104_2 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_100_Ls1_1.04_Ls2_1.04_T_100_tol_1e-10_RCG.dat']);
+en104_3 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_48_dt_0.0005_K_1000_Ls1_1.04_Ls2_1.04_T_50_tol_1e-10_RCG.dat']);
+en104_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_Ls1_1.04_Ls2_1.04_T_5_tol_1e-08_RCG.dat']);
+
+en106_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.002_K_1_Ls1_1.06_Ls2_1.06_T_100_tol_1e-08_RCG.dat']);
+en106_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.06_Ls2_1.06_T_100_tol_1e-10_RCG.dat']);
+en106_2 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_100_Ls1_1.06_Ls2_1.06_T_100_tol_1e-10_RCG.dat']);
+en106_3 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_48_dt_0.0005_K_1000_Ls1_1.06_Ls2_1.06_T_50_tol_1e-10_RCG.dat']);
+en106_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_Ls1_1.06_Ls2_1.06_T_5_tol_1e-08_RCG.dat']);
+
+en108_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.002_K_1_Ls1_1.08_Ls2_1.08_T_100_tol_1e-08_RCG.dat']);
+en108_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.08_Ls2_1.08_T_100_tol_1e-10_RCG.dat']);
+en108_2 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_100_Ls1_1.08_Ls2_1.08_T_100_tol_1e-10_RCG.dat']);
+en108_3 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_48_dt_0.0005_K_1000_Ls1_1.08_Ls2_1.08_T_50_tol_1e-10_RCG.dat']);
+en108_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_Ls1_1.08_Ls2_1.08_T_5_tol_1e-08_RCG.dat']);
+
+en110_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0015_K_1_Ls1_1.10_Ls2_1.10_T_100_tol_1e-08_RCG.dat']);
+en110_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.10_Ls2_1.10_T_100_tol_1e-10_RCG.dat']);
+en110_2 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_100_Ls1_1.10_Ls2_1.10_T_100_tol_1e-10_RCG.dat']);
+en110_3 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_48_dt_0.0005_K_1000_Ls1_1.10_Ls2_1.10_T_50_tol_1e-10_RCG.dat']);
+en110_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_Ls1_1.10_Ls2_1.10_T_5_tol_1e-08_RCG.dat']);
+
+h = figure;
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[0 0 1200 900])
+sgtitle('Asymptotic Behaviour of $L^2$ Energy-Optimized 2D Kuramoto-Sivashinsky Solutions','Interpreter','latex','FontSize',18)
+
+subplot(1,2,1)
+semilogy(linspace(0,5,size(en102_4,1)),en102_4,'r-','MarkerSize',5)
+hold on
+semilogy(linspace(0,5,size(en104_4,1)),en104_4,'b-','MarkerSize',5)
+semilogy(linspace(0,5,size(en106_4,1)),en106_4,'g-','MarkerSize',5)
+semilogy(linspace(0,5,size(en108_4,1)),en108_4,'k-','MarkerSize',5)
+semilogy(linspace(0,5,size(en110_4,1)),en110_4,'m-','MarkerSize',5)
+
+semilogy(linspace(0,50,size(en102_3,1)),en102_3,'r-','MarkerSize',5)
+hold on
+semilogy(linspace(0,50,size(en104_3,1)),en104_3,'b-','MarkerSize',5)
+semilogy(linspace(0,50,size(en106_3,1)),en106_3,'g-','MarkerSize',5)
+semilogy(linspace(0,50,size(en108_3,1)),en108_3,'k-','MarkerSize',5)
+semilogy(linspace(0,50,size(en110_3,1)),en110_3,'m-','MarkerSize',5)
+
+semilogy(linspace(0,100,size(en102_2,1)),en102_2,'r-','MarkerSize',5)
+hold on
+semilogy(linspace(0,100,size(en104_2,1)),en104_2,'b-','MarkerSize',5)
+semilogy(linspace(0,100,size(en106_2,1)),en106_2,'g-','MarkerSize',5)
+semilogy(linspace(0,100,size(en108_2,1)),en108_2,'k-','MarkerSize',5)
+semilogy(linspace(0,100,size(en110_2,1)),en110_2,'m-','MarkerSize',5)
+
+semilogy(linspace(0,100,size(en102_1,1)),en102_1,'r-','MarkerSize',5)
+hold on
+semilogy(linspace(0,100,size(en104_1,1)),en104_1,'b-','MarkerSize',5)
+semilogy(linspace(0,100,size(en106_1,1)),en106_1,'g-','MarkerSize',5)
+semilogy(linspace(0,100,size(en108_1,1)),en108_1,'k-','MarkerSize',5)
+semilogy(linspace(0,100,size(en110_1,1)),en110_1,'m-','MarkerSize',5)
+
+semilogy(linspace(0,100,size(en102_0,1)),en102_0,'r-','MarkerSize',5)
+hold on
+semilogy(linspace(0,100,size(en104_0,1)),en104_0,'b-','MarkerSize',5)
+semilogy(linspace(0,100,size(en106_0,1)),en106_0,'g-','MarkerSize',5)
+semilogy(linspace(0,100,size(en108_0,1)),en108_0,'k-','MarkerSize',5)
+semilogy(linspace(0,100,size(en110_0,1)),en110_0,'m-','MarkerSize',5)
+
+xlabel('Time Window $T$','Interpreter','latex','FontSize',16); 
+ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex','FontSize',16);
+
+%parfiglistInterval = '$\varphi^{(0)}=\varphi_{s1}, K = \left[10^{0}, 10^{4}\right], \ell = [1.02, 1.10]$';
+%subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legendlist(1) = {'$\| \phi(t;\max_T \tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(2) = {'$\| \phi(t;\max_T \tilde{\varphi}_{K,2\pi(1.04),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(3) = {'$\| \phi(t;\max_T \tilde{\varphi}_{K,2\pi(1.06),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(4) = {'$\| \phi(t;\max_T \tilde{\varphi}_{K,2\pi(1.08),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(5) = {'$\| \phi(t;\max_T \tilde{\varphi}_{K,2\pi(1.10),T}) \|^2_{L^2}~~~~~~~~$'};
+legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off','FontSize',16)
+set(gca,'FontSize',16)
+
+subplot(1,2,2)
+loglog(linspace(0,5,size(en102_4,1)),en102_4,'r-','MarkerSize',5)
+hold on
+loglog(linspace(0,5,size(en104_4,1)),en104_4,'b-','MarkerSize',5)
+loglog(linspace(0,5,size(en106_4,1)),en106_4,'g-','MarkerSize',5)
+loglog(linspace(0,5,size(en108_4,1)),en108_4,'k-','MarkerSize',5)
+loglog(linspace(0,5,size(en110_4,1)),en110_4,'m-','MarkerSize',5)
+
+loglog(linspace(0,50,size(en102_3,1)),en102_3,'r-','MarkerSize',5)
+hold on
+loglog(linspace(0,50,size(en104_3,1)),en104_3,'b-','MarkerSize',5)
+loglog(linspace(0,50,size(en106_3,1)),en106_3,'g-','MarkerSize',5)
+loglog(linspace(0,50,size(en108_3,1)),en108_3,'k-','MarkerSize',5)
+loglog(linspace(0,50,size(en110_3,1)),en110_3,'m-','MarkerSize',5)
+
+loglog(linspace(0,100,size(en102_2,1)),en102_2,'r-','MarkerSize',5)
+hold on
+loglog(linspace(0,100,size(en104_2,1)),en104_2,'b-','MarkerSize',5)
+loglog(linspace(0,100,size(en106_2,1)),en106_2,'g-','MarkerSize',5)
+loglog(linspace(0,100,size(en108_2,1)),en108_2,'k-','MarkerSize',5)
+loglog(linspace(0,100,size(en110_2,1)),en110_2,'m-','MarkerSize',5)
+
+loglog(linspace(0,100,size(en102_1,1)),en102_1,'r-','MarkerSize',5)
+hold on
+loglog(linspace(0,100,size(en104_1,1)),en104_1,'b-','MarkerSize',5)
+loglog(linspace(0,100,size(en106_1,1)),en106_1,'g-','MarkerSize',5)
+loglog(linspace(0,100,size(en108_1,1)),en108_1,'k-','MarkerSize',5)
+loglog(linspace(0,100,size(en110_1,1)),en110_1,'m-','MarkerSize',5)
+
+loglog(linspace(0,100,size(en102_0,1)),en102_0,'r-','MarkerSize',5)
+hold on
+loglog(linspace(0,100,size(en104_0,1)),en104_0,'b-','MarkerSize',5)
+loglog(linspace(0,100,size(en106_0,1)),en106_0,'g-','MarkerSize',5)
+loglog(linspace(0,100,size(en108_0,1)),en108_0,'k-','MarkerSize',5)
+loglog(linspace(0,100,size(en110_0,1)),en110_0,'m-','MarkerSize',5)
+
+xlabel('Time Window $T$','Interpreter','latex','FontSize',16); 
+ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex','FontSize',16);
+set(gca,'FontSize',16)
+
+filename = [pwd '/media/optimization/asymptotic_102_110_5K' ];
+>>>>>>> a5f484f (Initial upload)
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])

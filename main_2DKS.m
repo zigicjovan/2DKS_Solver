@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 %function main_2DKS
 tic
 
@@ -17,6 +18,28 @@ optT = 10^(-1.5);
 initialKmagnitude = 10^(4);                        % initial L^2 energy magnitudes
 L_scale = 1.1:.02:1.1;                        % domain sizes
 timewindow = logspace(2.0,2.0,1);         % time windows
+=======
+function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum)
+
+tic
+
+%%% choose test settings %%%
+run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
+restart = 1;                                    % binary switch to generate new test counters
+optfigs = 1;                                    % generate optimization diagnostic figures 
+continuation = 'IC';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
+optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
+Ntime_save_max = 10000;                         % choose maximum number of samples per data file
+timestep = dtc;                                 % time-step sizes
+gridsize = Nc;                                  % grid sizes
+tol = 1e-1;                                     % set optimization tolerance critera
+optT = 10^(-1.5);                               % T parameter of optimal IC for asymptotic simulations
+
+%%% choose parameter testing ranges %%%
+initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
+L_scale = ellstart:ellgap:ellend;                        % domain sizes
+timewindow = logspace(Tstart,Tend,Tnum);         % time windows
+>>>>>>> a5f484f (Initial upload)
 initialcondition = {'s1'}; % initial conditions
 
 %timewindow = timewindow(2);
@@ -282,9 +305,15 @@ for energy_i = 1 : length(initialKmagnitude)
                     case 'kappa' 
                         %pertIC = IC;
                         if testcounter > 1
+<<<<<<< HEAD
                             [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max);
                         else
                             [kappa,gat_riesz,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,0,0,Ntime_save_max);
+=======
+                            [~,~,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,kappalist,rieszlist,Ntime_save_max);
+                        else
+                            [~,~,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,0,0,Ntime_save_max);
+>>>>>>> a5f484f (Initial upload)
                         end               
                         delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,0);
                         delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,0);
@@ -307,11 +336,18 @@ for energy_i = 1 : length(initialKmagnitude)
                                 end
                         end
                         IC = strjoin(initialcondition(param_i),'');
+<<<<<<< HEAD
                         disp([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
                         disp(['Solved optimization problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                         disp(['Initial objective functional value: ' num2str(J_history(1,1))])
                         disp(['Optimal objective functional value: ' num2str(J_history(end,1))])
                         disp(['Number of iterations: ' num2str(length(J_history))])
+=======
+                        disp(['Solved optimization problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                        fprintf('Iterations \t Initial J \t Optimal J \t Wall Clock \n ')
+                        fprintf('----------------------------------------------------------------------------------------------------------\n')
+                        fprintf('%02d \t %.4f\t %.4f \t ', length(J_history), J_history(1,1), J_history(end,1) )
+>>>>>>> a5f484f (Initial upload)
                         disp(datetime)
                         Jinitdata(testrow,1) = K;
                         Joptdata(testrow,1) = Jinitdata(testrow,1);
@@ -322,6 +358,10 @@ for energy_i = 1 : length(initialKmagnitude)
                         Jinitdata(testrow,param_i+3) = J_history(1,1);
                         Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, 1, tol); % save solution to machine
+<<<<<<< HEAD
+=======
+                        fprintf('Saving diagnostic figures... ')
+>>>>>>> a5f484f (Initial upload)
                         if optfigs == 1
                             maxL2inT = plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
                         else
@@ -339,6 +379,10 @@ for energy_i = 1 : length(initialKmagnitude)
                             N = Nfull;
                             dt = dtfull;
                         end
+<<<<<<< HEAD
+=======
+                        fprintf('Optimization run complete.')
+>>>>>>> a5f484f (Initial upload)
                 end
             end
         end
@@ -373,4 +417,9 @@ switch run
     case 'dt'               % temporal convergence: error analysis and computational time
         [error_2,error_inf,comptime] = plot_measures('temporal', timestep, IC, N, T, K, L_s1, L_s2, L_s2, length(timewindow), 0, 0);
         save_measures('temporal', error_2, error_inf, comptime, IC, N, 0, T, K, L_s1, L_s2);
+<<<<<<< HEAD
+=======
+end
+
+>>>>>>> a5f484f (Initial upload)
 end

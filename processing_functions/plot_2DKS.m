@@ -207,7 +207,11 @@ end
 switch solplot
     case 'gif'
 
+<<<<<<< HEAD
         figure;
+=======
+        figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
         
@@ -268,7 +272,11 @@ switch solplot
             xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+=======
+            daspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+>>>>>>> a5f484f (Initial upload)
             view(3);
             drawnow
 
@@ -279,7 +287,11 @@ switch solplot
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+=======
+            %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+>>>>>>> a5f484f (Initial upload)
             xline(L_s1,'--');
             yline(L_s2,'--');
             view(2);
@@ -316,7 +328,11 @@ switch solplot
             sgtitle({title1, title2},'Interpreter','latex');
 
             if i == 1
+<<<<<<< HEAD
                 gif(filename)
+=======
+                gif(filename,'overwrite',true)
+>>>>>>> a5f484f (Initial upload)
             else
                 gif
             end
@@ -339,7 +355,11 @@ switch solplot
 
         % Wavenumber evolution plot
         timewindow = linspace(0,T,Ntime);
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
         hold on;
         for i = 2:size(v_mean,1)
@@ -373,7 +393,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % Wavenumber IC plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(v_mean(:,1),"o--")
         xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
         ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
@@ -399,7 +423,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % Wavenumber TC plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(v_mean(:,end),"o--")
         xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
         ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
@@ -425,7 +453,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % L2 energy plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
@@ -452,7 +484,11 @@ switch solplot
 
         %{
         % L2 energy time derivative plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         plot(timewindow(2:end),energyL2_t)
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
@@ -474,7 +510,11 @@ switch solplot
                 [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
 
                 % L2 energy plot
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
                 hold on
                 semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
@@ -496,7 +536,11 @@ switch solplot
 
                 % J history plot
                 plotdata = diagnostics(:,1);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 plot(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -514,7 +558,11 @@ switch solplot
 
                 % J change plot
                 plotdata = diagnostics(:,2);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -532,7 +580,11 @@ switch solplot
 
                 % stepsize plot
                 plotdata = diagnostics(:,3);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(abs(plotdata),'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -550,7 +602,11 @@ switch solplot
 
                 % manifold plot
                 plotdata = diagnostics(:,4);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -568,7 +624,11 @@ switch solplot
 
                 % gradient magnitude plot
                 plotdata = diagnostics(:,6);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -586,7 +646,11 @@ switch solplot
 
                 % momentum magnitude plot
                 plotdata = diagnostics(:,7);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -603,7 +667,11 @@ switch solplot
                 exportgraphics(h,[filename '.pdf'])
 
                 % line search plot
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(linesearchJ(:,1))
                 hold on
                 for iter = 2:(length(plotdata)-1)
@@ -625,13 +693,20 @@ switch solplot
                 exportgraphics(h,[filename '.pdf'])
 
                 close all
+<<<<<<< HEAD
 
                 disp(['Optimization loop computation time: ' num2str(diagnostics(length(plotdata),5)) ])
+=======
+>>>>>>> a5f484f (Initial upload)
         end
 
     case 'initial'
 
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
         
@@ -643,7 +718,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+=======
+        %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+>>>>>>> a5f484f (Initial upload)
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
@@ -679,7 +758,11 @@ switch solplot
 
     case 'terminal'
 
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
 
@@ -690,7 +773,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+=======
+        %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+>>>>>>> a5f484f (Initial upload)
         view(3);
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
@@ -730,7 +817,11 @@ switch solplot
         pertIC = utility2;
         kappaerror = abs( 1 - kappa );
 
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         %epscheck = [.001,.0025,.005,.0075,.01,.025,.05,.075,.1,.25,.5,.75,1];
         epscheck = logspace(-15,-1,15);
         loglog(epscheck,kappaerror,'r-*')
@@ -752,7 +843,11 @@ switch solplot
         
         close all
         %% opt gif
+<<<<<<< HEAD
         figure;
+=======
+        figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
         
@@ -813,7 +908,11 @@ switch solplot
             xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+=======
+            %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+>>>>>>> a5f484f (Initial upload)
             view(3);
             drawnow
 
@@ -824,7 +923,11 @@ switch solplot
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+=======
+            %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+>>>>>>> a5f484f (Initial upload)
             xline(L_s1,'--');
             yline(L_s2,'--');
             view(2);
@@ -862,7 +965,11 @@ switch solplot
             sgtitle({title1, title2},'Interpreter','latex');
 
             if i == 1
+<<<<<<< HEAD
                 gif(filename)
+=======
+                gif(filename,'overwrite',true)
+>>>>>>> a5f484f (Initial upload)
             else
                 gif
             end
@@ -873,7 +980,11 @@ switch solplot
         %% diagnostics
         % Wavenumber evolution plot
         timewindow = linspace(0,T,Ntime);
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
         hold on;
         for i = 2:size(v_mean,1)
@@ -907,7 +1018,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % Wavenumber IC plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(v_mean(:,1),"o--")
         xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
         ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
@@ -933,7 +1048,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % Wavenumber TC plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(v_mean(:,end),"o--")
         xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
         ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
@@ -959,7 +1078,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         % L2 energy plot
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
         set(gcf,'Position',[100 100 900 750])
         xlabel('Time $t$','Interpreter','latex'); 
@@ -990,7 +1113,11 @@ switch solplot
                 [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
 
                 % L2 energy plot
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
                 hold on
                 semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
@@ -1012,7 +1139,11 @@ switch solplot
 
                 % J history plot
                 plotdata = diagnostics(:,1);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 plot(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1030,7 +1161,11 @@ switch solplot
 
                 % J change plot
                 plotdata = diagnostics(:,2);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1048,7 +1183,11 @@ switch solplot
 
                 % stepsize plot
                 plotdata = diagnostics(:,3);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(abs(plotdata),'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1066,7 +1205,11 @@ switch solplot
 
                 % manifold plot
                 plotdata = diagnostics(:,4);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1084,7 +1227,11 @@ switch solplot
 
                 % gradient magnitude plot
                 plotdata = diagnostics(:,6);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1102,7 +1249,11 @@ switch solplot
 
                 % momentum magnitude plot
                 plotdata = diagnostics(:,7);
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(plotdata,'r-*')
                 set(gcf,'Position',[100 100 900 750])
                 xlabel('Iteration number $n$','Interpreter','latex'); 
@@ -1119,7 +1270,11 @@ switch solplot
                 exportgraphics(h,[filename '.pdf'])
 
                 % line search plot
+<<<<<<< HEAD
                 h = figure;
+=======
+                h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
                 semilogy(linesearchJ(:,1))
                 hold on
                 for iter = 2:(length(plotdata)-1)
@@ -1141,12 +1296,19 @@ switch solplot
                 exportgraphics(h,[filename '.pdf'])
 
                 close all
+<<<<<<< HEAD
 
                 disp(['Optimization loop computation time: ' num2str(diagnostics(length(plotdata),5)) ])
         end
 
         %% opt initial
         h = figure;
+=======
+        end
+
+        %% opt initial
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
         
@@ -1158,7 +1320,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+=======
+        %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+>>>>>>> a5f484f (Initial upload)
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
@@ -1193,7 +1359,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         %% opt terminal
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
 
@@ -1204,7 +1374,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+=======
+        %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+>>>>>>> a5f484f (Initial upload)
         view(3);
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
@@ -1244,7 +1418,11 @@ switch solplot
         parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 
         %% orig initial
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
 
@@ -1255,7 +1433,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+=======
+        %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
+>>>>>>> a5f484f (Initial upload)
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
         set(gcf,'color','white')
@@ -1281,7 +1463,11 @@ switch solplot
         exportgraphics(h,[filename '.pdf'])
 
         %% orig terminal
+<<<<<<< HEAD
         h = figure;
+=======
+        h = figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
 
@@ -1292,7 +1478,11 @@ switch solplot
         surfc(x1,x2,u_T); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
+<<<<<<< HEAD
         pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+=======
+        %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
+>>>>>>> a5f484f (Initial upload)
         view(3);
         fontsize(12,"points")
         set(gca,'fontsize', 16) 
@@ -1319,7 +1509,11 @@ switch solplot
 
         close all
         %% orig gif
+<<<<<<< HEAD
         figure;
+=======
+        figure('Visible', 'off');
+>>>>>>> a5f484f (Initial upload)
         set(gcf,'Position',[100 100 900 750])
         axis tight manual % this ensures that getframe() returns a consistent size
 
@@ -1379,7 +1573,11 @@ switch solplot
             xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+=======
+            %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
+>>>>>>> a5f484f (Initial upload)
             view(3);
             drawnow
 
@@ -1390,7 +1588,11 @@ switch solplot
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
+<<<<<<< HEAD
             pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+=======
+            %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
+>>>>>>> a5f484f (Initial upload)
             xline(L_s1,'--');
             yline(L_s2,'--');
             view(2);
@@ -1427,7 +1629,11 @@ switch solplot
             sgtitle({title1, title2},'Interpreter','latex');
 
             if i == 1
+<<<<<<< HEAD
                 gif(filename)
+=======
+                gif(filename,'overwrite',true)
+>>>>>>> a5f484f (Initial upload)
             else
                 gif
             end
