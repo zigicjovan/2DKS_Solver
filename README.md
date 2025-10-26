@@ -1,15 +1,15 @@
 # Animations of output with various parameter settings:
-# https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
+https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
 main_2DKS(dt,N,range of K values,range of ell values,range of T values)
 
-# Disable sleep
+# Disable sleep (when running on local machine):
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 
-# Re-enable sleep
+# Re-enable sleep (when running on local machine):
 sudo systemctl unmask sleep.target suspend.target hibernate.target
 
-# To run quick test on linux terminal with disabled respawning:
+# To run quick test on Linux terminal with disabled respawning:
 export MW_NO_SERVICE_HOST=1
 export MW_DISABLE_SERVICE_HOST=1
 nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(.0001,32,0,0,1,1.02,1.02,0.02,0,0,1); exit" > output1.log 2>&1 < /dev/null &
