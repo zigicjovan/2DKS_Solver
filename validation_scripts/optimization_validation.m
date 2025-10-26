@@ -13,11 +13,7 @@ ell = sqrt(2);
 k1 = 1; k2 = 0;
 lam = (k1/ell)^2*(1-(k1/ell)^2) + (k2/ell)^2*(1-(k2/ell)^2) - 2*((k1*k2)/(ell*ell))^2;
 
-<<<<<<< HEAD
-subplot(2,2,1:2)
-=======
 subplot(3,2,1:2)
->>>>>>> a5f484f (Initial upload)
 semilogy(rg141(:,1),'r-x')
 hold on
 semilogy(rcg141(:,1),'b-o')
@@ -27,24 +23,6 @@ hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
 legendlist(3) = {'$Ke^{2\lambda^* T}$'};
-<<<<<<< HEAD
-legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'Box','off','FontSize',14)
-xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
-ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
-
-subplot(2,2,3:4)
-semilogx(rg141(:,1),'r-x')
-hold on
-semilogx(rcg141(:,1),'b-o')
-ylim([rcg141(3,1) rcg141(end,1)+1e-9])
-hold off
-legendlist(1) = {'RG'};
-legendlist(2) = {'RCG'};
-legend(legendlist,'Interpreter','latex','Location','southeast','NumColumns',1,'Box','off','FontSize',14)
-xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
-ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
-
-=======
 legend(legendlist,'Interpreter','latex','Location','southeast','Orientation','horizontal','Box','off','FontSize',14)
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
@@ -72,28 +50,19 @@ xlabel('Iteration $n$','Interpreter','latex','FontSize',14);
 ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
 
 %{
->>>>>>> a5f484f (Initial upload)
 subplot(2,2,4)
 semilogx(rg141(:,1),'r-x')
 hold on
 semilogx(rcg141(:,1),'b-o')
-<<<<<<< HEAD
-ylim([rcg141(6,1)-1e-9 rg141(end,1)+1e-11])
-=======
 %ylim([rcg141(6,1)-1e-9 rg141(end,1)+1e-11])
 %ylim([rcg141(6,1)-1e-9 (K*exp(2*lam*T))+1e-11])
->>>>>>> a5f484f (Initial upload)
 hold off
 legendlist(1) = {'RG'};
 legendlist(2) = {'RCG'};
 legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off','FontSize',14)
 xlabel('Iteration $n$','Interpreter','latex','FontSize',14); 
 %ylabel('$\| \phi(T;{\varphi^{(n)}}) \|^2_{L^2}$','Interpreter','latex','FontSize',14);
-<<<<<<< HEAD
-
-=======
 %}
->>>>>>> a5f484f (Initial upload)
 filename = [pwd '/media/optimization/RCGvRG_lmax'];
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
@@ -232,17 +201,10 @@ ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
 parfiglistInterval = '$N = 48, {\Delta}t = 0.005, K = 1, \ell = [1.02, 1.10]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
-<<<<<<< HEAD
-legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
-legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
-legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
-legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
-=======
 legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{s1}~~~~~~~~$']};
 legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg1}~~~~~~~~$']};
 legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{stg30}~~~~~~~~$']};
 legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(1,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
->>>>>>> a5f484f (Initial upload)
 legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
 hold off
 filename = [pwd '/media/optimization/branches_comp_4ic' ];
@@ -251,33 +213,6 @@ exportgraphics(h,[filename '.pdf'])
 
 
 %% K branches
-<<<<<<< HEAD
-Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_1_1_L_1.02_1.10_T_0.10_150.00.dat']);
-Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.005_K_10_10_L_1.02_1.10_T_0.10_50.00.dat']);
-Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_48_dt_0.005_K_100_100_L_1.02_1.10_T_0.10_15.00.dat']);
-
-h = figure;
-
-loglog(Joptdata_K0(1:24,3),Joptdata_K0(1:24,4),'r-o','MarkerSize',5)
-hold on
-loglog(Joptdata_K1(1:14,3),Joptdata_K1(1:14,4),'b-o','MarkerSize',5)
-loglog(Joptdata_K2(1:16,3),Joptdata_K2(1:16,4),'g-o','MarkerSize',5)
-
-loglog(Joptdata_K0(25:48,3),Joptdata_K0(25:48,4),'r-o','MarkerSize',5)
-loglog(Joptdata_K0(49:72,3),Joptdata_K0(49:72,4),'r-o','MarkerSize',5)
-loglog(Joptdata_K0(73:96,3),Joptdata_K0(73:96,4),'r-o','MarkerSize',5)
-loglog(Joptdata_K0(97:120,3),Joptdata_K0(97:120,4),'r-o','MarkerSize',5)
-
-loglog(Joptdata_K1(15:25,3),Joptdata_K1(15:25,4),'b-o','MarkerSize',5)
-loglog(Joptdata_K1(26:36,3),Joptdata_K1(26:36,4),'b-o','MarkerSize',5)
-loglog(Joptdata_K1(37:47,3),Joptdata_K1(37:47,4),'b-o','MarkerSize',5)
-loglog(Joptdata_K1(48:58,3),Joptdata_K1(48:58,4),'b-o','MarkerSize',5)
-
-loglog(Joptdata_K2(17:32,3),Joptdata_K2(17:32,4),'g-o','MarkerSize',5)
-loglog(Joptdata_K2(33:48,3),Joptdata_K2(33:48,4),'g-o','MarkerSize',5)
-loglog(Joptdata_K2(49:64,3),Joptdata_K2(49:64,4),'g-o','MarkerSize',5)
-loglog(Joptdata_K2(65:80,3),Joptdata_K2(65:80,4),'g-o','MarkerSize',5)
-=======
 Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_24_dt_0.005_K_1_1_L_1.02_1.10_T_1.00000_100.00000.dat']);
 Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_10_10_L_1.02_1.10_T_0.31623_31.62278.dat']);
 Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_100_100_L_1.02_1.10_T_0.10000_10.00000.dat']);
@@ -316,7 +251,6 @@ loglog(Joptdata_K4(12:22,3),Joptdata_K4(12:22,4),'b-o','MarkerSize',5)
 loglog(Joptdata_K4(23:33,3),Joptdata_K4(23:33,4),'g-o','MarkerSize',5)
 loglog(Joptdata_K4(34:44,3),Joptdata_K4(34:44,4),'k-o','MarkerSize',5)
 loglog(Joptdata_K4(45:55,3),Joptdata_K4(45:55,4),'m-o','MarkerSize',5)
->>>>>>> a5f484f (Initial upload)
 
 hold off
 
@@ -327,17 +261,6 @@ set(gcf,'Position',[100 100 1200 900])
 xlabel('Time Window $T$','Interpreter','latex'); 
 ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
-<<<<<<< HEAD
-parfiglistInterval = '$N = 48, {\Delta}t = 0.005, \varphi^{(0)}=\varphi_{s1}, \ell = [1.02, 1.10]$';
-subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
-legendlist(1) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{0}~~~~~~~~$']};
-legendlist(2) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{1}~~~~~~~~$']};
-legendlist(3) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~K = 10^{2}~~~~~~~~$']};
-%legendlist(4) = {['$\| \phi(T;\tilde{\varphi}_{' num2str(K,'%.0f') ',2\pi(\ell),T}) \|^2_{L^2}~,~\varphi^{(0)}=\varphi_{noise}~~~~~~~~$']};
-legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',2,'Box','off')
-
-filename = [pwd '/media/optimization/branches_comp_3K' ];
-=======
 parfiglistInterval = '$\varphi^{(0)}=\varphi_{s1}, K = \left[10^{0}, 10^{4}\right], \ell = [1.02, 1.10]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
 legendlist(1) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
@@ -479,6 +402,5 @@ ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex','FontSize',16);
 set(gca,'FontSize',16)
 
 filename = [pwd '/media/optimization/asymptotic_102_110_5K' ];
->>>>>>> a5f484f (Initial upload)
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
