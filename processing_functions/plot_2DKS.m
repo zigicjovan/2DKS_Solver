@@ -870,7 +870,7 @@ switch solplot
         end
 
         close all
-        %% diagnostics z
+        %% diagnostics
         % Wavenumber evolution plot
         timewindow = linspace(0,T,Ntime);
         h = figure('Visible', 'off');
