@@ -1,7 +1,8 @@
 # Animations of output with various parameter settings:
 https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
-main_2DKS(dt,N,range of K values,range of ell values,range of T values)
+# Main function to run branch of tests for various K, ell, T values (check main_2DKS function for argument functionality):
+main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum)
 
 # Disable sleep (when running on local machine):
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
