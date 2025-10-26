@@ -751,7 +751,7 @@ switch solplot
         close all
         %% opt gif
         figure('Visible', 'off');
-        set(gcf,'Position',[100 100 1800 1500])
+        set(gcf,'Position',[100 100 1350 1125])
         axis tight manual % this ensures that getframe() returns a consistent size
         
 
@@ -808,24 +808,26 @@ switch solplot
             % Draw surface plot
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             surfc(x1pi,x2pi,u_i);
-            xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
+            xlabel('$x_1$','Interpreter','latex',FontSize=18); ylabel('$x_2$','Interpreter','latex',FontSize=18); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
             view(3);
+            set(gca,'fontsize', 14) 
             drawnow
 
             subplot(2,2,2);
             % Draw surface plot
             u_i2x = [ u_i , u_i ; u_i, u_i];
             surfc(x12x,x22x,u_i2x);
-            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex',FontSize=18); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex',FontSize=18); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
             xline(L_s1,'--');
             yline(L_s2,'--');
             view(2);
+            set(gca,'fontsize', 14) 
             drawnow
 
             subplot(2,2,3);
@@ -834,22 +836,22 @@ switch solplot
             semilogy(timewindow,energyL2_og,'r--')
             xline(currentT,'-');
             hold off
-            xlabel('Time $t$','Interpreter','latex');
-            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex');
+            xlabel('Time $t$','Interpreter','latex',FontSize=18);
+            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex',FontSize=18);
             xlim([0 T])
             ylim([0.5*min([energyL2;energyL2_og]) 1.5*max([energyL2;energyL2_og]) ])
-            title("Evolution of optimized $L^2$ energy",'Interpreter','latex')
-            legend('$\tilde\varphi$','Interpreter','latex','Location','southeast')
-            set(gca,'fontsize', 12) 
+            title("Evolution of optimized $L^2$ energy",'Interpreter','latex','FontSize',20)
+            legend('$\tilde\varphi$','Interpreter','latex','Location','southeast','FontSize',18)
+            set(gca,'fontsize', 14) 
         
             subplot(2,2,4);
             semilogy(v_mean(:,i),"o--")
-            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
-            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-            title("Energy spectrum",'Interpreter','latex')
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=18); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex',FontSize=18);
+            title("Energy spectrum",'Interpreter','latex','FontSize',20)
             xlim([1 size(v_mean,1)])
             ylim([ 1e-20 1.5*max(max(v_mean)) ])
-            set(gca,'fontsize', 12) 
+            set(gca,'fontsize', 14) 
         
             title1 = 'Forward-time 2DKS solution';
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
@@ -857,7 +859,7 @@ switch solplot
                 case {'optimized'}
                     title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
-            sgtitle({title1, title2},'Interpreter','latex');
+            sgtitle({title1, title2},'Interpreter','latex',FontSize=20);
 
             if i == 1
                 gif(filename,'overwrite',true)
@@ -1316,7 +1318,7 @@ switch solplot
         close all
         %% orig gif
         figure('Visible', 'off');
-        set(gcf,'Position',[100 100 1800 1500])
+        set(gcf,'Position',[100 100 1350 1125])
         axis tight manual % this ensures that getframe() returns a consistent size
 
         set(gcf,'color','white')
@@ -1372,24 +1374,26 @@ switch solplot
             % Draw surface plot
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             surfc(x1pi,x2pi,u_i);
-            xlabel('$x_1$','Interpreter','latex'); ylabel('$x_2$','Interpreter','latex'); %zlabel('Solution')
+            xlabel('$x_1$','Interpreter','latex',FontSize=18); ylabel('$x_2$','Interpreter','latex',FontSize=18); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
             view(3);
+            set(gca,'fontsize', 14) 
             drawnow
 
             subplot(2,2,2);
             % Draw surface plot
             u_i2x = [ u_i , u_i ; u_i, u_i];
             surfc(x12x,x22x,u_i2x);
-            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); %zlabel('Solution')
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex',FontSize=18); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex',FontSize=18); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
             xline(L_s1,'--');
             yline(L_s2,'--');
             view(2);
+            set(gca,'fontsize', 14) 
             drawnow
 
             subplot(2,2,3);
@@ -1397,22 +1401,22 @@ switch solplot
             hold on
             xline(currentT,'-');
             hold off
-            xlabel('Time $t$','Interpreter','latex');
-            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex');
+            xlabel('Time $t$','Interpreter','latex',FontSize=18);
+            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex',FontSize=18);
             xlim([0 T])
             ylim([0.5*min(energyL2_og) 1.5*max(energyL2_og) ])
-            title("Evolution of $L^2$ energy",'Interpreter','latex')
+            title("Evolution of $L^2$ energy",'Interpreter','latex','FontSize',20)
             %legend('L^{2} energy','Location','southeast')
-            set(gca,'fontsize', 12) 
+            set(gca,'fontsize', 14) 
         
             subplot(2,2,4);
             semilogy(v_mean_og(:,i),"o--")
-            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
-            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-            title("Energy spectrum",'Interpreter','latex')
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=18); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex',FontSize=18);
+            title("Energy spectrum",'Interpreter','latex','FontSize',20)
             xlim([1 size(v_mean_og,1)])
             ylim([ 1e-20 1.5*max(max(v_mean)) ])
-            set(gca,'fontsize', 12) 
+            set(gca,'fontsize', 14) 
         
             title1 = 'Forward-time 2DKS solution';
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
@@ -1420,7 +1424,7 @@ switch solplot
                 case {'optimized'}
                     title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
             end
-            sgtitle({title1, title2},'Interpreter','latex');
+            sgtitle({title1, title2},'Interpreter','latex',fontsize=20);
 
             if i == 1
                 gif(filename,'overwrite',true)
