@@ -1,5 +1,5 @@
 function checkCFL(dx,dt,u)
-    C = 0.2;
+    C = 0.4;
     u_Linf = max(max(abs(u)));
     cflstep = C*dx/(max(1e-16,u_Linf));
     if dt > cflstep
