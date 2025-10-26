@@ -11,7 +11,7 @@ optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
 timestep = dtc;                                 % time-step sizes
 gridsize = Nc;                                  % grid sizes
-tol = 1e-1;                                     % set optimization tolerance critera
+tol = 1e-8;                                     % set optimization tolerance critera
 optT = 10^(-1.5);                               % T parameter of optimal IC for asymptotic simulations
 
 %%% choose parameter testing ranges %%%
