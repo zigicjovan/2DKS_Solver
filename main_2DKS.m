@@ -1,18 +1,17 @@
-function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum)
-
+function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
 tic
 
 %%% choose test settings %%%
-run = 'optimize';                               % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
 restart = 1;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
-continuation = 'IC';                            % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
-optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 Ntime_save_max = 10000;                         % choose maximum number of samples per data file
+run = runc;                               	% switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
+continuation = continuationc;                   % 'IC' for optimal IC from file, 'forward' for optimized forward solution, 'off' to generate new data
+optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 timestep = dtc;                                 % time-step sizes
 gridsize = Nc;                                  % grid sizes
-tol = 1e-8;                                     % set optimization tolerance critera
-optT = 10^(-1.5);                               % T parameter of optimal IC for asymptotic simulations
+tol = tolc                                      % set optimization tolerance critera
+optT = 10^(optTc);                              % T parameter of optimal IC for asymptotic simulations
 
 %%% choose parameter testing ranges %%%
 initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
@@ -113,7 +112,7 @@ for energy_i = 1 : length(initialKmagnitude)
                 switch run 
                     case {'L','N','dt','IC','kappa','plotOptIC'} 
                         switch continuation
-                            case 'optIC' % choose which parameters define optimized initial data
+                            case 'IC' % choose which parameters define optimized initial data
                                 initIC = IC;
                                 optdt = dt;
                                 %optT = optT;
@@ -280,6 +279,10 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
                         %}
                         close all
+                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                     case 'kappa' 
                         %pertIC = IC;
                         if testcounter > 1
@@ -340,7 +343,11 @@ for energy_i = 1 : length(initialKmagnitude)
                             N = Nfull;
                             dt = dtfull;
                         end
-                        fprintf('Optimization run complete.')
+                        fprintf('Optimization run complete.\n')
+                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                 end
             end
         end

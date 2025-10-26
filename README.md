@@ -2,7 +2,7 @@
 https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
 # Main function to run branch of tests for various K, ell, T values:
-main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum)
+main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
 
 # To run quick test on Linux terminal with disabled respawning (assuming 'output' folder exists):
 nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(.0001,32,0,0,1,1.02,1.02,0.02,0,0,1); exit" > ./output/output1.log 2>&1 < /dev/null &
