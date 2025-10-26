@@ -805,7 +805,7 @@ switch solplot
             end
 
             subplot(2,2,1);
-            % Draw surface plot
+            % Draw surface plot 
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             surfc(x1pi,x2pi,u_i);
             xlabel('$x_1$','Interpreter','latex',FontSize=20); ylabel('$x_2$','Interpreter','latex',FontSize=20); %zlabel('Solution')
@@ -870,7 +870,7 @@ switch solplot
         end
 
         close all
-        %% diagnostics
+        %% diagnostics z
         % Wavenumber evolution plot
         timewindow = linspace(0,T,Ntime);
         h = figure('Visible', 'off');
