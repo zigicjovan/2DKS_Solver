@@ -15,6 +15,13 @@ export MW_NO_SERVICE_HOST=1
 export MW_DISABLE_SERVICE_HOST=1
 nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(.0001,32,0,0,1,1.02,1.02,0.02,0,0,1); exit" > output1.log 2>&1 < /dev/null &
 
+# To run on HPC cluster:
+sbatch run_2DKS.sh
+
+# To get PID from queue and check status, or to cancel:
+sq
+scancel PID
+
 # Monitor output file in terminal:
 tail -f output1.log
 
@@ -36,3 +43,4 @@ kill -9 parentPID
 
 # Push update to github:
 ./gitpush.sh . "" "COMMIT MESSAGE"
+
