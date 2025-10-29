@@ -216,8 +216,8 @@ switch solplot
         set(gca,'color','white')
 
         Ntime_remaining = Ntime;
-        if utility2(end) > 0
-            frames = utility2(end);
+        if utility2(3) > 0
+            frames = utility2(3);
         else
             frames = Ntime;
         end
@@ -759,8 +759,8 @@ switch solplot
         set(gca,'color','white')
 
         Ntime_remaining = Ntime;
-        if utility2(end) > 0
-            frames = utility2(end);
+        if utility2(3) > 0
+            frames = utility2(3);
         else
             frames = Ntime;
         end
@@ -870,277 +870,279 @@ switch solplot
         end
 
         close all
-        %% diagnostics
-        % Wavenumber evolution plot
-        timewindow = linspace(0,T,Ntime);
-        h = figure('Visible', 'off');
-        semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
-        hold on;
-        for i = 2:size(v_mean,1)
-            semilogy(timewindow,v_mean(i,:),'LineWidth',0.1,'Marker','.')
-        end
-        set(gcf,'Position',[100 100 900 750])
-        xlabel('Time $t$','Interpreter','latex'); 
-        xlim([0 T])
-        ylim([1e-20 max(v_mean(1,:))+1e5 ])
-        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title('Evolution of Fourier spectrum','Interpreter','latex')
-        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
-        switch IC 
-            case {'optimized'}
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-        end
-        %legend("Fourier band", 'Location','southeast','NumColumns',9,'Interpreter','latex')
-        %frame = getframe(h);
-        %im = frame2im(frame);
-        filename = [pwd '/media/energy/wavenumberevol_' parameterlist ];
-        switch IC
-            case {'optimized'}
-                filename = [pwd '/media/energy/wavenumberevol_' optparameters ];
-        end
-        %imwrite(im,filename,'png')
-        saveas(h,[filename '.fig'])
-        exportgraphics(h,[filename '.pdf'])
-
-        % Wavenumber IC plot
-        h = figure('Visible', 'off');
-        semilogy(v_mean(:,1),"o--")
-        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
-        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-        xlim([1 size(v_mean,1)])
-        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
-        set(gcf,'Position',[100 100 900 750])
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title('Initial Fourier spectrum','Interpreter','latex')
-        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
-        switch IC 
-            case {'optimized'}
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-        end
-        filename = [pwd '/media/energy/spectrumIC_' parameterlist ];
-        switch IC
-            case {'optimized'}
-                filename = [pwd '/media/energy/spectrumIC_' optparameters ];
-        end
-        saveas(h,[filename '.fig'])
-        exportgraphics(h,[filename '.pdf'])
-
-        % Wavenumber TC plot
-        h = figure('Visible', 'off');
-        semilogy(v_mean(:,end),"o--")
-        xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
-        ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
-        xlim([1 size(v_mean,1)])
-        ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
-        set(gcf,'Position',[100 100 900 750])
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title('Terminal Fourier spectrum','Interpreter','latex')
-        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
-        switch IC 
-            case {'optimized'}
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-        end
-        filename = [pwd '/media/energy/spectrumTC_' parameterlist ];
-        switch IC
-            case {'optimized'}
-                filename = [pwd '/media/energy/spectrumTC_' optparameters ];
-        end
-        saveas(h,[filename '.fig'])
-        exportgraphics(h,[filename '.pdf'])
-
-        % L2 energy plot
-        h = figure('Visible', 'off');
-        semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
-        set(gcf,'Position',[100 100 900 750])
-        xlabel('Time $t$','Interpreter','latex'); 
-        xlim([0 T])
-        ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
-        fontsize(12,"points")
-        set(gca,'fontsize', 16) 
-        set(gcf,'color','white')
-        set(gca,'color','white')    
-        title('Evolution of $L^2$ energy','Interpreter','latex')
-        subtitle(parfiglist,'Interpreter','latex','FontSize',14)
-        switch IC 
-            case {'optimized'}
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-        end
-        filename = [pwd '/media/energy/energyL2_' parameterlist ];
-        switch IC
-            case {'optimized'}
-                filename = [pwd '/media/energy/energyL2_' optparameters ];
-            otherwise
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-        end
-
-        switch IC 
-            case {'optimized'}
-                
-                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
-
-                % L2 energy plot
-                h = figure('Visible', 'off');
-                semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
-                hold on
-                semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
-                hold off
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Time $t$','Interpreter','latex'); 
-                xlim([0 T])
-                ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of optimized $L^2$ energy','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
-                filename = [pwd '/media/optimization/energyL2comp_' optparameters];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % J history plot
-                plotdata = diagnostics(:,1);
-                h = figure('Visible', 'off');
-                plot(plotdata,'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jhistory_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % J change plot
-                plotdata = diagnostics(:,2);
-                h = figure('Visible', 'off');
-                semilogy(plotdata,'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\frac{\mathcal{J}_T(\varphi^{(n+1)}) - \mathcal{J}_T(\varphi^{(n)})}{\mathcal{J}_T(\varphi^{(n)})}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jchange_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % stepsize plot
-                plotdata = diagnostics(:,3);
-                h = figure('Visible', 'off');
-                semilogy(abs(plotdata),'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\tau^{(n)}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Optimal step-size $\tau^{(n)}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/stepsize_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % manifold plot
-                plotdata = diagnostics(:,4);
-                h = figure('Visible', 'off');
-                semilogy(plotdata,'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of initial condition magnitude $K= \| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/initialK_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % gradient magnitude plot
-                plotdata = diagnostics(:,6);
-                h = figure('Visible', 'off');
-                semilogy(plotdata,'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of objective gradient magnitude $\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/Jgradient_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % momentum magnitude plot
-                plotdata = diagnostics(:,7);
-                h = figure('Visible', 'off');
-                semilogy(plotdata,'r-*')
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of momentum magnitude $\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/momentumsize_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                % line search plot
-                h = figure('Visible', 'off');
-                semilogy(linesearchJ(:,1))
-                hold on
-                for iter = 2:(length(plotdata)-1)
-                    semilogy(linesearchJ(:,iter))
-                end
-                hold off
-                set(gcf,'Position',[100 100 900 750])
-                xlabel('Iteration number $n$','Interpreter','latex'); 
-                xlim([1 length(plotdata)])
-                ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
-                fontsize(12,"points")
-                set(gca,'fontsize', 16) 
-                set(gcf,'color','white')
-                set(gca,'color','white')    
-                title('Evolution of Brent''s method objective functional evaluation','Interpreter','latex')
-                subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
-                filename = [pwd '/media/optimization/linesearch_' optparameters ];
-                saveas(h,[filename '.fig'])
-                exportgraphics(h,[filename '.pdf'])
-
-                close all
+        if utility2(4) > 0
+            %% diagnostics
+            % Wavenumber evolution plot
+            timewindow = linspace(0,T,Ntime);
+            h = figure('Visible', 'off');
+            semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
+            hold on;
+            for i = 2:size(v_mean,1)
+                semilogy(timewindow,v_mean(i,:),'LineWidth',0.1,'Marker','.')
+            end
+            set(gcf,'Position',[100 100 900 750])
+            xlabel('Time $t$','Interpreter','latex'); 
+            xlim([0 T])
+            ylim([1e-20 max(v_mean(1,:))+1e5 ])
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            fontsize(12,"points")
+            set(gca,'fontsize', 16) 
+            set(gcf,'color','white')
+            set(gca,'color','white')    
+            title('Evolution of Fourier spectrum','Interpreter','latex')
+            subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+            switch IC 
+                case {'optimized'}
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+            end
+            %legend("Fourier band", 'Location','southeast','NumColumns',9,'Interpreter','latex')
+            %frame = getframe(h);
+            %im = frame2im(frame);
+            filename = [pwd '/media/energy/wavenumberevol_' parameterlist ];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/energy/wavenumberevol_' optparameters ];
+            end
+            %imwrite(im,filename,'png')
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
+    
+            % Wavenumber IC plot
+            h = figure('Visible', 'off');
+            semilogy(v_mean(:,1),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            xlim([1 size(v_mean,1)])
+            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            set(gcf,'Position',[100 100 900 750])
+            fontsize(12,"points")
+            set(gca,'fontsize', 16) 
+            set(gcf,'color','white')
+            set(gca,'color','white')    
+            title('Initial Fourier spectrum','Interpreter','latex')
+            subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+            switch IC 
+                case {'optimized'}
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+            end
+            filename = [pwd '/media/energy/spectrumIC_' parameterlist ];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/energy/spectrumIC_' optparameters ];
+            end
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
+    
+            % Wavenumber TC plot
+            h = figure('Visible', 'off');
+            semilogy(v_mean(:,end),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
+            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
+            xlim([1 size(v_mean,1)])
+            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            set(gcf,'Position',[100 100 900 750])
+            fontsize(12,"points")
+            set(gca,'fontsize', 16) 
+            set(gcf,'color','white')
+            set(gca,'color','white')    
+            title('Terminal Fourier spectrum','Interpreter','latex')
+            subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+            switch IC 
+                case {'optimized'}
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+            end
+            filename = [pwd '/media/energy/spectrumTC_' parameterlist ];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/energy/spectrumTC_' optparameters ];
+            end
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
+    
+            % L2 energy plot
+            h = figure('Visible', 'off');
+            semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
+            set(gcf,'Position',[100 100 900 750])
+            xlabel('Time $t$','Interpreter','latex'); 
+            xlim([0 T])
+            ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
+            fontsize(12,"points")
+            set(gca,'fontsize', 16) 
+            set(gcf,'color','white')
+            set(gca,'color','white')    
+            title('Evolution of $L^2$ energy','Interpreter','latex')
+            subtitle(parfiglist,'Interpreter','latex','FontSize',14)
+            switch IC 
+                case {'optimized'}
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+            end
+            filename = [pwd '/media/energy/energyL2_' parameterlist ];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/energy/energyL2_' optparameters ];
+                otherwise
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+            end
+    
+            switch IC 
+                case {'optimized'}
+                    
+                    [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
+    
+                    % L2 energy plot
+                    h = figure('Visible', 'off');
+                    semilogy(timewindow,energyL2_og,'LineWidth',0.5,'Marker','.')
+                    hold on
+                    semilogy(timewindow,energyL2,'LineWidth',0.5,'Marker','.')
+                    hold off
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Time $t$','Interpreter','latex'); 
+                    xlim([0 T])
+                    ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of optimized $L^2$ energy','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    legend(['$\phi(t,\varphi_{' originalIC '})$'],'$\phi(t,\tilde{\varphi})$','Interpreter','latex','Location','northwest')
+                    filename = [pwd '/media/optimization/energyL2comp_' optparameters];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % J history plot
+                    plotdata = diagnostics(:,1);
+                    h = figure('Visible', 'off');
+                    plot(plotdata,'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/Jhistory_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % J change plot
+                    plotdata = diagnostics(:,2);
+                    h = figure('Visible', 'off');
+                    semilogy(plotdata,'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\frac{\mathcal{J}_T(\varphi^{(n+1)}) - \mathcal{J}_T(\varphi^{(n)})}{\mathcal{J}_T(\varphi^{(n)})}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/Jchange_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % stepsize plot
+                    plotdata = diagnostics(:,3);
+                    h = figure('Visible', 'off');
+                    semilogy(abs(plotdata),'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\tau^{(n)}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Optimal step-size $\tau^{(n)}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/stepsize_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % manifold plot
+                    plotdata = diagnostics(:,4);
+                    h = figure('Visible', 'off');
+                    semilogy(plotdata,'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of initial condition magnitude $K= \| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/initialK_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % gradient magnitude plot
+                    plotdata = diagnostics(:,6);
+                    h = figure('Visible', 'off');
+                    semilogy(plotdata,'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of objective gradient magnitude $\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/Jgradient_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % momentum magnitude plot
+                    plotdata = diagnostics(:,7);
+                    h = figure('Visible', 'off');
+                    semilogy(plotdata,'r-*')
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of momentum magnitude $\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/momentumsize_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    % line search plot
+                    h = figure('Visible', 'off');
+                    semilogy(linesearchJ(:,1))
+                    hold on
+                    for iter = 2:(length(plotdata)-1)
+                        semilogy(linesearchJ(:,iter))
+                    end
+                    hold off
+                    set(gcf,'Position',[100 100 900 750])
+                    xlabel('Iteration number $n$','Interpreter','latex'); 
+                    xlim([1 length(plotdata)])
+                    ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
+                    fontsize(12,"points")
+                    set(gca,'fontsize', 16) 
+                    set(gcf,'color','white')
+                    set(gca,'color','white')    
+                    title('Evolution of Brent''s method objective functional evaluation','Interpreter','latex')
+                    subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
+                    filename = [pwd '/media/optimization/linesearch_' optparameters ];
+                    saveas(h,[filename '.fig'])
+                    exportgraphics(h,[filename '.pdf'])
+    
+                    close all
+            end
         end
 
         %% opt initial
@@ -1325,8 +1327,8 @@ switch solplot
         set(gca,'color','white')
 
         Ntime_remaining = Ntime;
-        if utility2(end) > 0
-            frames = utility2(end);
+        if utility2(3) > 0
+            frames = utility2(3);
         else
             frames = Ntime;
         end

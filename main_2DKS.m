@@ -99,7 +99,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         N = gridsize(param_i);                        % number of grid points 
                     case 'dt'
                         dt = timestep(param_i);                       % length of time-step
-                    case {'IC', 'energygrowth','optimize'}
+                    case {'IC', 'energygrowth','optimize','plotOptIC'}
                         IC = strjoin(initialcondition(param_i),'');   % choice of initial condition
                     case {'kappa'}
                         save_each = 1;
@@ -125,6 +125,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                 tic
                                 disp(['Using chosen optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                                 solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                originalIC = IC;
                                 IC = 'optimized';
                                 [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
                                 time = toc;
@@ -267,8 +268,9 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
                         disp([num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's elapsed'])
                         close all                                                                                                         % close any open figures
-                    case {'plotOptIC'}                
-                        plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]); 
+                    case {'plotOptIC'}
+                        newopt = 0;
+                        plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,originalIC,[tol,RCGon,100,newopt]); 
                         %{
                         plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol); 
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,100);
@@ -279,8 +281,8 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
                         %}
                         close all
-                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                     case 'kappa' 
@@ -326,10 +328,11 @@ for energy_i = 1 : length(initialKmagnitude)
                         Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, 1, tol); % save solution to machine
                         fprintf('Saving diagnostic figures... ')
+                        newopt = 1;
                         if optfigs == 1
-                            maxL2inT = plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                       
+                            maxL2inT = plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);                       
                         else
-                            maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100]);                     
+                            maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);                     
                         end
                         Joptdata(testrow,(param_i-1)*3+5:(param_i-1)*3+6) = maxL2inT;  
                         close all
@@ -343,11 +346,11 @@ for energy_i = 1 : length(initialKmagnitude)
                             N = Nfull;
                             dt = dtfull;
                         end
-                        fprintf('Optimization run complete.\n')
-                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        fprintf('Optimization run complete.\n')
                 end
             end
         end
