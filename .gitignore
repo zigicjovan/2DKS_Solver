@@ -1,0 +1,7 @@
+._*
+*.mat
+archive/
+output/
+media/
+data/
+tempdata.mat

@@ -1,8 +1,9 @@
 #!/bin/bash
+set -e  # exit immediately on any error
 
 # Universal GitHub upload script
 # Works for both new and existing repos.
-# Uploads only: data/, media/, and main_2DKS.m
+# Uploads only: processing_functions/, solver_functions/, validation_scripts/, and main_2DKS.m
 # Usage:
 #   ./gitpush.sh <project_path> <repo_url> "<commit_message>"
 # Example:
@@ -31,21 +32,27 @@ if [ ! -d ".git" ]; then
   git remote add origin "$REPO_URL"
 fi
 
-# Pull latest to prevent conflicts (ignore if remote not yet available)
-git pull --rebase origin main 2>/dev/null
+# Pull latest to prevent divergence (ignore errors if repo is new)
+if ! git pull --rebase origin main 2>/dev/null; then
+  echo "⚠️  Could not pull (repository might be new or remote missing). Continuing..."
+fi
 
-# Stage only specific directories and file
-git add processing_functions/ solver_functions/ validation_scripts/ main_2DKS.m README.md 2>/dev/null
+# Stage specific files and folders
+git add processing_functions/ solver_functions/ validation_scripts/ main_2DKS.m 2>/dev/null || true
 
 # Exit early if nothing changed
 if git diff --cached --quiet; then
-  echo "ℹ️  No changes detected in processing_functions/ solver_functions/ validation_scripts/ main_2DKS.m. README.md"
+  echo "ℹ️  No changes detected in processing_functions/, solver_functions/, validation_scripts/, or main_2DKS.m."
   exit 0
 fi
 
 # Commit and push
 git commit -m "$COMMIT_MSG"
-git push -u origin main
 
-echo "✅ Successfully pushed selected files to GitHub!"
+if git push -u origin main; then
+  echo "✅ Successfully pushed selected files to GitHub!"
+else
+  echo "❌ Push failed. Try: git pull origin main --rebase && git push"
+  exit 1
+fi
 
