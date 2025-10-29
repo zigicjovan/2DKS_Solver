@@ -10,7 +10,7 @@ continuation = continuationc;                   % 'IC' for optimal IC from file,
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
 timestep = dtc;                                 % time-step sizes
 gridsize = Nc;                                  % grid sizes
-tol = tolc                                      % set optimization tolerance critera
+tol = tolc;                                     % set optimization tolerance critera
 optT = 10^(optTc);                              % T parameter of optimal IC for asymptotic simulations
 
 %%% choose parameter testing ranges %%%
