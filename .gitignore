@@ -8,3 +8,5 @@ tempdata.mat
 testscripts.txt
 README.md
 run_2DKS.sh
+param_driver.py
+run_array.sh
