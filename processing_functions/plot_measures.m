@@ -21,7 +21,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 IC = strjoin(control(IC_i));
                 Tcounter = 0;
 
-                h = figure;
+                h = figure('Visible', 'off');
                 parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', K = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')
@@ -64,7 +64,7 @@ function [measure1,measure2,measure3] = plot_measures(testcase, timestep, contro
                 IC = strjoin(control(IC_i));
                 Tcounter = 0;
 
-                h = figure;
+                h = figure('Visible', 'off');
                 parfiglistInterval = ['$\varphi = \varphi_{' IC '}, N = ' num2str(gridsize) ', {\Delta}t = ' num2str(timestep) ', K = [' num2str(Klist(1),'%.2f') ', ' num2str(Klist(end),'%.2f') '], \ell = [' num2str(Llist(1),'%.2f') ', ' num2str(Llist(end),'%.2f') '], T = [' num2str(Tlist(1),'%.2f') ', ' num2str(Tlist(end),'%.2f') ']$'];
                 set(gca,'fontsize', 16) 
                 set(gcf,'color','white')

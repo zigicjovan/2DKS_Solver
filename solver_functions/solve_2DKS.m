@@ -213,7 +213,7 @@ u_n: solution vector for each time step in Physical space
                 if (Ntime_save > Ntime_save_max) && (mod(i,Ntime_save_max) == 0) && (i ~= Ntime)
                     currentT = i/Ntime*T;
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility2); % save solution to machine
                     if (Ntime - i) < Ntime_save_max
                         fullsave = 0;
                         Ntime_save_remaining = Ntime - i;
@@ -229,15 +229,15 @@ u_n: solution vector for each time step in Physical space
                 elseif (Ntime_save > Ntime_save_max) && (i == Ntime)
                     time = toc;
                     if fullsave == 1
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max, utility2); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T], utility2); % save solution to machine
                     else 
-                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save_remaining, utility2); % save solution to machine
+                        save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, [Ntime_save_remaining T], utility2); % save solution to machine
                     end
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                 elseif i == Ntime % only reached for single-file evolution data
                     time = toc;
-                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, Ntime_save, utility2); % save solution to machine
+                    save_2DKSsolution('forward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, [Ntime_save T], utility2); % save solution to machine
                     v_out = v_n(:,end);
                     u_out = u_n(:,end);
                 end
@@ -300,7 +300,7 @@ u_n: solution vector for each time step in Physical space
             if Ntime_residual == 0
                 Ntime_residual = Ntime_save_max;
             end
-            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_residual, utility2);
+            [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_residual T], utility2);
             count = 0;
             for i = Ntime-1:-1:1
                 v_fwdstep = v_fwd(:,Ntime_residual-count);
@@ -343,14 +343,14 @@ u_n: solution vector for each time step in Physical space
                     time = toc;
                     v_n(:,1) = v_step;
                     u_n(:,1) = real(ifft2(v_n(:,1)));
-                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, 2, utility2); % save solution to machine
+                    save_2DKSsolution('backward', u_n, v_n, time, IC, dt, T, N, K, L_s1, L_s2, [2 T], utility2); % save solution to machine
                     v_out = v_12(:);
                     u_out = u_1(:);
                 elseif mod(count,Ntime_residual) == (Ntime_residual - 1)
                     Ntime_residual = Ntime_save_max;
                     count = 0;
                     currentT = i/Ntime*T;
-                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_residual, utility2);
+                    [~, v_fwd] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_residual T], utility2);
                 else
                     count = count + 1;                    
                 end

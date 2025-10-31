@@ -82,14 +82,14 @@ switch IC
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
-                [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime, 0);
+                [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime T], 0);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
-                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, 0);
+                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], 0);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
-                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, 0);
+                    [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], 0);
                 end
             end
             
@@ -139,14 +139,14 @@ switch solplot
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
                 end
             end
             
@@ -240,16 +240,16 @@ switch solplot
                 i = Ntime;
             end
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
                     currentT = frameovermax*Ntime_save_max/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
                 end
             end
 
@@ -471,7 +471,7 @@ switch solplot
         switch IC 
             case {'optimized'}
                 
-                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
+                [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, [tol T], originalIC);
 
                 % L2 energy plot
                 h = figure('Visible', 'off');
@@ -783,16 +783,16 @@ switch solplot
                 i = Ntime;
             end
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
                     currentT = frameovermax*Ntime_save_max/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
                 end
             end
 
@@ -988,7 +988,7 @@ switch solplot
             switch IC 
                 case {'optimized'}
                     
-                    [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, tol, originalIC);
+                    [diagnostics, linesearchJ] = load_2DKSsolution('optimization', 'optimized', dt, T, N, K, L_s1, L_s2, [tol T], originalIC);
     
                     % L2 energy plot
                     h = figure('Visible', 'off');
@@ -1351,16 +1351,16 @@ switch solplot
                 i = Ntime;
             end
             if Ntime < Ntime_save_max && i == 1
-                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime, utility1);
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
             else
                 if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
                     currentT = frameovermax*Ntime_save_max/Ntime*T;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, Ntime_save_max, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
                     frameovermax = frameovermax + 1;
-                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_remaining, utility1);
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
                 end
             end
 

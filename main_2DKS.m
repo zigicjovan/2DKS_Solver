@@ -123,7 +123,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                 optL_s1 = L_s1;
                                 optL_s2 = L_s2;
                                 opttol = tol; 
-                                [ u_IC , ~ ] = load_2DKSsolution('optimal', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, opttol, 0);
+                                [ u_IC , ~ ] = load_2DKSsolution('optimal', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, [opttol optT], 0);
                                 tic
                                 disp(['Using chosen optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                                 solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
@@ -144,7 +144,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                         timeTC = time1;
                                         time2 = T;
                                     end
-                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, timeIC, IC);
+                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
                                     u_IC = u(:,1);
                                     tic
                                     disp(['Continuing from loaded optimized solution for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
@@ -167,7 +167,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         switch continuation
                             case 'IC'
                                 try
-                                    [ u_IC , ~ ] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, tol, 0);
+                                    [ u_IC , ~ ] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, [tol T], 0);
                                     tic
                                     disp(['Continuing from loaded optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                                     solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
@@ -187,8 +187,8 @@ for energy_i = 1 : length(initialKmagnitude)
                                             timeTC = time1;
                                             time2 = T;
                                         end
-                                        [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, timeIC, IC);
-                                        [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, timeTC, IC);
+                                        [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
+                                        [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [timeTC T], IC);
                                         u_IC = u(:,1);
                                         v_TC = v(:,end);
                                         u_TC = real(ifft2(v_TC));
@@ -215,8 +215,8 @@ for energy_i = 1 : length(initialKmagnitude)
                                         timeTC = time1;
                                         time2 = T;
                                     end
-                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, timeIC, IC);
-                                    [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, timeTC, IC);
+                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
+                                    [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [timeTC T], IC);
                                     u_IC = u(:,1);
                                     v_TC = v(:,end);
                                     u_TC = real(ifft2(v_TC));
@@ -252,7 +252,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         %[u_n, ~] = load_2DKSsolution('time_evolution', IC, dt, T, N, K, L_s1, L_s2, 0);                   % load solution
                         %[u_energyL2, ~] = load_2DKSsolution('energyL2', IC, dt, T, N, K, L_s1, L_s2, 0, 0);                       % load solution
                         %l2norms_guess(1:size(u_energyL2,1),testcounter) = u_energyL2;
-                        [u_energyL2, ~] = load_2DKSsolution('energyL2', 'optimized', dt, T, N, K, L_s1, L_s2, tol, IC);                       % load solution
+                        [u_energyL2, ~] = load_2DKSsolution('energyL2', 'optimized', dt, T, N, K, L_s1, L_s2, [tol T], IC);                       % load solution
                         l2norms_opt(1:size(u_energyL2,1),testcounter) = u_energyL2;
                         u_energyL2rd = round(u_energyL2,1);
                         l2norms_mode(domain_i,param_i) = mode(u_energyL2rd);
@@ -262,7 +262,7 @@ for energy_i = 1 : length(initialKmagnitude)
                             l2norms_mode(domain_i,param_i+1) = std(l2norms_mode(domain_i,1:param_i));
                         end
                     case {'L','N','dt','IC'}                
-                        %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, K, L_s1, L_s2,0,0);                      % save solution
+                        %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, K, L_s1, L_s2,[0 T],0);                      % save solution
                         %plot_2DKS(save_each, 'initial', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect initial state
                         %plot_2DKS(save_each, 'terminal', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                               % save/inspect terminal state
                         plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
@@ -283,10 +283,10 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
                         %}
                         close all
-                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                     case 'kappa' 
                         %pertIC = IC;
                         if testcounter > 1
@@ -294,8 +294,8 @@ for energy_i = 1 : length(initialKmagnitude)
                         else
                             [~,~,kappalist,rieszlist] = test_kappa(numberoftests,testcounter,IC,N,L_s1,L_s2,dt,T,u_TC,v_TC,pertIC,0,0,Ntime_save_max);
                         end               
-                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,0);
-                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,0);
+                        delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],0);
+                        delete_2DKSsolution('backward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],0);
                     case 'optimize' 
                         [J_opt, J_history , v_TC_opt , u_IC_opt] = optimize_2DKS(optmethod,IC,N,K,L_s1,L_s2,dt,T,u_TC,v_TC,u_IC,Ntime_save_max,originalIC,tol);
                         switch continuation
@@ -328,7 +328,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         Joptdata(testrow,3) = Jinitdata(testrow,3);
                         Jinitdata(testrow,param_i+3) = J_history(1,1);
                         Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
-                        save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, 1, tol); % save solution to machine
+                        save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
                         fprintf('Saving diagnostic figures... ')
                         newopt = 1;
                         if optfigs == 1
@@ -348,10 +348,10 @@ for energy_i = 1 : length(initialKmagnitude)
                             N = Nfull;
                             dt = dtfull;
                         end
-                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
-                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         rowend = testcounter/(length(initialcondition));
                         save_measures('optimization', Jinitdata(rowend,:), Joptdata(rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
                         fprintf('Optimization run complete.\n')
