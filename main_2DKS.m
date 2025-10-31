@@ -352,6 +352,8 @@ for energy_i = 1 : length(initialKmagnitude)
                         delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
                         delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, Ntime_save_max,originalIC);
+                        rowend = testcounter/(length(initialcondition));
+                        save_measures('optimization', Jinitdata(rowend,:), Joptdata(rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
                         fprintf('Optimization run complete.\n')
                 end
             end
@@ -360,9 +362,9 @@ for energy_i = 1 : length(initialKmagnitude)
             case 'kappa'    % designed for 5 or 10 tests only
                 plot_measures('kappa', dt, pertIC, N, timewindow, K, L_s1, L_s2, testcounter, length(timewindow));
             case 'optimize'
-                rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
-                rowend = testcounter/(length(initialcondition));
-                save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
+                %rowstart = testcounter/(length(initialcondition)) - length(timewindow) + 1;
+                %rowend = testcounter/(length(initialcondition));
+                %save_measures('optimization', Jinitdata(rowstart:rowend,:), Joptdata(rowstart:rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
         end
         %% end window block
     end
