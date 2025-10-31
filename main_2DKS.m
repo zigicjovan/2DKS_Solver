@@ -1,4 +1,6 @@
 function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
+
+addpath(genpath(pwd));
 tic
 
 %%% choose test settings %%%
@@ -369,7 +371,7 @@ for energy_i = 1 : length(initialKmagnitude)
             if length(timewindow) > 1
                 plot_measures('optimization', dt, initialcondition, N, T, K, L_s1, L_s2, Jinitdata, Joptdata, IC, tol);
             end
-            save_measures('optimization', Jinitdata, Joptdata, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
+            %save_measures('optimization', Jinitdata, Joptdata, numberoftests, initialcondition, N, dt, timewindow, K, L_scale, L_s2);
     end
 end
 

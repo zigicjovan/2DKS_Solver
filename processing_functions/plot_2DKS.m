@@ -1102,7 +1102,7 @@ switch solplot
                     exportgraphics(h,[filename '.pdf'])
     
                     % momentum magnitude plot
-                    plotdata = diagnostics(:,7);
+                    plotdata = abs(diagnostics(:,7));
                     h = figure('Visible', 'off');
                     semilogy(plotdata,'r-*')
                     set(gcf,'Position',[100 100 900 750])
