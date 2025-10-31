@@ -15,6 +15,10 @@ sq
 seff PID
 scancel PID
 
+# To fetch new code update from Github (but leave all untracked files):
+git fetch origin
+git reset --hard origin/main
+
 # Monitor output file in terminal:
 tail -f ./output/output1.log
 
