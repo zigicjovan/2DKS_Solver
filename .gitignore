@@ -10,3 +10,5 @@ README.md
 run_2DKS.sh
 param_driver.py
 run_array.sh
+run_task_array.sh
+runscripts/
