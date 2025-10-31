@@ -12,6 +12,7 @@ sbatch run_2DKS.sh
 
 # To get PID from queue and check status, or to cancel:
 sq
+seff PID
 scancel PID
 
 # Monitor output file in terminal:
