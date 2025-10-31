@@ -6,3 +6,5 @@ media/
 data/
 tempdata.mat
 testscripts.txt
+README.md
+run_2DKS.sh
