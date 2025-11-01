@@ -275,7 +275,6 @@ u_n: solution vector for each time step in Physical space
                 % save solution step to workspace
                 v_12 = reshape( v_1, [ N , N_x2 ] );
                 u_1 = real(ifft2(v_12));
-                checkCFL(dx,dt,u_1);
                 v_step = v_1;
 
                 if i == Ntime
@@ -336,7 +335,6 @@ u_n: solution vector for each time step in Physical space
                 % save solution step to workspace
                 v_12 = reshape( v_1, [ N , N_x2 ] );
                 u_1 = real(ifft2(v_12));
-                checkCFL(dx,dt,u_1);
                 v_step = v_1;
 
                 if i == 1
