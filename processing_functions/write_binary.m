@@ -1,12 +1,14 @@
-function write_binary(filename,data)
+function write_binary(data, filename)
     fid = fopen(filename, 'w');  % explicitly binary
     if fid == -1
         error('Could not open file for writing: %s', filename);
     end
 
-    % Write complex numbers interleaved (real, imag)
     if ~isreal(data)
-        fwrite(fid, [real(data(:)) imag(data(:))], 'double');
+        tmp = zeros(numel(data)*2,1);
+        tmp(1:2:end) = real(data(:));
+        tmp(2:2:end) = imag(data(:));
+        fwrite(fid, tmp, 'double');
     else
         fwrite(fid, data(:), 'double');
     end

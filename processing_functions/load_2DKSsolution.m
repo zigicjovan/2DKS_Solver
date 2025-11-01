@@ -19,6 +19,9 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file1 = read_binary(phys_file,N,N,false);   
             file2 = read_binary(four_file,N,N,true);
             file3 = read_binary(time_file,1,1,false);
+            %file1 = readmatrix(phys_file);   
+            %file2 = readmatrix(four_file);
+            %file3 = readmatrix(time_file);
         case {'optimal'}
             tol = utility1(1);
             %phys_file = [pwd '/data/' foldername '/physIC_' parameterlist '_tol_' num2str(tol) '.bin'];
@@ -30,6 +33,9 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file1 = read_binary(phys_file,N,N,false);   
             file2 = read_binary(four_file,N,N,true);
             file3 = read_binary(time_file,1,1,false);
+            %file1 = readmatrix(phys_file);   
+            %file2 = readmatrix(four_file);
+            %file3 = readmatrix(time_file);
         case {'energyL2','energyL2_t','spectrum'}
             tol = utility1(1);
             norm_file = [pwd '/data/' foldername '/' foldername '_' parameterlist '.dat'];

@@ -18,9 +18,12 @@ function save_2DKSsolution(foldername, u_n, v_n, time, IC, dt, T, N, K, L_s1, L_
         %four_file = sprintf('%s/data/%s/fourTC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
         time_file = [pwd '/data/' foldername '/time_' parameterlist '_tol_' num2str(tol) '.bin'];
         %time_file = sprintf('%s/data/%s/time_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
-        write_binary(phys_file, u_n);
-        write_binary(four_file, v_n);
-        write_binary(time_file, time);
+        write_binary(u_n, phys_file);
+        write_binary(v_n, four_file);
+        write_binary(time, time_file);
+        %writematrix(u_n, phys_file);
+        %writematrix(v_n, four_file);
+        %writematrix(time, time_file);
     else
         phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples_' num2str(saved) '.bin'];
         four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples_' num2str(saved) '.bin'];
@@ -33,8 +36,11 @@ function save_2DKSsolution(foldername, u_n, v_n, time, IC, dt, T, N, K, L_s1, L_
                 time_file = [pwd '/data/' foldername '/time_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
         end
         % Write binary data
-        write_binary(phys_file, u_n);
-        write_binary(four_file, v_n);
-        write_binary(time_file, time);
+        write_binary(u_n, phys_file);
+        write_binary(v_n, four_file);
+        write_binary(time, time_file);
+        %writematrix(u_n, phys_file);
+        %writematrix(v_n, four_file);
+        %writematrix(time, time_file);
     end
 end
