@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
 param_driver.py
-Generates runscripts/task_params_<mem>.txt and runscripts placeholder scripts,
-and writes run_array.sh which will submit arrays per-memory-group.
+Generates runscripts/task_params_<mem>.txt and placeholder scripts,
+and writes run_array.sh which submits arrays per-memory-group.
 """
+
 import numpy as np
 import os
 import shutil
@@ -12,7 +13,7 @@ from pathlib import Path
 # ----------------------------
 # User-editable parameter ranges
 # ----------------------------
-K_range = range(4, 6)
+K_range = range(0, 4)
 ell_range = np.round(np.arange(1.02, 1.03, 0.08), 2)
 
 # ----------------------------
@@ -52,28 +53,28 @@ def generate_tasks():
 # ----------------------------
 def write_runscripts(tasks, out_dir='runscripts'):
     out = Path(out_dir)
-    # remove and recreate runscripts directory (task_params are rewritten)
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
+    (out / 'output').mkdir(exist_ok=True)
+    (out / 'slurm_logs').mkdir(exist_ok=True)
 
-    # group tasks by mem
+    # group tasks by memory
     groups = {}
     for idx, t in enumerate(tasks):
         mem = t[5]
         groups.setdefault(mem, []).append((idx, t))
 
-    # write one param file per group: task_params_<mem>.txt
+    # write task_params_<mem>.txt
     for mem, items in groups.items():
-        # normalize mem string for filename (e.g., '32G' -> '32G')
         mem_tag = mem.replace('G','G')
         param_fname = out / f"task_params_{mem_tag}.txt"
         with param_fname.open('w') as pf:
             for (idx, (K, ell, T, dt, N, mem)) in items:
-                # write one tuple per line; index included (useful for debugging)
-                pf.write(f"{idx} {K} {ell:.2f} {T:.1f} {dt:.0e} {N} {mem}\n")
+                output_file = f"{out}/output/run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.mat"
+                pf.write(f"{idx} {K} {ell:.2f} {T:.1f} {dt:.0e} {N} {mem} {output_file}\n")
 
-    # optionally create placeholder per-task scripts (not required for array)
+    # placeholder scripts (optional)
     for idx, (K, ell, T, dt, N, mem) in enumerate(tasks):
         fname = out / f"run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.sh"
         with fname.open('w') as fh:
@@ -85,26 +86,23 @@ def write_runscripts(tasks, out_dir='runscripts'):
 #SBATCH --cpus-per-task=8
 #SBATCH --mem={mem}
 #SBATCH --time=07-00:00
-# This file is generated as a placeholder; real execution uses ../run_task_array.sh
 module load matlab/2024b.1
+# Placeholder; real execution uses ../run_task_array.sh
 """)
     return groups
 
 # ----------------------------
-# Write driver run_array.sh that submits per-mem group arrays
+# Write run_array.sh driver
 # ----------------------------
 def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
-    """
-    groups: dict mem -> list of items
-    max_concurrent: 0 means no %limit, otherwise integer
-    """
-    lines = []
-    lines.append("#!/bin/bash")
-    lines.append('DRY_RUN=0')
-    lines.append('if [[ "$1" == "--dry-run" ]]; then DRY_RUN=1; fi')
-    lines.append('mkdir -p slurm_logs output runscripts')
-    lines.append("echo \"(run_array.sh) dry-run=$DRY_RUN\"")
-    lines.append("")
+    lines = [
+        "#!/bin/bash",
+        'DRY_RUN=0',
+        'if [[ "$1" == "--dry-run" ]]; then DRY_RUN=1; fi',
+        'mkdir -p slurm_logs output runscripts',
+        'echo "(run_array.sh) dry-run=$DRY_RUN"',
+        ''
+    ]
 
     for mem, items in groups.items():
         mem_tag = mem.replace('G','G')
@@ -117,15 +115,13 @@ def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
 
         lines.append(f"echo \"Group memory={mem}: tasks={count}, param_file={param_file}\"")
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
-        # pass PARAM_FILE via --export so run_task_array.sh can access it
         lines.append(f"  sbatch --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
         lines.append(f"         --ntasks=1 --cpus-per-task=8 --time=07-00:00 --mem={mem} \\")
         lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
         lines.append(f"         --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh")
         lines.append("else")
         lines.append(f"  echo \"Dry run: would sbatch --array={array_spec} --mem={mem} --cpus-per-task=8 --export=PARAM_FILE={param_file} ./run_task_array.sh\"")
-        lines.append("fi")
-        lines.append("")
+        lines.append("fi\n")
 
     Path(out_fname).write_text("\n".join(lines))
     os.chmod(out_fname, 0o755)
@@ -136,8 +132,8 @@ def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
 def main():
     tasks = generate_tasks()
     print(f"Total parameter combinations: {len(tasks)}")
-    groups = write_runscripts(tasks, out_dir='runscripts')
-    write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0)
+    groups = write_runscripts(tasks)
+    write_run_array_sh(groups, max_concurrent=0)
     print("Wrote runscripts/ (task param files and placeholders) and run_array.sh")
 
 if __name__ == "__main__":
