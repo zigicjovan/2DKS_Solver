@@ -19,6 +19,10 @@ scancel PID
 git fetch origin
 git reset --hard origin/main
 
+# Check storage:
+du -h -d 3 /scratch/zigicj/2DKS_Solver/ | sort -h
+diskusage_report
+
 # Copy to scratch for production runs, and set up tests there:
 cp -r /project/def-bprotas/zigicj/2DKS_Solver/* /scratch/zigicj/2DKS_Solver/
 python3 param_driver.py
