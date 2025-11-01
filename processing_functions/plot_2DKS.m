@@ -191,12 +191,12 @@ switch solplot
         maxL2inT = [ maxL2time , maxL2 ];
         
         energyL2data_file = [pwd '/data/energyL2/energyL2_' parameterlist '.dat'];
-        energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_' parameterlist '.dat'];
+        energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_t_' parameterlist '.dat'];
         spectrum_file = [pwd '/data/spectrum/spectrum_' parameterlist '.dat'];
         switch IC
             case {'optimized'}
                 energyL2data_file = [pwd '/data/energyL2/energyL2_' optparameters '.dat'];
-                energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_' optparameters '.dat'];
+                energyL2deriv_file = [pwd '/data/energyL2_t/energyL2_t_' optparameters '.dat'];
                 spectrum_file = [pwd '/data/spectrum/spectrum_' optparameters '.dat'];
         end
         writematrix(energyL2, energyL2data_file,'Delimiter','tab');
