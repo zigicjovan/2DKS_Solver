@@ -58,8 +58,10 @@ LOG_FILE="${LOG_DIR}/run_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 
 module load matlab/2024b.1
 
-# MATLAB command
+# MATLAB command for max energy optimization:
 MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+# MATLAB command for asymptotic simulations:
+# MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,100,100,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
 # --- Retry loop with success-string check ---
 attempt=0
