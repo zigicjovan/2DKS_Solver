@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
 param_driver.py
-Generates runscripts/task_params_<mem>.txt and placeholder scripts,
+Generates runscripts/task_params_<mem>_<timestamp>.txt and placeholder scripts,
 and writes run_array.sh which submits arrays per-memory-group.
 """
 
 import numpy as np
 import os
-import shutil
 from pathlib import Path
+import time
 
 # ----------------------------
 # User-editable parameter ranges
 # ----------------------------
-K_range = range(0, 4)
-ell_range = np.round(np.arange(1.02, 1.03, 0.08), 2)
+K_range = range(0, 6)
+ell_range = np.round(np.arange(1.06, 1.51, 0.08), 2)
 
 # ----------------------------
 # Generate parameter tuples
@@ -40,7 +40,7 @@ def generate_tasks():
                 dt, N, mem = 1e-6, 64, '32G'
             elif K == 5:
                 T_range = np.round(np.arange(-3.0, -1.9, 0.1), 1)
-                dt, N, mem = 1e-8, 192, '48G'
+                dt, N, mem = 5e-8, 128, '64G'
             else:
                 continue
 
@@ -53,11 +53,10 @@ def generate_tasks():
 # ----------------------------
 def write_runscripts(tasks, out_dir='runscripts'):
     out = Path(out_dir)
-    if out.exists():
-        shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / 'output').mkdir(exist_ok=True)
-    (out / 'slurm_logs').mkdir(exist_ok=True)
+
+    # timestamp tag to avoid overwriting old param files
+    tag = time.strftime("%Y%m%d_%H%M%S")
 
     # group tasks by memory
     groups = {}
@@ -65,16 +64,16 @@ def write_runscripts(tasks, out_dir='runscripts'):
         mem = t[5]
         groups.setdefault(mem, []).append((idx, t))
 
-    # write task_params_<mem>.txt
+    # write task_params_<mem>_<tag>.txt
     for mem, items in groups.items():
-        mem_tag = mem.replace('G','G')
-        param_fname = out / f"task_params_{mem_tag}.txt"
+        mem_tag = mem.replace('G', 'G')
+        param_fname = out / f"task_params_{mem_tag}_{tag}.txt"
         with param_fname.open('w') as pf:
             for (idx, (K, ell, T, dt, N, mem)) in items:
-                output_file = f"{out}/output/run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.mat"
+                output_file = f"output/run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.mat"
                 pf.write(f"{idx} {K} {ell:.2f} {T:.1f} {dt:.0e} {N} {mem} {output_file}\n")
 
-    # placeholder scripts (optional)
+    # placeholder scripts
     for idx, (K, ell, T, dt, N, mem) in enumerate(tasks):
         fname = out / f"run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.sh"
         with fname.open('w') as fh:
@@ -89,12 +88,12 @@ def write_runscripts(tasks, out_dir='runscripts'):
 module load matlab/2024b.1
 # Placeholder; real execution uses ../run_task_array.sh
 """)
-    return groups
+    return groups, tag
 
 # ----------------------------
 # Write run_array.sh driver
 # ----------------------------
-def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
+def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
     lines = [
         "#!/bin/bash",
         'DRY_RUN=0',
@@ -105,13 +104,10 @@ def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
     ]
 
     for mem, items in groups.items():
-        mem_tag = mem.replace('G','G')
-        param_file = f"runscripts/task_params_{mem_tag}.txt"
+        mem_tag = mem.replace('G', 'G')
+        param_file = f"runscripts/task_params_{mem_tag}_{tag}.txt"
         count = len(items)
-        if max_concurrent > 0:
-            array_spec = f"0-{count-1}%{max_concurrent}"
-        else:
-            array_spec = f"0-{count-1}"
+        array_spec = f"0-{count-1}%{max_concurrent}" if max_concurrent > 0 else f"0-{count-1}"
 
         lines.append(f"echo \"Group memory={mem}: tasks={count}, param_file={param_file}\"")
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
@@ -132,9 +128,9 @@ def write_run_array_sh(groups, out_fname='run_array.sh', max_concurrent=0):
 def main():
     tasks = generate_tasks()
     print(f"Total parameter combinations: {len(tasks)}")
-    groups = write_runscripts(tasks)
-    write_run_array_sh(groups, max_concurrent=0)
-    print("Wrote runscripts/ (task param files and placeholders) and run_array.sh")
+    groups, tag = write_runscripts(tasks)
+    write_run_array_sh(groups, tag, max_concurrent=0)
+    print(f"Wrote runscripts/ (task param files with tag {tag}) and run_array.sh")
 
 if __name__ == "__main__":
     main()
