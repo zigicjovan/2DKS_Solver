@@ -3,15 +3,6 @@
 # Uses PARAM_FILE environment variable passed by sbatch --export
 # Creates a unique per-job temp dir in /scratch and cleans up at exit.
 #
-# SBATCH flags (provided by run_array.sh) override the ones below.
-
-#SBATCH --account=def-bprotas
-#SBATCH --mail-user=zigicj@mcmaster.ca
-#SBATCH --mail-type=ALL
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-#SBATCH --time=07-00:00
 
 set -euo pipefail
 
@@ -90,8 +81,10 @@ while [[ $attempt -lt $max_attempts ]]; do
     attempt=$((attempt+1))
 done
 
-# cleanup
-rm -rf "$TMPDIR_JOB"
+# --- Cleanup ---
+if [[ -d "$TMPDIR_JOB" ]]; then
+    rm -rf "$TMPDIR_JOB" 2>/dev/null || echo "Warning: could not fully remove $TMPDIR_JOB" >&2
+fi
 
 if [[ $rc -ne 0 ]]; then
     echo "[$(date)] TASK ${TASK_ID} finished with error (rc=${rc}). See $LOG_FILE" >&2
