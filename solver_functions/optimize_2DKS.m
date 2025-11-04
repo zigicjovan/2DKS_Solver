@@ -99,7 +99,8 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
         u_IC = retraction .* update_term;                                                               % current initial forward state
         manifold_size = sum( u_IC .* conj(u_IC) )*(L1*L2)/N^2;                                          % current manifold (L^2 inner product of initial forward state) 
         [ v_TC , u_TC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);    % terminal forward state via forward equation
-        
+        save_2DKSsolution('optimal', u_IC, v_TC, 0, originalIC, dt, T, N, K, L_s1, L_s2, [1 T], tol);           % save interim solution to machine
+
         fprintf('%01dh%02dm%02ds\t',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
         J_old = J_cur;                                                                                  % old objective functional
         J_cur = sum( u_TC .* conj(u_TC) )*(L1*L2)/N^2;                                                  % current objective functional 
