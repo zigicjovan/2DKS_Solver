@@ -45,14 +45,15 @@ mkdir -p "$LOG_DIR"
 ell_str=$(printf "%.2f" "$ell")
 T_str=$(printf "%.1f" "$T")
 dt_str="$dt"
-LOG_FILE="${LOG_DIR}/run_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+LOG_FILE="${LOG_DIR}/maxT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+#LOG_FILE="${LOG_DIR}/longT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 
 module load matlab/2024b.1
 
 # MATLAB command for max energy optimization:
 MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
-# MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,100,100,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,2.0,2.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
 # --- Retry loop with success-string check ---
 attempt=0
@@ -74,7 +75,7 @@ while [[ $attempt -lt $max_attempts ]]; do
         rc=0
         break
     else
-        echo "[$(date)] MATLAB failed or success string missing. Retrying after 10s..." >> "$LOG_FILE"
+        echo "[$(date)] MATLAB failed or success string missing." >> "$LOG_FILE"
         sleep 10
     fi
 
