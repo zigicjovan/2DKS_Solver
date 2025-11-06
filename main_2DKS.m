@@ -282,6 +282,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
+                        fprintf('Simulation run complete.\n')
                     case 'kappa' 
                         %pertIC = IC;
                         if testcounter > 1
@@ -324,7 +325,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         Jinitdata(testrow,param_i+3) = J_history(1,1);
                         Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
-                        fprintf('Saving diagnostic figures... ')
+                        fprintf('Saving diagnostics... ')
                         newopt = 1;
                         if optfigs == 1
                             maxL2inT = plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);                       

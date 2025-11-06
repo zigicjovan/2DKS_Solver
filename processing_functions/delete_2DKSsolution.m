@@ -22,6 +22,7 @@ function delete_2DKSsolution(foldername, IC, dt, T, N, K, L_s1, L_s2, utility1, 
             try
                 part = dt*Ntime_save_max;
                 for Tpart = part:part:T
+                        parameterlistT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_' num2str(Tpart) '_T_' num2str(fullT) ];
                         phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples*'];
                         four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples*'];
                         time_file = [pwd '/data/' foldername '/time_' parameterlistT '_samples*'];

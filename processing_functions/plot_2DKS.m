@@ -74,6 +74,7 @@ x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N );
 
 switch IC
     case {'optimized'}
+        fprintf('Computing optimized L2 energy evolution up to ')
         % compute L2 energy and Fourier mode evolution
         energyL2_og = NaN(Ntime,1);
         v_mean_og = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
@@ -82,14 +83,20 @@ switch IC
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
+                fprintf('T = %05d, ', T)
                 [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime T], 0);
+                fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
+                    fprintf('T = %05d, ', currentT)
                     [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], 0);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                    fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 elseif (mod(i,Ntime_save_max) == 1)
+                    fprintf('T = %05d, ', T)
                     [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], 0);
+                    fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 end
             end
             
@@ -131,6 +138,7 @@ end
 
 switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
+        fprintf('Computing original L2 energy evolution up to ')
         % compute L2 energy and Fourier mode evolution
         energyL2 = NaN(Ntime,1);
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
@@ -139,14 +147,20 @@ switch solplot
         for i = 1:Ntime
 
             if Ntime < Ntime_save_max && i == 1
+                fprintf('T = %05d, ', T)
                 [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
+                fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
+                    fprintf('T = %05d, ', currentT)
                     [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                    fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 elseif (mod(i,Ntime_save_max) == 1)
+                    fprintf('T = %05d, ', T)
                     [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
+                    fprintf('complete at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 end
             end
             
