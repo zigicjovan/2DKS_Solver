@@ -5,7 +5,8 @@ https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
 
 # To run quick test on Linux terminal with disabled respawning (assuming 'output' folder exists):
-nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(.0001,32,0,0,1,1.02,1.02,0.02,0,0,1); exit" > ./output/output1.log 2>&1 < /dev/null &
+nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(1e-3,32,0,0,1,1.02,1.02,.02,1.0,1.0,1,'optimize','IC',1e-6,0.0); exit" > ./output/maxTK0L102.log 2>&1 < /dev/null &
+nohup matlab -nodisplay -nodesktop -nosplash -r "main_2DKS(1e-3,32,0,0,1,1.02,1.02,.02,2.0,2.0,1,'plotOptIC','IC',1e-6,1.0); exit" > ./output/longTK0L102.log 2>&1 < /dev/null &
 
 # To run on HPC cluster:
 sbatch run_2DKS.sh
@@ -19,12 +20,12 @@ scancel PID
 git fetch origin
 git reset --hard origin/main
 
-# Check storage:
-du -h -d 3 /scratch/zigicj/2DKS_Solver/ | sort -h
+# Check storage and priority:
+du -h -d 3 /user/foldername/ | sort -h
 diskusage_report
+sshare -l -A def-prof1_cpu -u prof1,grad2,postdoc3
 
-# Copy to scratch for production runs, and set up tests there:
-cp -r /project/def-bprotas/zigicj/2DKS_Solver/* /scratch/zigicj/2DKS_Solver/
+# Set up tests:
 python3 param_driver.py
 bash run_array.sh --dry-run
 bash run_array.sh
