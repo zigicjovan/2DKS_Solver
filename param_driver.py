@@ -11,10 +11,17 @@ from pathlib import Path
 import time
 
 # ----------------------------
+# User-editable global settings
+# ----------------------------
+SBATCH_TIME = "02-00:00"  # <--- requested time limit (D-HH:MM format)
+
+# ----------------------------
 # User-editable parameter ranges
 # ----------------------------
-K_range = range(0, 6)
-ell_range = np.round(np.arange(1.06, 1.51, 0.08), 2)
+K_range = np.round(np.arange(1.0, 6.4, 0.5), 1)
+#K_range = np.round(np.array([3.0]), 1)
+ell_range = np.round(np.arange(1.02, 1.51, 0.02), 2)
+#ell_range = [round(x, 2) for x in [1.02, 1.05, 1.07, 1.11, 1.2, 1.35, 1.5]]
 
 # ----------------------------
 # Generate parameter tuples
@@ -24,23 +31,51 @@ def generate_tasks():
     for K in K_range:
         for ell in ell_range:
             if K == 0:
-                T_range = np.round(np.arange(0.0, 2.1, 0.1), 1)
+                T_range = np.round(np.arange(0.0, 2.09, 0.1), 1)
+                #T_range = np.round(np.array([2.0]), 1)
                 dt, N, mem = 1e-3, 24, '32G'
             elif K == 1:
-                T_range = np.round(np.arange(-0.5, 1.6, 0.1), 1)
+                T_range = np.round(np.arange(-0.5, 1.59, 0.1), 1)
+                #T_range = np.round(np.array([1.5]), 1)
                 dt, N, mem = 1e-3, 32, '32G'
             elif K == 2:
-                T_range = np.round(np.arange(-1.0, 1.1, 0.1), 1)
+                T_range = np.round(np.arange(-1.0, 1.09, 0.1), 1)
+                #T_range = np.round(np.array([0.5]), 1)
                 dt, N, mem = 1e-3, 32, '32G'
             elif K == 3:
-                T_range = np.round(np.arange(-1.5, 0.6, 0.1), 1)
-                dt, N, mem = 5e-5, 48, '32G'
+                T_range = np.round(np.arange(-1.0, 0.09, 0.1), 1)
+                #T_range = np.round(np.array([-0.5]), 1)
+                dt, N, mem = 1e-3, 48, '32G'
+            elif K == 3.5:
+                T_range = np.round(np.arange(-1.5, -0.41, 0.1), 1)
+                #T_range = np.round(np.array([-1.0]), 1)
+                dt, N, mem = 2e-4, 64, '32G'
             elif K == 4:
-                T_range = np.round(np.arange(-2.0, -0.9, 0.1), 1)
-                dt, N, mem = 1e-6, 64, '32G'
+                T_range = np.round(np.arange(-2.0, -0.91, 0.1), 1)
+                #T_range = np.round(np.array([-1.5]), 1)
+                dt, N, mem = 1e-4, 96, '32G'
+            elif K == 4.5:
+                T_range = np.round(np.arange(-2.5, -1.41, 0.1), 1)
+                #T_range = np.round(np.array([-2.0]), 1)
+                dt, N, mem = 2e-5, 144, '32G'
             elif K == 5:
-                T_range = np.round(np.arange(-3.0, -1.9, 0.1), 1)
-                dt, N, mem = 5e-8, 128, '64G'
+                T_range = np.round(np.arange(-3.0, -1.91, 0.1), 1)
+                #T_range = np.round(np.array([-2.5]), 1)
+                dt, N, mem = 1e-5, 192, '32G'
+            elif K == 5.5:
+                T_range = np.round(np.arange(-3.5, -2.41, 0.1), 1)
+                #T_range = np.round(np.array([-3.0]), 1)
+                dt, N, mem = 5e-7, 320, '48G'
+            elif K == 6:
+                T_range = np.round(np.arange(-4.0, -2.91, 0.1), 1)
+                #T_range = np.round(np.array([-3.5]), 1)
+                dt, N, mem = 2e-7, 360, '48G'
+            elif K == 6.5:
+                T_range = np.round(np.arange(-4.5, -3.41, 0.1), 1)
+                dt, N, mem = 2e-8, 432, '64G'
+            elif K == 7:
+                T_range = np.round(np.arange(-5.0, -3.91, 0.1), 1)
+                dt, N, mem = 1e-8, 432, '64G'
             else:
                 continue
 
@@ -84,7 +119,7 @@ def write_runscripts(tasks, out_dir='runscripts'):
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem={mem}
-#SBATCH --time=07-00:00
+#SBATCH --time={SBATCH_TIME}
 module load matlab/2024b.1
 # Placeholder; real execution uses ../run_task_array.sh
 """)
@@ -112,7 +147,7 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         lines.append(f"echo \"Group memory={mem}: tasks={count}, param_file={param_file}\"")
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
         lines.append(f"  sbatch --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
-        lines.append(f"         --ntasks=1 --cpus-per-task=8 --time=07-00:00 --mem={mem} \\")
+        lines.append(f"         --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
         lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
         lines.append(f"         --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh")
         lines.append("else")
