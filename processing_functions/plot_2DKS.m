@@ -83,16 +83,15 @@ switch IC
 
             if Ntime < Ntime_save_max && i == 1
                 [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime T], 0);
-                fprintf('Computed optimized L2 energy evolution at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
+                fprintf('Computed optimized L2 energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
                     [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], 0);
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
-                    fprintf('T = %05d, ', T)
                     [u_og, ~] = load_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], 0);
-                    fprintf('Computed optimized L2 energy evolution at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
+                    fprintf('Computed optimized L2 energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 end
             end
             
@@ -143,7 +142,7 @@ switch solplot
 
             if Ntime < Ntime_save_max && i == 1
                 [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
-                fprintf('Computed original L2 energy evolution at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
+                fprintf('Computed original L2 energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
             else
                 if (Ntime_remaining >= Ntime_save_max) && (mod(i,Ntime_save_max) == 1)
                     currentT = (i+Ntime_save_max-1)/Ntime*T;
@@ -151,7 +150,7 @@ switch solplot
                     Ntime_remaining = Ntime_remaining - Ntime_save_max;
                 elseif (mod(i,Ntime_save_max) == 1)
                     [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
-                    fprintf('Computed original L2 energy evolution at %01dh%02dm%02ds...\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
+                    fprintf('Computed original L2 energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                 end
             end
             
