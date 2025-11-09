@@ -9,6 +9,9 @@ set -euo pipefail
 # SLURM array task id
 TASK_ID=${SLURM_ARRAY_TASK_ID:-0}
 
+# --- Stagger start of each array task (3 sec per task, modulo 60 sec) ---
+sleep $(( (TASK_ID * 3) % 60 ))
+
 # PARAM_FILE should be exported by the sbatch command (see run_array.sh)
 PARAM_FILE=${PARAM_FILE:-"./runscripts/task_params_32G.txt"}
 if [[ ! -f "$PARAM_FILE" ]]; then
@@ -53,7 +56,7 @@ module load matlab/2024b.1
 # MATLAB command for max energy optimization:
 MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
-#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,2.0,2.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
 # --- Retry loop with success-string check ---
 attempt=0
@@ -61,7 +64,7 @@ max_attempts=2
 rc=1
 
 while [[ $attempt -lt $max_attempts ]]; do
-    if grep -q "Optimization run complete" "$LOG_FILE" 2>/dev/null; then
+    if grep -q "run complete" "$LOG_FILE" 2>/dev/null; then
         echo "[$(date)] MATLAB reported success. Skipping retry." >> "$LOG_FILE"
         rc=0
         break
@@ -70,7 +73,7 @@ while [[ $attempt -lt $max_attempts ]]; do
     echo "[$(date)] Running MATLAB attempt $((attempt+1))/$max_attempts for TASK_ID=${TASK_ID} (IDX=${IDX})" >> "$LOG_FILE"
     matlab -nodisplay -nodesktop -nosplash -r "$MATLAB_CMD" >> "$LOG_FILE" 2>&1 || rc=$?
 
-    if grep -q "Optimization run complete" "$LOG_FILE"; then
+    if grep -q "run complete" "$LOG_FILE"; then
         echo "[$(date)] MATLAB finished successfully (success string found)." >> "$LOG_FILE"
         rc=0
         break
