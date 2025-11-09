@@ -94,13 +94,11 @@ if [[ $rc -ne 0 ]]; then
     echo "[$(date)] TASK ${TASK_ID} finished with error (rc=${rc}). See $LOG_FILE" >&2
     exit $rc
 fi
-
 # --- Append SLURM efficiency info (seff) to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
 echo "SLURM Job Efficiency Summary (seff)" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
 # run seff safely (no exit on error)
-seff "${SLURM_JOB_ID}" >> "$LOG_FILE" 2>&1 || echo "(seff failed or not available)" >> "$LOG_FILE"
-
+seff "${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}" >> "$LOG_FILE" 2>&1 || echo "(seff failed or not available)" >> "$LOG_FILE"
 
 exit 0
