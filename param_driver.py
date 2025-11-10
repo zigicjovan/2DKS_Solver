@@ -18,10 +18,10 @@ SBATCH_TIME = "02-00:00"  # <--- requested time limit (D-HH:MM format)
 # ----------------------------
 # User-editable parameter ranges
 # ----------------------------
-K_range = np.round(np.arange(1.0, 6.4, 0.5), 1)
-#K_range = np.round(np.array([3.0]), 1)
-ell_range = np.round(np.arange(1.02, 1.51, 0.02), 2)
-#ell_range = [round(x, 2) for x in [1.02, 1.05, 1.07, 1.11, 1.2, 1.35, 1.5]]
+K_range = np.round(np.arange(1.0, 1.9, 1.0), 1)
+#K_range = np.round(np.array([6.5]), 1)
+#ell_range = np.round(np.arange(1.42, 2.01, 0.02), 2)
+ell_range = [round(x, 2) for x in [1.98]]
 
 # ----------------------------
 # Generate parameter tuples
@@ -31,51 +31,65 @@ def generate_tasks():
     for K in K_range:
         for ell in ell_range:
             if K == 0:
-                T_range = np.round(np.arange(0.0, 2.09, 0.1), 1)
-                #T_range = np.round(np.array([2.0]), 1)
-                dt, N, mem = 1e-3, 24, '32G'
+                #T_range = np.round(np.arange(0.5, 2.09, 0.1), 1)
+                T_range = np.round(np.array([1.0]), 1)
+                dt, N, mem = 1e-3,48, '32G'
+                #dt, N, mem = 1e-3, 24, '32G'
             elif K == 1:
-                T_range = np.round(np.arange(-0.5, 1.59, 0.1), 1)
-                #T_range = np.round(np.array([1.5]), 1)
-                dt, N, mem = 1e-3, 32, '32G'
-            elif K == 2:
-                T_range = np.round(np.arange(-1.0, 1.09, 0.1), 1)
-                #T_range = np.round(np.array([0.5]), 1)
-                dt, N, mem = 1e-3, 32, '32G'
-            elif K == 3:
-                T_range = np.round(np.arange(-1.0, 0.09, 0.1), 1)
-                #T_range = np.round(np.array([-0.5]), 1)
+                #T_range = np.round(np.arange(0.5, 2.09, 0.1), 1)
+                T_range = np.round(np.array([1.0]), 1)
                 dt, N, mem = 1e-3, 48, '32G'
+                #dt, N, mem = 1e-3, 32, '32G'
+            elif K == 2:
+                #T_range = np.round(np.arange(0.0, 1.09, 0.1), 1)
+                T_range = np.round(np.array([1.0]), 1)
+                dt, N, mem = 1e-3, 48, '32G'
+                #dt, N, mem = 1e-3, 32, '32G'
+            elif K == 3:
+                #T_range = np.round(np.arange(-0.5, 0.59, 0.1), 1)
+                T_range = np.round(np.array([0.0]), 1)
+                dt, N, mem = 1e-3, 48, '32G'
+                #dt, N, mem = 1e-3, 48, '64G'
             elif K == 3.5:
                 T_range = np.round(np.arange(-1.5, -0.41, 0.1), 1)
                 #T_range = np.round(np.array([-1.0]), 1)
                 dt, N, mem = 2e-4, 64, '32G'
+                #dt, N, mem = 2e-4, 64, '64G'
             elif K == 4:
                 T_range = np.round(np.arange(-2.0, -0.91, 0.1), 1)
                 #T_range = np.round(np.array([-1.5]), 1)
                 dt, N, mem = 1e-4, 96, '32G'
+                #dt, N, mem = 1e-4, 96, '128G'
             elif K == 4.5:
                 T_range = np.round(np.arange(-2.5, -1.41, 0.1), 1)
-                #T_range = np.round(np.array([-2.0]), 1)
+                #T_range = np.round(np.array([-2.1]), 1)
                 dt, N, mem = 2e-5, 144, '32G'
+                #dt, N, mem = 2e-5, 144, '192G'
             elif K == 5:
                 T_range = np.round(np.arange(-3.0, -1.91, 0.1), 1)
-                #T_range = np.round(np.array([-2.5]), 1)
-                dt, N, mem = 1e-5, 192, '32G'
+                #T_range = np.round(np.array([-2.7]), 1)
+                dt, N, mem = 2e-6, 256, '48G'
+                #dt, N, mem = 1e-5, 192, '192G'
             elif K == 5.5:
                 T_range = np.round(np.arange(-3.5, -2.41, 0.1), 1)
-                #T_range = np.round(np.array([-3.0]), 1)
+                #T_range = np.round(np.array([-3.1]), 1)
                 dt, N, mem = 5e-7, 320, '48G'
+                #dt, N, mem = 5e-7, 320, '2048G'
             elif K == 6:
                 T_range = np.round(np.arange(-4.0, -2.91, 0.1), 1)
                 #T_range = np.round(np.array([-3.5]), 1)
                 dt, N, mem = 2e-7, 360, '48G'
+                #dt, N, mem = 2e-7, 360, '2048G'
             elif K == 6.5:
                 T_range = np.round(np.arange(-4.5, -3.41, 0.1), 1)
-                dt, N, mem = 2e-8, 432, '64G'
+                #T_range = np.round(np.array([-3.5]), 1)
+                dt, N, mem = 2e-8, 360, '96G'
+                #dt, N, mem = 2e-8, 360, '4096G'
             elif K == 7:
-                T_range = np.round(np.arange(-5.0, -3.91, 0.1), 1)
-                dt, N, mem = 1e-8, 432, '64G'
+                T_range = np.round(np.arange(-4.7, -4.01, 0.1), 1)
+                #T_range = np.round(np.array([-4.6]), 1)
+                dt, N, mem = 5e-9, 360, '128G'
+                #dt, N, mem = 5e-9, 360, '4096G'
             else:
                 continue
 
