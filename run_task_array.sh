@@ -97,12 +97,8 @@ fi
 
 # --- Append SLURM efficiency info (seff) to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
-echo "SLURM Job Efficiency Summary (seff)" >> "$LOG_FILE"
+echo "SLURM Job Efficiency Info (manual lookup)" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
-(
-    sleep 120
-    seff "${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}" >> "$LOG_FILE" 2>&1 \
-        || echo "(seff failed or not available)" >> "$LOG_FILE"
-) & disown
+echo "Job identifier: ${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}" >> "$LOG_FILE"
 
 exit 0
