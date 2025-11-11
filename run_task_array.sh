@@ -25,7 +25,8 @@ mkdir -p ./slurm_logs
 
 # create unique scratch temp dir per job
 SCRATCH_BASE=${SCRATCH:-/scratch}/${USER}
-TMPDIR_JOB="${SCRATCH_BASE}/tmp_job_${SLURM_JOB_ID:-$$}_${SLURM_ARRAY_TASK_ID:-0}"
+JOB_TAG="${SLURM_JOB_ID:-$$}_${SLURM_ARRAY_TASK_ID:-0}"
+TMPDIR_JOB="${SCRATCH_BASE}/tmp_job_${JOB_TAG}"
 mkdir -p "$TMPDIR_JOB"
 export TMPDIR="$TMPDIR_JOB"
 export MATLAB_PREFDIR="$TMPDIR_JOB/matlab_prefs"
@@ -99,6 +100,6 @@ fi
 echo -e "\n=============================" >> "$LOG_FILE"
 echo "SLURM Job Efficiency Info (manual lookup)" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
-echo "Job identifier: ${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}" >> "$LOG_FILE"
+echo "Job identifier: $JOB_TAG" >> "$LOG_FILE"
 
 exit 0
