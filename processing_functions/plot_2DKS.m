@@ -67,6 +67,12 @@ x1_pts = 2*pi*L_s1*linspace( 0 , 1 - 1/N , N );
 x2_pts = 2*pi*L_s2*linspace( 0 , 1 - 1/N , N ); 
 [ x1pi , x2pi ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
 
+% Fourier space domain
+kx = (2*pi/L1) * (-N/2 : N/2-1);   
+ky = (2*pi/L2) * (-N/2 : N/2-1);
+[KX, KY] = meshgrid(kx, ky);       
+K2 = KX.^2 + KY.^2;                % |k|^2
+
 % 4-period physical space domain
 x12_pts = 2*L_s1*linspace( 0 , 1 - 1/N , 2*N ); 
 x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N ); 
@@ -76,6 +82,8 @@ switch IC
     case {'optimized'}
         % compute L2 energy and Fourier mode evolution
         energyL2_og = NaN(Ntime,1);
+        energyH1_og = NaN(Ntime,1);
+        energyH2_og = NaN(Ntime,1);
         v_mean_og = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount_og = v_mean_og;
         Ntime_remaining = Ntime;
@@ -101,8 +109,11 @@ switch IC
                 imod = Ntime_save_max;
             end
             u_i = reshape( u_og(:,imod) , [ N , N ] );
-            energyL2_og(i,1) = (sum( u_og(:,imod) .* conj(u_og(:,imod)) )*(L1*L2)/N^2);
-            v = fftshift(real(abs(fft2(u_i))));
+            v = fftshift(abs(fft2(u_i)).^2);
+            %energyL2_og(i,1) = (sum( u_og(:,imod) .* conj(u_og(:,imod)) )*(L1*L2)/N^2);
+            energyL2_og(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
+            energyH1_og(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
+            energyH2_og(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
             for j = 1:N
                 for k = 1:N
                     index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
@@ -111,7 +122,7 @@ switch IC
                 end
             end
             for m = 1:size(v_meancount_og,1)
-                v_mean_og(m,i) = v_mean_og(m,i)/v_meancount_og(m,i);
+                v_mean_og(m,i) = v_mean_og(m,i)/2;%v_meancount_og(m,i);
             end
                 
             if i == 1
@@ -135,6 +146,8 @@ switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
         % compute L2 energy and Fourier mode evolution
         energyL2 = NaN(Ntime,1);
+        energyH1 = NaN(Ntime,1);
+        energyH2 = NaN(Ntime,1);
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount = v_mean;
         Ntime_remaining = Ntime;
@@ -160,8 +173,11 @@ switch solplot
                 imod = Ntime_save_max;
             end
             u_i = reshape( u_n(:,imod) , [ N , N ] );
-            energyL2(i,1) = (sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/N^2);
-            v = fftshift(real(abs(fft2(u_i))));
+            v = fftshift(abs(fft2(u_i)).^2);
+            %energyL2(i,1) = (sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/(N*N));
+            energyL2(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
+            energyH1(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
+            energyH2(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
             for j = 1:N
                 for k = 1:N
                     index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
@@ -170,7 +186,7 @@ switch solplot
                 end
             end
             for m = 1:size(v_meancount,1)
-                v_mean(m,i) = v_mean(m,i)/v_meancount(m,i);
+                v_mean(m,i) = v_mean(m,i)/2;%v_meancount(m,i);
             end
                 
             if i == 1
@@ -754,7 +770,7 @@ switch solplot
         
         close all
         %% opt gif
-        figure('Visible', 'off');
+        figure('Visible', 'on');
         set(gcf,'Position',[100 100 1350 1125])
         axis tight manual % this ensures that getframe() returns a consistent size
         
@@ -780,6 +796,9 @@ switch solplot
             case {'optimized'}
                 filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
         end
+
+        drow = 0; % initialize phase shift row
+        dcol = 0; % initialize phase shift col
 
         for i = 1 : ceil(Ntime/frames) : Ntime+1
         
@@ -811,18 +830,30 @@ switch solplot
             subplot(2,2,1);
             % Draw surface plot 
             u_i = reshape( u_n(:,imod) , [ N , N ] );
-            surfc(x1pi,x2pi,u_i);
+            % phase-shift first iteration
+            if i == 1
+                [~, min_idx] = min(u_i(:));
+                [rowmin, colmin] = ind2sub(size(u_i), min_idx);
+                [Ny, Nx] = size(u_i);
+                rowc = floor((Ny+1)/2) + 1;
+                colc = floor((Nx+1)/2) + 1;
+                drow = rowc - rowmin;
+                dcol = colc - colmin;
+            end
+            u_i_ps = circshift(u_i, [drow, dcol]);
+            surfc(x1pi,x2pi,u_i_ps);
             xlabel('$x_1$','Interpreter','latex',FontSize=20); ylabel('$x_2$','Interpreter','latex',FontSize=20); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
             %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
             view(3);
             set(gca,'fontsize', 16) 
+            axis square;
             drawnow
 
             subplot(2,2,2);
             % Draw surface plot
-            u_i2x = [ u_i , u_i ; u_i, u_i];
+            u_i2x = [ u_i_ps , u_i_ps ; u_i_ps, u_i_ps];
             surfc(x12x,x22x,u_i2x);
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex',FontSize=20); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex',FontSize=20); %zlabel('Solution')
             shading(gca,'interp')
@@ -832,30 +863,35 @@ switch solplot
             yline(L_s2,'--');
             view(2);
             set(gca,'fontsize', 16) 
+            axis square;
             drawnow
 
             subplot(2,2,3);
-            semilogy(timewindow,energyL2,'b')
+            semilogy(timewindow,energyH2,'g')
             hold on
-            semilogy(timewindow,energyL2_og,'r--')
+            semilogy(timewindow,energyH1,'r')
+            semilogy(timewindow,energyL2,'b')
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex',FontSize=20);
-            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex',FontSize=20);
+            ylabel('$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex',FontSize=20);
             xlim([0 T])
-            ylim([0.5*min([energyL2;energyL2_og]) 1.5*max([energyL2;energyL2_og]) ])
-            title("Evolution of optimized $L^2$ energy",'Interpreter','latex','FontSize',22)
-            legend('$\tilde\varphi$','Interpreter','latex','Location','southeast','FontSize',20)
+            ylim([0.5*min(energyL2) 1.5*max(energyH2) ])
+            title("Energy evolution",'Interpreter','latex','FontSize',22)
+            legend('$S=H^2$','$S=H^1$','$S=L^2$','Interpreter','latex','Location','southeast','FontSize',12)
             set(gca,'fontsize', 16) 
+            axis square;
         
             subplot(2,2,4);
             semilogy(v_mean(:,i),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
-            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex',FontSize=20);
-            title("Energy spectrum",'Interpreter','latex','FontSize',22)
+            ylabel('$E(k)$','Interpreter','latex',FontSize=20);
+            %ylabel('$\frac{1}{2}\sum_{j} |{\widehat{\phi}_j}|^2$','Interpreter','latex',FontSize=20);
+            title("Radial energy spectrum",'Interpreter','latex','FontSize',22)
             xlim([1 size(v_mean,1)])
             ylim([ 1e-20 1.5*max(max(v_mean)) ])
             set(gca,'fontsize', 16) 
+            axis square;
         
             title1 = 'Forward-time 2DKS solution';
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
@@ -1157,13 +1193,21 @@ switch solplot
         h = figure('Visible', 'off');
         axis tight manual % this ensures that getframe() returns a consistent size
         set(gcf,'Position',[100 100 900 750])
-        
 
         % inspect physical solution 
         u_T = reshape( u_IC , [ N , N ] );
+        % phase-shift
+        [~, min_idx] = min(u_T(:));
+        [rowmin, colmin] = ind2sub(size(u_T), min_idx);
+        [Ny, Nx] = size(u_T);
+        rowc = floor((Ny+1)/2) + 1;
+        colc = floor((Nx+1)/2) + 1;
+        drow = rowc - rowmin;
+        dcol = colc - colmin;
+        u_T_ps = circshift(u_T, [drow, dcol]);
 
         % surface plot
-        surfc(x1,x2,u_T); 
+        surfc(x1,x2,u_T_ps); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
@@ -1191,6 +1235,7 @@ switch solplot
         %}
         % contour plot
         view(2);
+        axis square;
         % Save image
         filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
         switch IC
@@ -1207,9 +1252,18 @@ switch solplot
 
         % inspect physical solution
         u_T = reshape( u_TC , [ N , N ] );
+        % phase-shift
+        [~, min_idx] = min(u_T(:));
+        [rowmin, colmin] = ind2sub(size(u_T), min_idx);
+        [Ny, Nx] = size(u_T);
+        rowc = floor((Ny+1)/2) + 1;
+        colc = floor((Nx+1)/2) + 1;
+        drow = rowc - rowmin;
+        dcol = colc - colmin;
+        u_T_ps = circshift(u_T, [drow, dcol]);
 
         % surface plot
-        surfc(x1,x2,u_T); 
+        surfc(x1,x2,u_T_ps);  
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
@@ -1237,6 +1291,7 @@ switch solplot
         %}
         % contour plot
         view(2);
+        axis square;
         % Save image
         filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
         switch IC
@@ -1258,9 +1313,18 @@ switch solplot
 
         % inspect physical solution 
         u_T = reshape( u_IC_og , [ N , N ] );
+        % phase-shift
+        [~, min_idx] = min(u_T(:));
+        [rowmin, colmin] = ind2sub(size(u_T), min_idx);
+        [Ny, Nx] = size(u_T);
+        rowc = floor((Ny+1)/2) + 1;
+        colc = floor((Nx+1)/2) + 1;
+        drow = rowc - rowmin;
+        dcol = colc - colmin;
+        u_T_ps = circshift(u_T, [drow, dcol]);
 
         % surface plot
-        surfc(x1,x2,u_T); 
+        surfc(x1,x2,u_T_ps); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
@@ -1279,6 +1343,7 @@ switch solplot
 
         % contour plot
         view(2);
+        axis square;
         % Save image
         filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
         switch IC
@@ -1295,9 +1360,18 @@ switch solplot
 
         % inspect physical solution
         u_T = reshape( u_TC_og , [ N , N ] );
+        % phase-shift
+        [~, min_idx] = min(u_T(:));
+        [rowmin, colmin] = ind2sub(size(u_T), min_idx);
+        [Ny, Nx] = size(u_T);
+        rowc = floor((Ny+1)/2) + 1;
+        colc = floor((Nx+1)/2) + 1;
+        drow = rowc - rowmin;
+        dcol = colc - colmin;
+        u_T_ps = circshift(u_T, [drow, dcol]);
 
         % surface plot
-        surfc(x1,x2,u_T); 
+        surfc(x1,x2,u_T_ps); 
         xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
         shading interp
         %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
@@ -1316,6 +1390,7 @@ switch solplot
 
         % contour plot
         view(2);
+        axis square;
         % Save image
         filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
         switch IC
@@ -1355,6 +1430,9 @@ switch solplot
                 filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
         end
 
+        drow = 0; % initialize phase shift row
+        dcol = 0; % initialize phase shift col
+
         for i = 1 : ceil(Ntime/frames) : Ntime+1
         
             if i == Ntime + 1
@@ -1385,7 +1463,18 @@ switch solplot
             subplot(2,2,1);
             % Draw surface plot
             u_i = reshape( u_n(:,imod) , [ N , N ] );
-            surfc(x1pi,x2pi,u_i);
+            % phase-shift first iteration
+            if i == 1
+                [~, min_idx] = min(u_i(:));
+                [rowmin, colmin] = ind2sub(size(u_i), min_idx);
+                [Ny, Nx] = size(u_i);
+                rowc = floor((Ny+1)/2) + 1;
+                colc = floor((Nx+1)/2) + 1;
+                drow = rowc - rowmin;
+                dcol = colc - colmin;
+            end
+            u_i_ps = circshift(u_i, [drow, dcol]);
+            surfc(x1pi,x2pi,u_i_ps);
             xlabel('$x_1$','Interpreter','latex',FontSize=20); ylabel('$x_2$','Interpreter','latex',FontSize=20); %zlabel('Solution')
             shading(gca,'interp')
             colormap(redblue)
@@ -1393,10 +1482,11 @@ switch solplot
             view(3);
             set(gca,'fontsize', 16) 
             drawnow
+            axis square;
 
             subplot(2,2,2);
             % Draw surface plot
-            u_i2x = [ u_i , u_i ; u_i, u_i];
+            u_i2x = [ u_i_ps , u_i_ps ; u_i_ps, u_i_ps];
             surfc(x12x,x22x,u_i2x);
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex',FontSize=20); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex',FontSize=20); %zlabel('Solution')
             shading(gca,'interp')
@@ -1407,28 +1497,34 @@ switch solplot
             view(2);
             set(gca,'fontsize', 16) 
             drawnow
+            axis square;
 
             subplot(2,2,3);
-            semilogy(timewindow,energyL2_og,'b')
+            semilogy(timewindow,energyH2_og,'g')
             hold on
+            semilogy(timewindow,energyH1_og,'r')
+            semilogy(timewindow,energyL2_og,'b')
             xline(currentT,'-');
             hold off
             xlabel('Time $t$','Interpreter','latex',FontSize=20);
-            ylabel('$\| \phi(t;\varphi) \|^2_{L^2}$','Interpreter','latex',FontSize=20);
+            ylabel('$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex',FontSize=20);
             xlim([0 T])
-            ylim([0.5*min(energyL2_og) 1.5*max(energyL2_og) ])
-            title("Evolution of $L^2$ energy",'Interpreter','latex','FontSize',22)
-            %legend('L^{2} energy','Location','southeast')
+            ylim([0.5*min(energyL2_og) 1.5*max(energyH2_og) ])
+            title("Energy evolution",'Interpreter','latex','FontSize',22)
+            legend('$S=H^2$','$S=H^1$','$S=L^2$','Interpreter','latex','Location','southeast','FontSize',12)
             set(gca,'fontsize', 16) 
-        
+            axis square;
+
             subplot(2,2,4);
             semilogy(v_mean_og(:,i),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
-            ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex',FontSize=20);
-            title("Energy spectrum",'Interpreter','latex','FontSize',22)
+            ylabel('$E(k)$','Interpreter','latex',FontSize=20);
+            %ylabel('$\frac{1}{2}\sum_{j} |{\widehat\phi_j}|^2$','Interpreter','latex',FontSize=20);
+            title("Radial energy spectrum",'Interpreter','latex','FontSize',22)
             xlim([1 size(v_mean_og,1)])
             ylim([ 1e-20 1.5*max(max(v_mean)) ])
             set(gca,'fontsize', 16) 
+            axis square;
         
             title1 = 'Forward-time 2DKS solution';
             title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.2f') '$'];
