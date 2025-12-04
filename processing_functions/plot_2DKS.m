@@ -82,10 +82,11 @@ switch IC
     case {'optimized'}
         % compute L2 energy and Fourier mode evolution
         energyL2_og = NaN(Ntime,1);
-        energyH1_og = NaN(Ntime,1);
-        energyH2_og = NaN(Ntime,1);
+        energyH1_og = energyL2_og;
+        energyH2_og = energyL2_og;
         v_mean_og = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount_og = v_mean_og;
+        projcoeffevolution_og = v_mean_og;
         Ntime_remaining = Ntime;
         for i = 1:Ntime
 
@@ -108,6 +109,14 @@ switch IC
             else
                 imod = Ntime_save_max;
             end
+            
+            % projection coefficients and unstable modes
+            [~,projcoeffs,unstablemodes] = eigenfunction_validation(u_og(:,imod),L_s1, N, T,IC,'full');
+            for j = 1:size(unstablemodes,1)
+                index = round(sqrt((unstablemodes(j,1))^2+(unstablemodes(j,2))^2));
+                projcoeffevolution_og(index,i) = projcoeffevolution_og(index,i) + projcoeffs(j,1);
+            end
+
             u_i = reshape( u_og(:,imod) , [ N , N ] );
             v = fftshift(abs(fft2(u_i)).^2);
             %energyL2_og(i,1) = (sum( u_og(:,imod) .* conj(u_og(:,imod)) )*(L1*L2)/N^2);
@@ -146,10 +155,11 @@ switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
         % compute L2 energy and Fourier mode evolution
         energyL2 = NaN(Ntime,1);
-        energyH1 = NaN(Ntime,1);
-        energyH2 = NaN(Ntime,1);
+        energyH1 = energyL2;
+        energyH2 = energyL2;
         v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
         v_meancount = v_mean;
+        projcoeffevolution = v_mean;
         Ntime_remaining = Ntime;
         for i = 1:Ntime
 
@@ -172,6 +182,14 @@ switch solplot
             else
                 imod = Ntime_save_max;
             end
+
+            % projection coefficients and unstable modes
+            [~,projcoeffs,unstablemodes] = eigenfunction_validation(u_n(:,imod),L_s1, N, T,IC,'full');
+            for j = 1:size(unstablemodes,1)
+                index = round(sqrt((unstablemodes(j,1))^2+(unstablemodes(j,2))^2));
+                projcoeffevolution(index,i) = projcoeffevolution(index,i) + projcoeffs(j,1);
+            end
+
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             v = fftshift(abs(fft2(u_i)).^2);
             %energyL2(i,1) = (sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/(N*N));
@@ -770,14 +788,44 @@ switch solplot
         
         close all
         %% opt gif
-        figure('Visible', 'on');
-        set(gcf,'Position',[100 100 1350 1125])
-        axis tight manual % this ensures that getframe() returns a consistent size
         
-
-        set(gcf,'color','white')
-        set(gca,'color','white')
-
+        fig = figure('Visible', 'on');
+        set(fig, 'Position', [100 100 1200 900], 'Color', 'white', 'Resize', 'off');
+        
+        set(groot, 'DefaultAxesLooseInset', [0 0 0 0]);
+        
+        ax(1) = subplot(2,3,1);
+        ax(2) = subplot(2,3,2);
+        ax(3) = subplot(2,3,3);
+        ax(4) = subplot(2,3,4);
+        ax(5) = subplot(2,3,5);
+        ax(6) = subplot(2,3,6);
+        
+        for k = 1:6
+            set(ax(k), ...
+                'Color','white', ...
+                'FontSize',16, ...
+                'LabelFontSizeMultiplier', 1, ...
+                'TitleFontSizeMultiplier', 1);
+            axis(ax(k), 'square');
+        end
+        
+        for k = 1:6
+            pos = get(ax(k),'Position');
+            pos(2) = pos(2) - 0.05;
+            set(ax(k),'Position',pos);
+        end
+        
+        ymin_energy = 0.5 * min(energyL2);
+        ymax_energy = 1.5 * max(energyH2);
+        
+        ymax_spec = 1.5 * max(v_mean(:));
+        ymax_proj = 1.5 * max(projcoeffevolution(:));
+        
+        title1 = 'Forward-time 2DKS solution';
+        title2 = '';
+        sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',22);
+        
         Ntime_remaining = Ntime;
         if utility2(3) > 0
             frames = utility2(3);
@@ -785,26 +833,36 @@ switch solplot
             frames = Ntime;
         end
         frameovermax = 0;
-        switch IC 
+        
+        switch IC
             case {'optimized'}
                 frames = 100;
         end
         
         filename = [pwd '/media/movies/phys_' parameterlist '_frames_' num2str(frames) '.gif'];
-
         switch IC
             case {'optimized'}
                 filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
         end
-
-        drow = 0; % initialize phase shift row
-        dcol = 0; % initialize phase shift col
-
+        
+        drow = 0;
+        dcol = 0;
+        
+        % ---------- NEW: handles for graphics objects ----------
+        h_surf1 = []; h_surf2 = [];
+        h_H2 = []; h_H1 = []; h_L2 = []; h_xline = [];
+        h_spec1 = []; h_proj = []; h_spec2 = [];
+        didInitPlots = false;
+        % ------------------------------------------------------
+        
+        
         for i = 1 : ceil(Ntime/frames) : Ntime+1
         
             if i == Ntime + 1
                 i = Ntime;
             end
+        
+            % ---------- loading logic unchanged ----------
             if Ntime < Ntime_save_max && i == 1
                 [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
             else
@@ -818,19 +876,18 @@ switch solplot
                     [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
                 end
             end
-
+            % --------------------------------------------
+        
             currentT = (i-1)/(Ntime-1)*T;
-
+        
             if mod(i,Ntime_save_max) ~= 0
                 imod = mod(i,Ntime_save_max);
             else
                 imod = Ntime_save_max;
             end
-
-            subplot(2,2,1);
-            % Draw surface plot 
-            u_i = reshape( u_n(:,imod) , [ N , N ] );
-            % phase-shift first iteration
+        
+            u_i = reshape(u_n(:,imod), [N, N]);
+        
             if i == 1
                 [~, min_idx] = min(u_i(:));
                 [rowmin, colmin] = ind2sub(size(u_i), min_idx);
@@ -841,74 +898,128 @@ switch solplot
                 dcol = colc - colmin;
             end
             u_i_ps = circshift(u_i, [drow, dcol]);
-            surfc(x1pi,x2pi,u_i_ps);
-            xlabel('$x_1$','Interpreter','latex',FontSize=20); ylabel('$x_2$','Interpreter','latex',FontSize=20); %zlabel('Solution')
-            shading(gca,'interp')
-            colormap(redblue)
-            %pbaspect( [ abs(max(max(x1pi))), abs(max(max(x2pi))), abs(max(max(u_i))) ] );
-            view(3);
-            set(gca,'fontsize', 16) 
-            axis square;
-            drawnow
-
-            subplot(2,2,2);
-            % Draw surface plot
-            u_i2x = [ u_i_ps , u_i_ps ; u_i_ps, u_i_ps];
-            surfc(x12x,x22x,u_i2x);
-            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex',FontSize=20); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex',FontSize=20); %zlabel('Solution')
-            shading(gca,'interp')
-            colormap(redblue)
-            %pbaspect( [ abs(max(max(x12x))), abs(max(max(x22x))), abs(max(max(u_i2x))) ] );
-            xline(L_s1,'--');
-            yline(L_s2,'--');
-            view(2);
-            set(gca,'fontsize', 16) 
-            axis square;
-            drawnow
-
-            subplot(2,2,3);
-            semilogy(timewindow,energyH2,'g')
-            hold on
-            semilogy(timewindow,energyH1,'r')
-            semilogy(timewindow,energyL2,'b')
-            xline(currentT,'-');
-            hold off
-            xlabel('Time $t$','Interpreter','latex',FontSize=20);
-            ylabel('$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex',FontSize=20);
-            xlim([0 T])
-            ylim([0.5*min(energyL2) 1.5*max(energyH2) ])
-            title("Energy evolution",'Interpreter','latex','FontSize',22)
-            legend('$S=H^2$','$S=H^1$','$S=L^2$','Interpreter','latex','Location','southeast','FontSize',12)
-            set(gca,'fontsize', 16) 
-            axis square;
         
-            subplot(2,2,4);
-            semilogy(v_mean(:,i),"o--")
-            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
-            ylabel('$E(k)$','Interpreter','latex',FontSize=20);
-            %ylabel('$\frac{1}{2}\sum_{j} |{\widehat{\phi}_j}|^2$','Interpreter','latex',FontSize=20);
-            title("Radial energy spectrum",'Interpreter','latex','FontSize',22)
-            xlim([1 size(v_mean,1)])
-            ylim([ 1e-20 1.5*max(max(v_mean)) ])
-            set(gca,'fontsize', 16) 
-            axis square;
+            u_i2x = [u_i_ps , u_i_ps ; u_i_ps , u_i_ps];
         
-            title1 = 'Forward-time 2DKS solution';
-            title2 = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.5f') '$'];
-            switch IC 
-                case {'optimized'}
-                    title2 = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(currentT,'%.5f') '$'];
-            end
-            sgtitle({title1, title2},'Interpreter','latex',FontSize=22);
-
-            if i == 1
-                gif(filename,'overwrite',true)
+            % ==========================================================
+            %   FIRST FRAME: CREATE PLOTS & LABELS, STORE HANDLES
+            %   LATER FRAMES: ONLY UPDATE DATA, NO cla, NO new plots
+            % ==========================================================
+            if ~didInitPlots
+                % ------------ AXIS 1: physical field ---------------
+                axes(ax(1));
+                h_surf1 = surfc(ax(1), x1pi, x2pi, u_i_ps);
+                xlabel(ax(1),'$x_1$','Interpreter','latex','FontSize',16);
+                ylabel(ax(1),'$x_2$','Interpreter','latex','FontSize',16);
+                shading(ax(1),'interp');
+                colormap(ax(1), redblue);
+                view(ax(1),3);
+                axis(ax(1),'square');
+        
+                % ------------ AXIS 2: tiled domain -----------------
+                axes(ax(2));
+                h_surf2 = surfc(ax(2), x12x, x22x, u_i2x);
+                xlabel(ax(2),'$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',16);
+                ylabel(ax(2),'$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',16);
+                shading(ax(2),'interp');
+                colormap(ax(2), redblue);
+                xline(ax(2), L_s1, '--');
+                yline(ax(2), L_s2, '--');
+                view(ax(2),2);
+                axis(ax(2),'square');
+        
+                % ------------ AXIS 3: energy evolution -------------
+                axes(ax(3));
+                h_H2 = semilogy(ax(3), timewindow, energyH2, 'g'); hold(ax(3),'on');
+                h_H1 = semilogy(ax(3), timewindow, energyH1, 'r');
+                h_L2 = semilogy(ax(3), timewindow, energyL2, 'b');
+                h_xline = xline(ax(3), currentT, '-');
+                hold(ax(3),'off');
+        
+                xlabel(ax(3),'Time $t$','Interpreter','latex','FontSize',16);
+                ylabel(ax(3),'$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex','FontSize',16);
+                xlim(ax(3), [0 T]);
+                ylim(ax(3), [ymin_energy ymax_energy]);
+                title(ax(3), "Energy evolution", 'Interpreter','latex','FontSize',16);
+                legend(ax(3), '$S=H^2$','$S=H^1$','$S=L^2$', ...
+                       'Interpreter','latex','Location','southeast','FontSize',12);
+                axis(ax(3),'square');
+        
+                % ------------ AXIS 4: radial spectrum --------------
+                axes(ax(4));
+                h_spec1 = semilogy(ax(4), v_mean(:,i), "o--");
+                xlabel(ax(4),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(4),'$E(k)$','Interpreter','latex','FontSize',16);
+                title(ax(4),"Radial energy spectrum",'Interpreter','latex','FontSize',16);
+                xlim(ax(4), [1 size(v_mean,1)]);
+                ylim(ax(4), [1e-20 ymax_spec]);
+                axis(ax(4),'square');
+        
+                % ------------ AXIS 5: projection coeffs ------------
+                axes(ax(5));
+                h_proj = plot(ax(5), projcoeffevolution(:,i), "o--");
+                xlabel(ax(5),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(5),'$\sum_{k} a_k$','Interpreter','latex','FontSize',16);
+                title(ax(5),"Projection coefficient evolution",'Interpreter','latex','FontSize',16);
+                xlim(ax(5), [1 size(projcoeffevolution,1)]);
+                ylim(ax(5), [1e-20 ymax_proj]);
+                axis(ax(5),'square');
+        
+                % ------------ AXIS 6: duplicate spectrum -----------
+                axes(ax(6));
+                h_spec2 = semilogy(ax(6), v_mean(:,i), "o--");
+                xlabel(ax(6),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(6),'$E(k)$','Interpreter','latex','FontSize',16);
+                title(ax(6),"Radial energy spectrum",'Interpreter','latex','FontSize',16);
+                xlim(ax(6), [1 size(v_mean,1)]);
+                ylim(ax(6), [1e-20 ymax_spec]);
+                axis(ax(6),'square');
+        
+                didInitPlots = true;
+        
             else
-                gif
+                % ================= UPDATE ONLY =====================
+                % Axis 1 & 2 surfaces:
+                set(h_surf1, 'ZData', u_i_ps);
+                set(h_surf2, 'ZData', u_i2x);
+        
+                % Axis 3: just move the xline (curves are static arrays)
+                h_xline.Value = currentT;
+        
+                % Axis 4: update spectrum
+                set(h_spec1, 'YData', v_mean(:,i));
+        
+                % Axis 5: update projection coefficients
+                set(h_proj, 'YData', projcoeffevolution(:,i));
+        
+                % Axis 6: update second spectrum
+                set(h_spec2, 'YData', v_mean(:,i));
+                % ==================================================
+            end
+        
+            % ------------ Update LaTeX sgtitle --------------------
+            if strcmp(IC,'optimized')
+                phi_str = '\tilde{\varphi}';
+            else
+                phi_str = ['\varphi_{' IC '}'];
+            end
+        
+            title2 = sprintf( ...
+                '$\\varphi = %s, N = %d, {\\Delta}t = %.5g, K = %.0f, L_1 = 2\\pi(%.2f), L_2 = 2\\pi(%.2f), T = %.5f$', ...
+                phi_str, N, dt, K, L_s1, L_s2, currentT);
+        
+            sg.String = {title1, title2};
+        
+            drawnow limitrate;   % lighter than bare drawnow
+        
+            if i == 1
+                gif(filename,'overwrite',true);
+            else
+                gif;
             end
         
         end
-        
+
         fprintf('Saved optimized evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
         close all
@@ -1403,6 +1514,8 @@ switch solplot
         fprintf('Saved initial/terminal state figures at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
         close all
+
+        %{
         %% orig gif
         figure('Visible', 'off');
         set(gcf,'Position',[100 100 1350 1125])
@@ -1460,7 +1573,7 @@ switch solplot
                 imod = Ntime_save_max;
             end
 
-            subplot(2,2,1);
+            subplot(2,3,1);
             % Draw surface plot
             u_i = reshape( u_n(:,imod) , [ N , N ] );
             % phase-shift first iteration
@@ -1484,7 +1597,7 @@ switch solplot
             drawnow
             axis square;
 
-            subplot(2,2,2);
+            subplot(2,3,2);
             % Draw surface plot
             u_i2x = [ u_i_ps , u_i_ps ; u_i_ps, u_i_ps];
             surfc(x12x,x22x,u_i2x);
@@ -1499,7 +1612,7 @@ switch solplot
             drawnow
             axis square;
 
-            subplot(2,2,3);
+            subplot(2,3,3);
             semilogy(timewindow,energyH2_og,'g')
             hold on
             semilogy(timewindow,energyH1_og,'r')
@@ -1515,7 +1628,28 @@ switch solplot
             set(gca,'fontsize', 16) 
             axis square;
 
-            subplot(2,2,4);
+            subplot(2,3,4);
+            semilogy(v_mean_og(:,i),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
+            ylabel('$E(k)$','Interpreter','latex',FontSize=20);
+            %ylabel('$\frac{1}{2}\sum_{j} |{\widehat\phi_j}|^2$','Interpreter','latex',FontSize=20);
+            title("Radial energy spectrum",'Interpreter','latex','FontSize',22)
+            xlim([1 size(v_mean_og,1)])
+            ylim([ 1e-20 1.5*max(max(v_mean_og)) ])
+            set(gca,'fontsize', 16) 
+            axis square;
+
+            subplot(2,3,5);
+            plot(projcoeffevolution_og(:,i),"o--")
+            xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
+            ylabel('$\sum_{k} a_k$','Interpreter','latex',FontSize=20);
+            title("Projection coefficient evolution",'Interpreter','latex','FontSize',22)
+            xlim([1 size(projcoeffevolution_og,1)])
+            ylim([ 1e-20 1.5*max(max(projcoeffevolution_og)) ])
+            set(gca,'fontsize', 16) 
+            axis square;
+
+            subplot(2,3,6);
             semilogy(v_mean_og(:,i),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex',FontSize=20); 
             ylabel('$E(k)$','Interpreter','latex',FontSize=20);
@@ -1541,6 +1675,241 @@ switch solplot
             end
         
         end
+        %}
+
+        %% original gif
+        
+        fig = figure('Visible', 'on');
+        set(fig, 'Position', [100 100 1200 900], 'Color', 'white', 'Resize', 'off');
+        
+        set(groot, 'DefaultAxesLooseInset', [0 0 0 0]);
+        
+        ax(1) = subplot(2,3,1);
+        ax(2) = subplot(2,3,2);
+        ax(3) = subplot(2,3,3);
+        ax(4) = subplot(2,3,4);
+        ax(5) = subplot(2,3,5);
+        ax(6) = subplot(2,3,6);
+        
+        for k = 1:6
+            set(ax(k), ...
+                'Color','white', ...
+                'FontSize',16, ...
+                'LabelFontSizeMultiplier', 1, ...
+                'TitleFontSizeMultiplier', 1);
+            axis(ax(k), 'square');
+        end
+        
+        for k = 1:6
+            pos = get(ax(k),'Position');
+            pos(2) = pos(2) - 0.05;
+            set(ax(k),'Position',pos);
+        end
+        
+        ymin_energy = 0.5 * min(energyL2_og);
+        ymax_energy = 1.5 * max(energyH2_og);
+        
+        ymax_spec = 1.5 * max(v_mean_og(:));
+        ymax_proj = 1.5 * max(projcoeffevolution_og(:));
+        
+        title1 = 'Forward-time 2DKS solution';
+        title2 = '';
+        sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',22);
+        
+        Ntime_remaining = Ntime;
+        if utility2(3) > 0
+            frames = utility2(3);
+        else
+            frames = Ntime;
+        end
+        frameovermax = 0;
+        
+        switch IC
+            case {'optimized'}
+                frames = 100;
+        end
+        
+        filename = [pwd '/media/movies/phys_' parameterlist '_frames_' num2str(frames) '.gif'];
+        switch IC
+            case {'optimized'}
+                filename = [pwd '/media/movies/phys_' optparameters '_frames_' num2str(frames) '.gif'];
+        end
+        
+        drow = 0;
+        dcol = 0;
+        
+        % ---------- NEW: handles for graphics objects ----------
+        h_surf1 = []; h_surf2 = [];
+        h_H2 = []; h_H1 = []; h_L2 = []; h_xline = [];
+        h_spec1 = []; h_proj = []; h_spec2 = [];
+        didInitPlots = false;
+        % ------------------------------------------------------
+        
+        
+        for i = 1 : ceil(Ntime/frames) : Ntime+1
+        
+            if i == Ntime + 1
+                i = Ntime;
+            end
+        
+            % ---------- loading logic unchanged ----------
+            if Ntime < Ntime_save_max && i == 1
+                [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
+            else
+                if (Ntime_remaining >= Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    currentT = frameovermax*Ntime_save_max/Ntime*T;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, currentT, N, K, L_s1, L_s2, [Ntime_save_max T], utility1);
+                    Ntime_remaining = Ntime_remaining - Ntime_save_max;
+                elseif (Ntime_remaining < Ntime_save_max) && (i > (frameovermax*Ntime_save_max))
+                    frameovermax = frameovermax + 1;
+                    [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_remaining T], utility1);
+                end
+            end
+            % --------------------------------------------
+        
+            currentT = (i-1)/(Ntime-1)*T;
+        
+            if mod(i,Ntime_save_max) ~= 0
+                imod = mod(i,Ntime_save_max);
+            else
+                imod = Ntime_save_max;
+            end
+        
+            u_i = reshape(u_n(:,imod), [N, N]);
+        
+            if i == 1
+                [~, min_idx] = min(u_i(:));
+                [rowmin, colmin] = ind2sub(size(u_i), min_idx);
+                [Ny, Nx] = size(u_i);
+                rowc = floor((Ny+1)/2) + 1;
+                colc = floor((Nx+1)/2) + 1;
+                drow = rowc - rowmin;
+                dcol = colc - colmin;
+            end
+            u_i_ps = circshift(u_i, [drow, dcol]);
+        
+            u_i2x = [u_i_ps , u_i_ps ; u_i_ps , u_i_ps];
+        
+            % ==========================================================
+            %   FIRST FRAME: CREATE PLOTS & LABELS, STORE HANDLES
+            %   LATER FRAMES: ONLY UPDATE DATA, NO cla, NO new plots
+            % ==========================================================
+            if ~didInitPlots
+                % ------------ AXIS 1: physical field ---------------
+                axes(ax(1));
+                h_surf1 = surfc(ax(1), x1pi, x2pi, u_i_ps);
+                xlabel(ax(1),'$x_1$','Interpreter','latex','FontSize',16);
+                ylabel(ax(1),'$x_2$','Interpreter','latex','FontSize',16);
+                shading(ax(1),'interp');
+                colormap(ax(1), redblue);
+                view(ax(1),3);
+                axis(ax(1),'square');
+        
+                % ------------ AXIS 2: tiled domain -----------------
+                axes(ax(2));
+                h_surf2 = surfc(ax(2), x12x, x22x, u_i2x);
+                xlabel(ax(2),'$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',16);
+                ylabel(ax(2),'$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',16);
+                shading(ax(2),'interp');
+                colormap(ax(2), redblue);
+                xline(ax(2), L_s1, '--');
+                yline(ax(2), L_s2, '--');
+                view(ax(2),2);
+                axis(ax(2),'square');
+        
+                % ------------ AXIS 3: energy evolution -------------
+                axes(ax(3));
+                h_H2 = semilogy(ax(3), timewindow, energyH2_og, 'g'); hold(ax(3),'on');
+                h_H1 = semilogy(ax(3), timewindow, energyH1_og, 'r');
+                h_L2 = semilogy(ax(3), timewindow, energyL2_og, 'b');
+                h_xline = xline(ax(3), currentT, '-');
+                hold(ax(3),'off');
+        
+                xlabel(ax(3),'Time $t$','Interpreter','latex','FontSize',16);
+                ylabel(ax(3),'$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex','FontSize',16);
+                xlim(ax(3), [0 T]);
+                ylim(ax(3), [ymin_energy ymax_energy]);
+                title(ax(3), "Energy evolution", 'Interpreter','latex','FontSize',16);
+                legend(ax(3), '$S=H^2$','$S=H^1$','$S=L^2$', ...
+                       'Interpreter','latex','Location','southeast','FontSize',12);
+                axis(ax(3),'square');
+        
+                % ------------ AXIS 4: radial spectrum --------------
+                axes(ax(4));
+                h_spec1 = semilogy(ax(4), v_mean_og(:,i), "o--");
+                xlabel(ax(4),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(4),'$E(k)$','Interpreter','latex','FontSize',16);
+                title(ax(4),"Radial energy spectrum",'Interpreter','latex','FontSize',16);
+                xlim(ax(4), [1 size(v_mean_og,1)]);
+                ylim(ax(4), [1e-20 ymax_spec]);
+                axis(ax(4),'square');
+        
+                % ------------ AXIS 5: projection coeffs ------------
+                axes(ax(5));
+                h_proj = plot(ax(5), projcoeffevolution_og(:,i), "o--");
+                xlabel(ax(5),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(5),'$\sum_{k} a_k$','Interpreter','latex','FontSize',16);
+                title(ax(5),"Projection coefficient evolution",'Interpreter','latex','FontSize',16);
+                xlim(ax(5), [1 size(projcoeffevolution_og,1)]);
+                ylim(ax(5), [1e-20 ymax_proj]);
+                axis(ax(5),'square');
+        
+                % ------------ AXIS 6: duplicate spectrum -----------
+                axes(ax(6));
+                h_spec2 = semilogy(ax(6), v_mean_og(:,i), "o--");
+                xlabel(ax(6),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+                ylabel(ax(6),'$E(k)$','Interpreter','latex','FontSize',16);
+                title(ax(6),"Radial energy spectrum",'Interpreter','latex','FontSize',16);
+                xlim(ax(6), [1 size(v_mean_og,1)]);
+                ylim(ax(6), [1e-20 ymax_spec]);
+                axis(ax(6),'square');
+        
+                didInitPlots = true;
+        
+            else
+                % ================= UPDATE ONLY =====================
+                % Axis 1 & 2 surfaces:
+                set(h_surf1, 'ZData', u_i_ps);
+                set(h_surf2, 'ZData', u_i2x);
+        
+                % Axis 3: just move the xline (curves are static arrays)
+                h_xline.Value = currentT;
+        
+                % Axis 4: update spectrum
+                set(h_spec1, 'YData', v_mean_og(:,i));
+        
+                % Axis 5: update projection coefficients
+                set(h_proj, 'YData', projcoeffevolution_og(:,i));
+        
+                % Axis 6: update second spectrum
+                set(h_spec2, 'YData', v_mean_og(:,i));
+                % ==================================================
+            end
+        
+            % ------------ Update LaTeX sgtitle --------------------
+            if strcmp(IC,'optimized')
+                phi_str = '\tilde{\varphi}';
+            else
+                phi_str = ['\varphi_{' IC '}'];
+            end
+        
+            title2 = sprintf( ...
+                '$\\varphi = %s, N = %d, {\\Delta}t = %.5g, K = %.0f, L_1 = 2\\pi(%.2f), L_2 = 2\\pi(%.2f), T = %.5f$', ...
+                phi_str, N, dt, K, L_s1, L_s2, currentT);
+        
+            sg.String = {title1, title2};
+        
+            drawnow limitrate;   % lighter than bare drawnow
+        
+            if i == 1
+                gif(filename,'overwrite',true);
+            else
+                gif;
+            end
+        
+        end
+
         fprintf('Saved original evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
 end
