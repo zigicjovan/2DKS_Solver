@@ -212,7 +212,7 @@ saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
 
 
-%% K branches
+%% max T K0-K5, 1.02-1.10
 Joptdata_K0 = load([pwd '/data/optimization/Jopt_s1_N_24_dt_0.005_K_1_1_L_1.02_1.10_T_1.00000_100.00000.dat']);
 Joptdata_K1 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_10_10_L_1.02_1.10_T_0.31623_31.62278.dat']);
 Joptdata_K2 = load([pwd '/data/optimization/Jopt_s1_N_32_dt_0.0025_K_100_100_L_1.02_1.10_T_0.10000_10.00000.dat']);
@@ -268,13 +268,110 @@ legendlist(2) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.04),T}) \|^2_{L^2}~~~~~~~
 legendlist(3) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.06),T}) \|^2_{L^2}~~~~~~~~$'};
 legendlist(4) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.08),T}) \|^2_{L^2}~~~~~~~~$'};
 legendlist(5) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.10),T}) \|^2_{L^2}~~~~~~~~$'};
-legend(legendlist,'Interpreter','latex','Location','southoutside','NumColumns',3,'Box','off')
+legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off')
 
 filename = [pwd '/media/optimization/branches_comp_5K' ];
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
 
-% long T optimized energy evolutions branches
+%% max T K4-K6, 1.02-1.40
+ellarray = 1.02:.02:1.40;
+numK = 5;
+Joptdata_K40 = NaN(30,length(ellarray)+1);
+Joptdata_K45 = NaN(30,length(ellarray)+1);
+Joptdata_K50 = NaN(30,length(ellarray)+1);
+Joptdata_K55 = NaN(30,length(ellarray)+1);
+Joptdata_K60 = NaN(30,length(ellarray)+1);
+Jmaxopt = NaN(length(ellarray)*numK,3);
+Jmaxoptplot = NaN(numK,length(ellarray)+1);
+for i = 1:length(ellarray)
+    Joptdata_K40temp = load([pwd '/data/branches/Jopt_s1_N_96_dt_0.0001_K_10000_10000_L_' num2str(ellarray(i),'%.2f') '_' num2str(ellarray(i),'%.2f') '.dat']);
+    Joptdata_K45temp = load([pwd '/data/branches/Jopt_s1_N_144_dt_2e-05_K_31623_31623_L_' num2str(ellarray(i),'%.2f') '_' num2str(ellarray(i),'%.2f') '.dat']);
+    Joptdata_K50temp = load([pwd '/data/branches/Jopt_s1_N_256_dt_2e-06_K_100000_100000_L_' num2str(ellarray(i),'%.2f') '_' num2str(ellarray(i),'%.2f') '.dat']);
+    Joptdata_K55temp = load([pwd '/data/branches/Jopt_s1_N_320_dt_5e-07_K_316228_316228_L_' num2str(ellarray(i),'%.2f') '_' num2str(ellarray(i),'%.2f') '.dat']);
+    Joptdata_K60temp = load([pwd '/data/branches/Jopt_s1_N_360_dt_2e-07_K_1000000_1000000_L_' num2str(ellarray(i),'%.2f') '_' num2str(ellarray(i),'%.2f') '.dat']);
+    Joptdata_K40(1:size(Joptdata_K40temp,1),i+1) = Joptdata_K40temp(:,4);    
+    Joptdata_K45(1:size(Joptdata_K45temp,1),i+1) = Joptdata_K45temp(:,4);
+    Joptdata_K50(1:size(Joptdata_K50temp,1),i+1) = Joptdata_K50temp(:,4);
+    Joptdata_K55(1:size(Joptdata_K55temp,1),i+1) = Joptdata_K55temp(:,4);
+    Joptdata_K60(1:size(Joptdata_K60temp,1),i+1) = Joptdata_K60temp(:,4);
+    Jmaxopt((i-1)*numK+1,:) = [ Joptdata_K40temp(1,1:2), max(Joptdata_K40temp(:,4)) ];
+    Jmaxopt((i-1)*numK+2,:) = [ Joptdata_K45temp(1,1:2), max(Joptdata_K45temp(:,4)) ];
+    Jmaxopt((i-1)*numK+3,:) = [ Joptdata_K50temp(1,1:2), max(Joptdata_K50temp(:,4)) ];
+    Jmaxopt((i-1)*numK+4,:) = [ Joptdata_K55temp(1,1:2), max(Joptdata_K55temp(:,4)) ];
+    Jmaxopt((i-1)*numK+5,:) = [ Joptdata_K60temp(1,1:2), max(Joptdata_K60temp(:,4)) ];
+    Jmaxoptplot(:,i+1) = Jmaxopt((i-1)*numK+1:(i-1)*numK+5,3);
+end
+Joptdata_K40(1:size(Joptdata_K40temp,1),1) = Joptdata_K40temp(:,3);
+Joptdata_K45(1:size(Joptdata_K45temp,1),1) = Joptdata_K45temp(:,3);
+Joptdata_K50(1:size(Joptdata_K50temp,1),1) = Joptdata_K50temp(:,3);
+Joptdata_K55(1:size(Joptdata_K55temp,1),1) = Joptdata_K55temp(:,3);
+Joptdata_K60(1:size(Joptdata_K60temp,1),1) = Joptdata_K60temp(:,3);
+Jmaxoptplot(:,1) = Jmaxopt(1:numK,1);
+
+h = figure;
+
+loglog(Joptdata_K40(:,1),Joptdata_K40(:,2:length(ellarray)),'-o','MarkerSize',5)
+hold on
+loglog(Joptdata_K45(:,1),Joptdata_K45(:,2:length(ellarray)),'-o','MarkerSize',5)
+loglog(Joptdata_K50(:,1),Joptdata_K50(:,2:length(ellarray)),'-o','MarkerSize',5)
+loglog(Joptdata_K55(:,1),Joptdata_K55(:,2:length(ellarray)),'-o','MarkerSize',5)
+loglog(Joptdata_K60(:,1),Joptdata_K60(:,2:length(ellarray)),'-o','MarkerSize',5)
+
+hold off
+
+set(gca,'fontsize', 16) 
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[100 100 1250 700])
+xlabel('Time Window $T$','Interpreter','latex'); 
+ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
+title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+parfiglistInterval = '$K = \left[10^{4},10^{4.5}, ... , 10^{6}\right], \ell = [1.02,1.04, ... , 1.40]$';
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+%{
+legendlist(1) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(2) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.04),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(3) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.06),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(4) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.08),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(5) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.10),T}) \|^2_{L^2}~~~~~~~~$'};
+legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off')
+%}
+filename = [pwd '/media/optimization/branches_K4-6' ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])
+
+h = figure;
+
+xlin = logspace(4,6,5);
+loglog(xlin, 10^(-2.05).*(xlin.^(1.9/1.0)),'--','MarkerSize',5)
+hold on
+loglog(Jmaxoptplot(:,1),Jmaxoptplot(:,2:length(ellarray)),'-o','MarkerSize',5)
+hold off
+
+set(gca,'fontsize', 16) 
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[100 100 1250 700])
+xlabel('Initial Energy $K$','Interpreter','latex'); 
+ylabel('Peak Terminal Energy $\tilde K$','Interpreter','latex');
+title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+parfiglistInterval = '$K = \left[10^{4},10^{4.5}, ... , 10^{6}\right], \ell = [1.02,1.04, ... , 1.40]$';
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legend('$K^{\alpha},\alpha = 1.9$~','Interpreter','latex','Location','southeast','Box','off','FontSize',18)
+%{
+legendlist(1) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(2) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.04),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(3) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.06),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(4) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.08),T}) \|^2_{L^2}~~~~~~~~$'};
+legendlist(5) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.10),T}) \|^2_{L^2}~~~~~~~~$'};
+legend(legendlist,'Interpreter','latex','Location','northeast','NumColumns',1,'Box','off')
+%}
+filename = [pwd '/media/optimization/powerlaw_K4-6' ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])
+
+%% long T K0-K5, 1.02-1.10
 
 en102_0 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_1_Ls1_1.02_Ls2_1.02_T_100_tol_1e-08_RCG.dat']);
 en102_1 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_32_dt_0.0025_K_10_Ls1_1.02_Ls2_1.02_T_100_tol_1e-10_RCG.dat']);
@@ -309,7 +406,7 @@ en110_4 = load([pwd '/data/energyL2/energyL2_s1_optimized_N_64_dt_5e-05_K_10000_
 h = figure;
 set(gcf,'color','white')
 set(gca,'color','white') 
-set(gcf,'Position',[0 0 1200 900])
+set(gcf,'Position',[0 0 1250 700])
 sgtitle('Asymptotic Behaviour of $L^2$ Energy-Optimized 2D Kuramoto-Sivashinsky Solutions','Interpreter','latex','FontSize',18)
 
 subplot(1,2,1)

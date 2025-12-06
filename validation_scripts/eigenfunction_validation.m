@@ -203,8 +203,9 @@ function [match_score,ampstars,modes] = eigenfunction_validation(u_IC_opt, L_s1,
     u_norm = u_centered / sqrt( sum((u_centered(:)) .* conj((u_centered(:))))*(L1*L2)/N^2 );
     phi_norm = u_eff / sqrt( sum((u_eff(:)) .* conj((u_eff(:))))*(L1*L2)/N^2 );
     match_score = 1 - sum((u_norm(:)) .* conj((phi_norm(:))))*(L1*L2)/N^2 ;
-    fprintf('Correlation match: %.7f\n', match_score(1)); 
+    %fprintf('Correlation match: %.7f\n', match_score(1)); 
     
+    %{
     h = figure;
     set(gcf,'Position',[100 100 1800 750])
     set(gcf,'color','white')
@@ -240,5 +241,5 @@ function [match_score,ampstars,modes] = eigenfunction_validation(u_IC_opt, L_s1,
     writematrix(ampstars, [filename '_amps.dat']);
     saveas(h,[filename '.fig'])
     exportgraphics(h,[filename '.pdf'])
-
+    %}
 end

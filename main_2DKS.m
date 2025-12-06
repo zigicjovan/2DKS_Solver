@@ -258,8 +258,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         end
                     case {'L','N','dt','IC'}                
                         %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, K, L_s1, L_s2,[0 T],0);                      % save solution
-                        %plot_2DKS(save_each, 'initial', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect initial state
-                        %plot_2DKS(save_each, 'terminal', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                               % save/inspect terminal state
+                        %plot_2DKS(save_each, 'state', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect state                             % save/inspect terminal state
                         plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
                         %plot_2DKS(save_each, 'norms', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,100);                                     % save/inspect time evolution 
@@ -272,10 +271,8 @@ for energy_i = 1 : length(initialKmagnitude)
                         plot_2DKS(save_each, 'diagnostics', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol); 
                         plot_2DKS(save_each, 'gif', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,100);
                         plot_2DKS(save_each, 'gif', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,100); 
-                        plot_2DKS(save_each, 'initial', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'terminal', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
-                        plot_2DKS(save_each, 'initial', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);
-                        plot_2DKS(save_each, 'terminal', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
+                        plot_2DKS(save_each, 'state', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,0);
+                        plot_2DKS(save_each, 'state', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,tol);  
                         %}
                         close all
                         delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
