@@ -172,33 +172,10 @@ for energy_i = 1 : length(initialKmagnitude)
                                     [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
                                     disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
                                 catch
-                                    %{
-                                    % try
-                                        time1 = ceil(T/(dt*save_each));
-                                        if time1 > Ntime_save_max 
-                                            timeIC = Ntime_save_max;
-                                            timeTC = mod(time1,Ntime_save_max);
-                                            time2 = ceil(Ntime_save_max*dt*save_each);
-                                        else
-                                            timeIC = time1;
-                                            timeTC = time1;
-                                            time2 = T;
-                                        end
-                                        [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
-                                        [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [timeTC T], IC);
-                                        u_IC = u(:,1);
-                                        v_TC = v(:,end);
-                                        u_TC = real(ifft2(v_TC));
-                                        IC = 'optimized';
-                                        tic
-                                        disp(['No optimal IC file found. Continuing from loaded optimized solution for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
-                                    %catch
-                                    %}
-                                        disp(['No saved solution. Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
-                                        tic
-                                        [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
-                                        disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
-                                    %end
+                                    disp(['No saved solution. Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                                    tic
+                                    [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                    disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
                                 end
                             case 'forward'
                                 try
@@ -307,7 +284,11 @@ for energy_i = 1 : length(initialKmagnitude)
                                     optmethod = 'RCG';
                                 end
                         end
+                        eps = 1e-7;
+                        u_pert = 'noise';
+                        [ ~ , ~ , LLE ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,eps,u_pert);
                         IC = strjoin(initialcondition(param_i),'');
+                        [ ~ , ~ , LLE_og ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,eps,u_pert);
                         disp(['Solved optimization problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                         fprintf('Iterations \t Initial J \t Optimal J \t Wall Clock \n ')
                         fprintf('----------------------------------------------------------------------------------------------------------\n')

@@ -34,20 +34,24 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
 
 
     %% process
+    projcoeffradialcut = projcoeffradialevolution(~any(projcoeffradialevolution == 0, 2), :);
+    num_radii = size(projcoeffradialcut,1);
+    number_of_plots = 7 + num_radii;
+    maxplotcols = 5;
+    number_of_plot_rows = ceil(number_of_plots/maxplotcols);
+    figwidth = 400*maxplotcols;
+    figheight = 450*number_of_plot_rows;
+
     fig = figure('Visible', 'on');
-    set(fig, 'Position', [100 100 1600 900], 'Color', 'white', 'Resize', 'off');
+    set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
     set(groot, 'DefaultAxesLooseInset', [0 0 0 0]);
     
-    ax(1) = subplot(2,4,1);
-    ax(2) = subplot(2,4,2);
-    ax(3) = subplot(2,4,3);
-    ax(4) = subplot(2,4,4);
-    ax(5) = subplot(2,4,5);
-    ax(6) = subplot(2,4,6);
-    ax(7) = subplot(2,4,7);
+    for k = 1:number_of_plots
+        ax(k) = subplot(number_of_plot_rows,maxplotcols,k);
+    end
     
-    for k = 1:7
+    for k = 1:number_of_plots
         set(ax(k), ...
             'Color','white', ...
             'FontSize',16, ...
@@ -152,86 +156,148 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
         % ==========================================================
         if ~didInitPlots
             % ------------ AXIS 1: physical field ---------------
-            h_surf1 = surfc(ax(1), x1pi, x2pi, u_i_ps);
-            xlabel(ax(1),'$x_1$','Interpreter','latex','FontSize',16);
-            ylabel(ax(1),'$x_2$','Interpreter','latex','FontSize',16);
-            shading(ax(1),'interp');
-            colormap(ax(1), redblue);
-            view(ax(1),3);
-            axis(ax(1),'square');
+            k = 1;
+            h_surf1 = surfc(ax(k), x1pi, x2pi, u_i_ps);
+            xlabel(ax(k),'$x_1$','Interpreter','latex','FontSize',16);
+            ylabel(ax(k),'$x_2$','Interpreter','latex','FontSize',16);
+            shading(ax(k),'interp');
+            colormap(ax(k), redblue);
+            view(ax(k),3);
+            axis(ax(k),'square');
     
             % ------------ AXIS 2: tiled domain -----------------
-            h_surf2 = surfc(ax(2), x12x, x22x, u_i2x);
-            xlabel(ax(2),'$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',16);
-            ylabel(ax(2),'$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',16);
-            shading(ax(2),'interp');
-            colormap(ax(2), redblue);
-            xline(ax(2), L_s1, '--');
-            yline(ax(2), L_s2, '--');
-            view(ax(2),2);
-            axis(ax(2),'square');
+            k = 2;
+            h_surf2 = surfc(ax(k), x12x, x22x, u_i2x);
+            xlabel(ax(k),'$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',16);
+            ylabel(ax(k),'$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',16);
+            shading(ax(k),'interp');
+            colormap(ax(k), redblue);
+            xline(ax(k), L_s1, '--');
+            yline(ax(k), L_s2, '--');
+            view(ax(k),2);
+            axis(ax(k),'square');
     
             % ------------ AXIS 3: energy evolution -------------
-            h_H2 = semilogy(ax(3), timewindow, energyH2, 'g'); hold(ax(3),'on');
-            h_H1 = semilogy(ax(3), timewindow, energyH1, 'r');
-            h_L2 = semilogy(ax(3), timewindow, energyL2, 'b');
-            h_xline = xline(ax(3), currentT, '-');
-            hold(ax(3),'off');
+            k = 3;
+            h_H2 = semilogy(ax(k), timewindow, energyH2, 'g'); hold(ax(3),'on');
+            h_H1 = semilogy(ax(k), timewindow, energyH1, 'r');
+            h_L2 = semilogy(ax(k), timewindow, energyL2, 'b');
+            %h_xline = xline(ax(k), currentT, '-');
+            H2_xline = plot(ax(k), timewindow(1,i), energyH2(1,i), 'ko');
+            H1_xline = plot(ax(k), timewindow(1,i), energyH1(1,i), 'ko');
+            L2_xline = plot(ax(k), timewindow(1,i), energyL2(1,i), 'ko');
+            hold(ax(k),'off');
     
-            xlabel(ax(3),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(3),'$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex','FontSize',16);
-            xlim(ax(3), [0 T]);
-            ylim(ax(3), [ymin_energy ymax_energy]);
-            title(ax(3), "Energy evolution", 'Interpreter','latex','FontSize',16);
-            legend(ax(3), '$S=H^2$','$S=H^1$','$S=L^2$', ...
+            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
+            ylabel(ax(k),'$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex','FontSize',16);
+            xlim(ax(k), [0 T]);
+            ylim(ax(k), [ymin_energy ymax_energy]);
+            title(ax(k), "Energy evolution", 'Interpreter','latex','FontSize',16);
+            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$', ...
                    'Interpreter','latex','Location','southeast','FontSize',12);
-            axis(ax(3),'square');
+            axis(ax(k),'square');
     
             % ------------ AXIS 4: radial spectrum --------------
-            h_spec1 = semilogy(ax(4), v_mean(:,i), "o--");
-            xlabel(ax(4),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
-            ylabel(ax(4),'$E(k)$','Interpreter','latex','FontSize',16);
-            title(ax(4),"Energy spectrum",'Interpreter','latex','FontSize',16);
-            xlim(ax(4), [1 size(v_mean,1)]);
-            ylim(ax(4), [1e-20 ymax_spec]);
-            axis(ax(4),'square');
+            k = 4;
+            h_spec1 = semilogy(ax(k), v_mean(:,1), v_mean(:,i+1), "-");
+            xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+            ylabel(ax(k),'$E(k)$','Interpreter','latex','FontSize',16);
+            title(ax(k),"Energy spectrum",'Interpreter','latex','FontSize',16);
+            xlim(ax(k), [1 size(v_mean,1)]);
+            ylim(ax(k), [1e-20 ymax_spec]);
+            axis(ax(k),'square');
             
             % ------------ AXIS 5: analyticity strip -----------
-            a_strip = plot(ax(5), timewindow, astripwidth, 'b'); 
-            hold(ax(5),'on');
-            a_xline = xline(ax(5), currentT, '-');
-            a_resline = yline(ax(5), max(L1/N,L2/N), '--');
-            ylim(ax(5), [0 1.5*max(astripwidth)]);
-            hold(ax(5),'off');
+            k = 5;
+            a_strip = plot(ax(k), timewindow, astripwidth, 'b'); 
+            hold(ax(k),'on');
+            %a_xline = xline(ax(k), currentT, '-');
+            a_xline = plot(ax(k), timewindow(1,i), astripwidth(1,i), 'ko');
+            a_resline = yline(ax(k), max(L1/N,L2/N), '--');
+            ylim(ax(k), [0 1.5*max(astripwidth)]);
+            hold(ax(k),'off');
     
-            xlabel(ax(5),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(5),'$\delta(t)$','Interpreter','latex','FontSize',16);
-            title(ax(5), "Analyticity strip width", 'Interpreter','latex','FontSize',16);
-            axis(ax(5),'square');
+            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
+            ylabel(ax(k),'$\delta(t)$','Interpreter','latex','FontSize',16);
+            title(ax(k), "Analyticity strip width", 'Interpreter','latex','FontSize',16);
+            axis(ax(k),'square');
 
             % ------------ AXIS 6: projection coeffs v radius ------------
-            idx0 = find(projcoeffradialevolution(:,end) == 0, 3, 'first');
+            k = 6;
+            %{
+            idx0 = find(projcoeffradialevolution(:,end) == 0, 1, 'first');
             idx0 = idx0(end);
-            h_proj = plot(ax(6), projcoeffradialevolution(1:idx0,i), "o--");
-            xlabel(ax(6),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
-            ylabel(ax(6),'$\sum_{k} |a_k|$','Interpreter','latex','FontSize',16);
-            title(ax(6),"Projection coefficient spectrum",'Interpreter','latex','FontSize',16);
-            xlim(ax(6), [1 idx0]);
-            ylim(ax(6), [1e-20 ymax_proj]);
-            axis(ax(6),'square');
+            projcoeffradialevolution(idx0,1) = round(projcoeffradialevolution(idx0-1,1))+1;
+            h_proj = plot(ax(k), projcoeffradialevolution(1:idx0,1), projcoeffradialevolution(1:idx0,i+1), "o--");
+            %}
+            h_proj = plot(ax(k), projcoeffradialcut(:,1), projcoeffradialcut(:,i+1), "o--");
+            xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
+            ylabel(ax(k),'$P(a_k)$','Interpreter','latex','FontSize',16);
+            title(ax(k),"Projection coefficient spectrum",'Interpreter','latex','FontSize',16);
+            %xlim(ax(k), [1 idx0]);
+            ylim(ax(k), [min(min(projcoeffradialcut(:,2:end))) max(max(projcoeffradialcut(:,2:end)))]);
+            axis(ax(k),'square');
 
-            % ------------ AXIS 7: projection coeffs v time ------------
-            proj_strip = plot(ax(7), timewindow, projcoeffmodeevolution(:,3:end)'); 
-            hold(ax(7),'on');
-            proj_coeffpts = plot(ax(7), currentT, projcoeffmodeevolution(:,i+2)', 'o');
-            ylim(ax(7), [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))]);
-            hold(ax(7),'off');
+            % ------------ AXIS 7-X: projection coeffs v time ------------
+            k = 7;
+            proj_strip(k,1:size(projcoeffmodeevolution,1)) = plot(ax(k), timewindow, projcoeffmodeevolution(:,3:end)'); 
+            hold(ax(k),'on');
+            
+            Nmodes = size(projcoeffmodeevolution,1);
+            % Initial coordinates (for the first frame)
+            xpts = currentT * ones(Nmodes,1);
+            ypts = projcoeffmodeevolution(:, i+2);
+            %kx = projcoeffmodeevolution(:,1);
+            %ky = projcoeffmodeevolution(:,2);
+            %labels = compose('%g', 1:Nmodes);%compose('%g , %g', kx, ky);
+
+            % Create marker handles (one per point)
+            proj_coeffpts(k,1:Nmodes) = plot(ax(k), xpts, ypts, 'ko');
+            hold(ax(k), 'on')
+            
+            % Create text labels (one per point)
+            %{
+            for r = 1:Nmodes
+                proj_labels(k,r) = text(ax(k), xpts(r), ypts(r), labels(r), ...
+                    'VerticalAlignment',  'middle', ...
+                    'HorizontalAlignment', 'left', ...
+                    'FontSize',            8);
+            end
+            %}
+
+            ylim(ax(k), [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))]);
+            hold(ax(k),'off');
     
-            xlabel(ax(7),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(7),'$P\left(a_k\right)$','Interpreter','latex','FontSize',16);
-            %ylabel(ax(7),'${|a_k|}/{\| \sum |a_k| \|}$','Interpreter','latex','FontSize',16);
-            title(ax(7), "Projection coefficient evolution", 'Interpreter','latex','FontSize',16);
-            axis(ax(7),'square');
+            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
+            ylabel(ax(k),'$P\left(a_k\right)$','Interpreter','latex','FontSize',16);
+            %ylabel(ax(k),'${|a_k|}/{\| \sum |a_k| \|}$','Interpreter','latex','FontSize',16);
+            title(ax(k), 'Full projection', 'Interpreter','latex','FontSize',16);
+            legend(ax(k), proj_coeffpts(k,1), [num2str(Nmodes) ' modes'],'Location','southwest')
+            axis(ax(k),'square');
+                        
+            radnum = 0;
+            averagemodes = size(projcoeffmodeevolution,1)/size(rmmissing(projcoeffradialevolution),1);
+            radrows = NaN(num_radii,averagemodes);
+            for k = 8:number_of_plots
+                radnum = radnum + 1;
+                radius = projcoeffradialevolution(radnum,1);
+                currows = find( abs(vecnorm(projcoeffmodeevolution(:,1:2), 2, 2) - radius) < 1e-10 );
+                radrows(radnum,1:size(currows,1)) = currows;
+                proj_strip(k,1:size(currows,1)) = plot(ax(k), timewindow, projcoeffmodeevolution(radrows(radnum,1:size(currows,1)),3:end)'); 
+                hold(ax(k),'on');
+                proj_coeffpts(k,1:size(currows,1)) = plot(ax(k), currentT*ones(size(radrows(radnum,1:size(currows,1)),1),1), projcoeffmodeevolution(radrows(radnum,1:size(currows,1)),i+2)', 'ko');
+                %ylim(ax(k), [0.99*min(min(projcoeffmodeevolution(radrows(radnum,1:size(currows,1)),3:end))) 1.01*max(max(projcoeffmodeevolution(radrows(radnum,1:size(currows,1)),3:end)))]);
+                ylim(ax(k), [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))]);
+                
+                hold(ax(k),'off');
+        
+                xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
+                ylabel(ax(k),'$P\left(a_k\right)$','Interpreter','latex','FontSize',16);
+                %ylabel(ax(k),'${|a_k|}/{\| \sum |a_k| \|}$','Interpreter','latex','FontSize',16);
+                title(ax(k), ['$k =$' num2str(radius) ' projection'], 'Interpreter','latex','FontSize',16);
+                legend(ax(k), proj_coeffpts(k,1), [num2str(size(currows,1)) ' modes'],'Location','southwest')
+                axis(ax(k),'square');
+            end
     
             didInitPlots = true;
     
@@ -242,20 +308,35 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             set(h_surf2, 'ZData', u_i2x);
     
             % Axis 3: just move the xline (curves are static arrays)
-            h_xline.Value = currentT;
+            %h_xline.Value = currentT;
+            set(H2_xline, 'XData', timewindow(1,i), 'YData', energyH2(i,1));
+            set(H1_xline, 'XData', timewindow(1,i), 'YData', energyH1(i,1));
+            set(L2_xline, 'XData', timewindow(1,i), 'YData', energyL2(i,1));
     
             % Axis 4: update spectrum
-            set(h_spec1, 'YData', v_mean(:,i));
+            set(h_spec1, 'YData', v_mean(:,i+1));
                     
             % Axis 5: update analyticity strip
-            a_xline.Value = currentT;
+            %a_xline.Value = currentT;
+            set(a_xline, 'XData', timewindow(1,i), 'YData', astripwidth(i,1));
 
             % Axis 6: update projection coefficient spectrum
-            set(h_proj, 'YData', projcoeffradialevolution(:,i));
+            %set(h_proj, 'YData', projcoeffradialevolution(1:idx0,i+1));
+            set(h_proj, 'YData', projcoeffradialcut(:,i+1));
 
-            % Axis 7: update proj coeff evolution
-            set(proj_coeffpts, 'XData', currentT*ones(size(projcoeffmodeevolution,1),1), 'YData', projcoeffmodeevolution(:,i+2));
-    
+            % Axis X: update proj coeff evolution
+            k = 7;
+            xpts = currentT * ones(Nmodes,1);
+            ypts = projcoeffmodeevolution(:, i+2);
+            set(proj_coeffpts(k,1:Nmodes), 'XData', xpts, 'YData', ypts);
+
+            radnum = 0;
+            for k = 8:number_of_plots
+                radnum = radnum + 1;
+                numrows = size(rmmissing(radrows(radnum,:)),2);
+                set(proj_coeffpts(k,1:numrows), 'XData', currentT*ones(numrows,1), 'YData', projcoeffmodeevolution(radrows(radnum,1:numrows),i+2));
+            end
+
             % ==================================================
         end
     

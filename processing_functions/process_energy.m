@@ -39,9 +39,8 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
     energyH1 = energyL2;
     energyH2 = energyL2;
     astripwidth = energyL2;                               % analyticity strip width
-    v_radii = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime); % radial mode distance
-    v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1,Ntime);
-    v_meancount = v_mean;
+    v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1, Ntime+1 ); % uniform-distance radial energy spectrum
+    v_mean(:,1) = NaN;
     projcoeffradialevolution = v_mean;
     projcoeffmodeevolution = [];
     Ntime_remaining = Ntime;
@@ -73,16 +72,27 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
             projcoeffmodeevolution = [projcoeffmodeevolution ; zeros(size(unstablemodes,1)-size(projcoeffmodeevolution,1),Ntime+2)];
         end
         for j = 1:size(unstablemodes,1)
-            index = round(sqrt((unstablemodes(j,1))^2+(unstablemodes(j,2))^2));
-            projcoeffradialevolution(index,i) = projcoeffradialevolution(index,i) + projcoeffs(j,1);
+            % radial projection sum
+            radius = sqrt((unstablemodes(j,1))^2+(unstablemodes(j,2))^2);
+            if ~isempty(find(abs(projcoeffradialevolution(:,1) - radius) < 1e-10 , 1))
+                idx = find(abs(projcoeffradialevolution(:,1) - radius) < 1e-10 , 1);
+                projcoeffradialevolution(idx,i+1) = projcoeffradialevolution(idx,i+1) + projcoeffs(j).^2/norm(projcoeffs).^2;%projcoeffs(j,1);
+            else
+                idx = find(isnan(projcoeffradialevolution(:,1)) , 1, 'first');
+                projcoeffradialevolution(idx,1) = radius;
+                projcoeffradialevolution(idx,i+1) = projcoeffs(j).^2/norm(projcoeffs).^2;%projcoeffs(j,1);
+            end
+
+            % mode projection coefficient
             if ~isempty(find(abs(projcoeffmodeevolution(:,1) - unstablemodes(j,1)) < 1e-10 & abs(projcoeffmodeevolution(:,2) - unstablemodes(j,2)) < 1e-10, 1, 'first'))
                 idx = find(abs(projcoeffmodeevolution(:,1) - unstablemodes(j,1)) < 1e-10 & abs(projcoeffmodeevolution(:,2) - unstablemodes(j,2)) < 1e-10, 1, 'first');
-                projcoeffmodeevolution(idx,i+2) = abs(projcoeffs(j))/norm(sum(abs(projcoeffs)));
+                projcoeffmodeevolution(idx,i+2) = projcoeffs(j).^2/norm(projcoeffs).^2;
             else
                 idx = find(projcoeffmodeevolution(:,1) == 0 & projcoeffmodeevolution(:,2) == 0, 1, 'first');
                 projcoeffmodeevolution(idx,1:2) = unstablemodes(j,1:2);
-                projcoeffmodeevolution(idx,i+2) = abs(projcoeffs(j))/norm(sum(abs(projcoeffs)));
+                projcoeffmodeevolution(idx,i+2) = projcoeffs(j).^2/norm(projcoeffs).^2;
             end
+
         end
 
         u_i = reshape( u_n(:,imod) , [ N , N ] );
@@ -91,20 +101,25 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
         energyL2(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
         energyH1(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
         energyH2(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
+
         for j = 1:N
             for k = 1:N
-                index = round(sqrt((j-(N/2+1))^2+(k-(N/2+1))^2)) + 1;
-                v_radii(index,i) = index;
-                v_mean(index,i) = v_mean(index,i) + v(j,k);
-                v_meancount(index,i) = v_meancount(index,i) + 1;
+                radius = sqrt((j-(N/2+1))^2+(k-(N/2+1))^2);
+                if ~isempty(find(abs(v_mean(:,1) - round(radius)) < 1e-10 , 1))
+                    idx = find(abs(v_mean(:,1) - round(radius)) < 1e-10 , 1);
+                    v_mean(idx,i+1) = v_mean(idx,i+1) + v(j,k);
+                else
+                    idx = find(isnan(v_mean(:,1)) , 1, 'first');
+                    v_mean(idx,1) = round(radius);
+                    v_mean(idx,i+1) = v(j,k);
+                end
             end
         end
-        for m = 1:size(v_meancount,1)
-            v_mean(m,i) = v_mean(m,i)/2;%v_meancount(m,i);
-        end
+        v_mean = sortrows(v_mean,1);
+        v_mean(:,i+1) = v_mean(:,i+1)./2;
             
         % Width of the analyticity strip
-        astripwidth(i,1) = fit_delta(v_radii(2:end,i), v_mean(2:end,i));
+        astripwidth(i,1) = fit_delta(v_mean(2:end,1), v_mean(2:end,i+1));
             
         if i == 1
             u_IC = u_n(:,1);

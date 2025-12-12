@@ -37,15 +37,15 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             % Wavenumber evolution plot
             timewindow = linspace(0,T,Ntime);
             h = figure('Visible', 'off');
-            semilogy(timewindow,v_mean(1,:),'LineWidth',0.1,'Marker','.')
+            semilogy(timewindow,v_mean(1,2:end),'LineWidth',0.1,'Marker','.')
             hold on;
             for i = 2:size(v_mean,1)
-                semilogy(timewindow,v_mean(i,:),'LineWidth',0.1,'Marker','.')
+                semilogy(timewindow,v_mean(i,2:end),'LineWidth',0.1,'Marker','.')
             end
             set(gcf,'Position',[100 100 900 750])
             xlabel('Time $t$','Interpreter','latex'); 
             xlim([0 T])
-            ylim([1e-20 max(v_mean(1,:))+1e5 ])
+            ylim([1e-20 max(v_mean(1,2:end))+1e5 ])
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             fontsize(12,"points")
             set(gca,'fontsize', 16) 
@@ -71,11 +71,11 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % Wavenumber IC plot
             h = figure('Visible', 'off');
-            semilogy(v_mean(:,1),"o--")
+            semilogy(v_mean(:,1),v_mean(:,2),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             xlim([1 size(v_mean,1)])
-            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            ylim([ 1e-20 max(v_mean(1,2:end))+1e5 ])
             set(gcf,'Position',[100 100 900 750])
             fontsize(12,"points")
             set(gca,'fontsize', 16) 
@@ -97,11 +97,11 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % Wavenumber TC plot
             h = figure('Visible', 'off');
-            semilogy(v_mean(:,end),"o--")
+            semilogy(v_mean(:,1),v_mean(:,end),"o--")
             xlabel('$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex'); 
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             xlim([1 size(v_mean,1)])
-            ylim([ 1e-20 max(v_mean(1,:))+1e5 ])
+            ylim([ 1e-20 max(v_mean(1,2:end))+1e5 ])
             set(gcf,'Position',[100 100 900 750])
             fontsize(12,"points")
             set(gca,'fontsize', 16) 
