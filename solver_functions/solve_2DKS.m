@@ -86,10 +86,8 @@ u_n: solution vector for each time step in Physical space
 
     % set initial L^2 energy magnitude
     u_0_mag = sqrt(sum( u_0(:) .* conj(u_0(:)) )*(L1*L2)/N^2);                  % compute norm of IC
-    if K ~= 0 
-        u_0 = sqrt(K)*(u_0/u_0_mag);                                                    % set norm of IC equal to K
-    end
-    
+    u_0 = sqrt(K)*(u_0/u_0_mag);                                                % set norm of IC equal to K
+
     % perturbation function for adjoint calculus
     switch utility2 
         case 'noise'
@@ -108,7 +106,13 @@ u_n: solution vector for each time step in Physical space
             u_pert = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'stg30'
             u_pert = sin( (L_x1*x1 + L_x2*x2) ) +  sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
-    end                   
+    end      
+
+    % normalize perturbed L^2 energy magnitude
+    if exist('u_pert','var')
+        u_pert_mag = sqrt(sum( u_pert(:) .* conj(u_pert(:)) )*(L1*L2)/N^2);                  % compute norm of IC
+        u_pert = u_pert/u_pert_mag;                                                    % set norm of IC equal to 1
+    end
 
     switch solver
         case 'forward'
@@ -124,7 +128,7 @@ u_n: solution vector for each time step in Physical space
             u_out = 0;
             utilityout = 0;
         case 'LLE'
-            eps = utility1;            % perturbation magnitude for largest Lyapunov exponent
+            eps = 1e-7;            % perturbation magnitude for largest Lyapunov exponent
             u_0p = u_0 + eps*u_pert;     % perturbed initial condition
             v_0p = fft2(u_0p);            % FFT of perturbed physical initial condition
             v_0 = fft2(u_0);            % FFT of original physical initial condition
@@ -194,12 +198,14 @@ u_n: solution vector for each time step in Physical space
 
                 % nonlinear terms and solution substeps
                 for k = 1:4
-                    v_step2x = reshape( D1vec .* v_step, [ N , N_x2 ] );                     % f_x
-                    v_step2y = reshape( D2vec .* v_step, [ N , N_x2 ] );                     % f_y
-                    w1_r = multiply2D( v_step2x , v_step2x , 'fourier2real' );                  % f_x * f_x in physical space (pseudospectral)
-                    w1s_r = multiply2D( v_step2y , v_step2y , 'fourier2real' );                 % f_y * f_y in physical space (pseudospectral)
-                    Nonlin_v1_r = (1/2) * ( w1_r + w1s_r );                                     % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
-                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) ,'dealias');  % dealias
+                    %% C++
+                    v_step2x = reshape( D1vec .* v_step, [ N , N_x2 ] );                              % f_x 
+                    v_step2y = reshape( D2vec .* v_step, [ N , N_x2 ] );                              % f_y
+                    w1_r = multiply2D( v_step2x , v_step2x , 'fourier2real' );                        % f_x * f_x in physical space (pseudospectral)
+                    w1s_r = multiply2D( v_step2y , v_step2y , 'fourier2real' );                       % f_y * f_y in physical space (pseudospectral)
+                    Nonlin_v1_r = (1/2) * ( w1_r + w1s_r );                                           % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
+                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) ,'dealias');        % dealias
+                    %%
                     Nonlin_v1 = Nonlin_v1(:);
     
                     v_1 = ( 1 + (dt * alpha_I(k) * Lin) ).^(-1) .* ...
@@ -274,8 +280,9 @@ u_n: solution vector for each time step in Physical space
             v_stepp = v_np(:,1);                                                                  % initialize stepping with fourier IC
             Nonlin_v0p = 0;
             deltav0 = v_0p(:) - v_0(:);
-            deltav0mag = sum( deltav0(:) )*(L1*L2)/(N*N)^2;
-            renormcounter = 0;                                                              % count number of renormalizations
+            deltav0mag = sqrt(sum( abs(deltav0(:)).^2 )*(L1*L2)/(N*N)^2);
+            renormcounter = 0;                                                                  % count number of renormalizations
+            growthfactors = NaN(3,1);
             for i = 2:Ntime
 
                 % nonlinear terms and solution substeps for original problem
@@ -333,14 +340,27 @@ u_n: solution vector for each time step in Physical space
                 
                 %% renormalization check
                 deltav1 = v_1p(:) - v_1(:);
-                deltav1mag = sum( deltav1(:) )*(L1*L2)/(N*N)^2;
+                deltav1mag = sqrt(sum( abs(deltav1(:)).^2 )*(L1*L2)/(N*N)^2);
                 growthfactor = deltav1mag/deltav0mag;
                 currentT = i/Ntime*T;
                 if growthfactor > 10^(1.5)
                     renormcounter = renormcounter + 1;
-                    utilityout = [ utilityout, growthfactor ];
-                    utilityout(renormcounter,1) = (1/currentT)*sum(log(utilityout));
-                    deltav0mag = deltav1mag;
+                    if ~isnan(growthfactors(1,end))
+                        growthfactors = [ growthfactors , NaN(3,1) ];
+                    end
+                    growthfactors(1,renormcounter) = currentT;             % current time
+                    growthfactors(2,renormcounter) = log(growthfactor);    % logarithmic growth
+                    growthfactors(3,renormcounter) = (1/currentT)*sum(growthfactors(2,:)); % largest Lyapunov exponent
+                    %% reset perturbed trajectory
+                    u_pert = (2*rand(N)-ones(N));
+                    u_pert_mag = sqrt(sum( u_pert(:) .* conj(u_pert(:)) )*(L1*L2)/N^2);                  
+                    u_pert = u_pert/u_pert_mag;
+                    u_1p = u_1 + eps*u_pert;     
+                    v_12p = fft2(u_1p);
+                    v_stepp = v_12p(:);
+                    deltav0 = v_stepp(:) - v_step(:);
+                    deltav0mag = sqrt(sum( abs(deltav0(:)).^2 )*(L1*L2)/(N*N)^2);
+                    utilityout = growthfactors;
                 end
 
             end
