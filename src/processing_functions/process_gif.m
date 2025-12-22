@@ -64,7 +64,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     figwidth = 400*maxplotcols;
     figheight = 450*number_of_plot_rows;
 
-    fig = figure('Visible', 'off');
+    fig = figure('Visible', 'on');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
     set(groot, 'DefaultAxesLooseInset', [0 0 0 0]);
@@ -241,6 +241,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             a_xline = plot(ax(k), timewindow(1,i), astripwidth(1,i), 'ko');
             a_resline = yline(ax(k), max(L1/N,L2/N), '--');
             ylim(ax(k), [0 1.5*max(astripwidth)]);
+            xlim(ax(k), [0 T]);
             hold(ax(k),'off');
     
             xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
@@ -262,12 +263,11 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             ax(k).XTick = xmodelabels;
             ax(k).XTickLabel = cellstr(modecats);
             ax(k).XLim = [0.5, numel(modecats) + 0.5];
-            ax(k).YLim = [0.9*min(projcoeffradialcut(:, i+1)), 1.1*max(projcoeffradialcut(:, i+1))];
             xlabel(ax(k),'$(k_1,k_2)$','Interpreter','latex','FontSize',16); 
             ylabel(ax(k),'$P(a_k)$','Interpreter','latex','FontSize',16);
             title(ax(k),"Projection coefficient weights",'Interpreter','latex','FontSize',16);
             %xlim(ax(k), [1 idx0]);
-            ylim(ax(k), [min(min(projcoeffradialcut(:,2:end))) max(max(projcoeffradialcut(:,2:end)))]);
+            ylim(ax(k), [0.9*min(min(projcoeffradialcut(:,2:end))) , 1.1*max(max(projcoeffradialcut(:,2:end)))]);
             axis(ax(k),'square');
 
             % ------------ AXIS 7-X: projection coeffs v time ------------
@@ -295,6 +295,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
                     'VerticalAlignment','middle');
             end
 
+            xlim(ax(k), [0 T]);
             ylim(ax(k), [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))]);
             hold(ax(k),'off');
     
