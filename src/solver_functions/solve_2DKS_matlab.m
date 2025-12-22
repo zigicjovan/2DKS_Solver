@@ -196,12 +196,12 @@ u_n: solution vector for each time step in Physical space
 
                 % nonlinear terms and solution substeps
                 for k = 1:4
-                    v_step2x = reshape( D1vec .* v_step, [ N , N_x2 ] );                     % f_x
-                    v_step2y = reshape( D2vec .* v_step, [ N , N_x2 ] );                     % f_y
-                    w1_r = multiply2D( v_step2x , v_step2x , 'fourier2real' );                  % f_x * f_x in physical space (pseudospectral)
-                    w1s_r = multiply2D( v_step2y , v_step2y , 'fourier2real' );                 % f_y * f_y in physical space (pseudospectral)
-                    Nonlin_v1_r = (1/2) * ( w1_r + w1s_r );                                     % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
-                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) ,'dealias');  % dealias
+                    v_step2x = reshape( D1vec .* v_step, [ N , N_x2 ] );                              % f_x 
+                    v_step2y = reshape( D2vec .* v_step, [ N , N_x2 ] );                              % f_y
+                    w1_r = multiply2D( v_step2x , v_step2x , 'fourier2real' );                        % f_x * f_x in physical space (pseudospectral)
+                    w1s_r = multiply2D( v_step2y , v_step2y , 'fourier2real' );                       % f_y * f_y in physical space (pseudospectral)
+                    Nonlin_v1_r = (1/2) * ( w1_r + w1s_r );                                           % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
+                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) ,'dealias');        % dealias
                     Nonlin_v1 = Nonlin_v1(:);
     
                     v_1 = ( 1 + (dt * alpha_I(k) * Lin) ).^(-1) .* ...

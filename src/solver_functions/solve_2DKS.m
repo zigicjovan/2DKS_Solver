@@ -352,12 +352,36 @@ u_n: solution vector for each time step in Physical space
             end
             [~, v_fwd] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_residual T], utility2);
             count = 0;
+            Nonlin_v0 = 0;
             for i = Ntime-1:-1:1
                 
                 v_fwdstep = v_fwd(:,Ntime_residual-count);
 
+                % matlab
+                v_fwd2x = reshape( D1vec .* v_fwdstep, [ N , N_x2 ] );                       % f_x
+                v_fwd2y = reshape( D2vec .* v_fwdstep, [ N , N_x2 ] );                       % f_y
+                v_fwd2lap = reshape( Lap .* v_fwdstep, [ N , N_x2 ] );                       % lap(f)
                 % nonlinear terms and solution substeps
-                v_1 = ks_nonlinear_bwd( v_step, v_fwdstep, D1vec, D2vec, Lap, N, Lin, dt, alpha_I, beta_I, alpha_E, beta_E);
+                for k = 1:4
+                    v_step2 = reshape( v_step, [ N , N_x2 ] );                               % z (adjoint variable)
+                    v_step2x = reshape( D1vec .* v_step, [ N , N_x2 ] );                     % z_x
+                    v_step2y = reshape( D2vec .* v_step, [ N , N_x2 ] );                     % z_y
+                    w1_r = multiply2D( v_step2x , v_fwd2x , 'fourier2real' );                   % z_x * f_x in physical space (pseudospectral)
+                    w1s_r = multiply2D( v_step2y , v_fwd2y , 'fourier2real' );                  % z_y * f_y in physical space (pseudospectral)
+                    w2_r = multiply2D( v_fwd2lap , v_step2 , 'fourier2real' );                  % lap(f) * z in physical space (pseudospectral)
+                    Nonlin_v1_r = (-1)*( w1_r + w1s_r ) - ( w2_r ) ;                            % - (z_x * f_x + z_y * f_y) - (lap(f) * z) in physical space
+                    Nonlin_v1 = multiply2D( fft2(Nonlin_v1_r) , fft2(Nonlin_v1_r) , 'dealias'); % dealias
+                    Nonlin_v1 = Nonlin_v1(:);
+
+                    v_1 = ( 1 + (dt * alpha_I(k) * Lin) ).^(-1) .* ...
+                        ( ( 1 - (dt * beta_I(k) * Lin) ) .* v_step - ...
+                        (dt * alpha_E(k) * Nonlin_v1) - (dt * beta_E(k) * Nonlin_v0) );
+
+                    v_step = v_1;
+                    Nonlin_v0 = Nonlin_v1;
+                end
+                % nonlinear terms and solution substeps
+                %v_1 = ks_nonlinear_bwd( v_step, v_fwdstep, D1vec, D2vec, Lap, N, Lin, dt, alpha_I, beta_I, alpha_E, beta_E);
                 
                 % correction of non-zero mean solution
                 if abs(mean(v_1)) > 1e-5 
