@@ -327,7 +327,7 @@ set(gcf,'Position',[100 100 1250 700])
 xlabel('Time Window $T$','Interpreter','latex'); 
 ylabel('$\| {\phi(T;\varphi)} \|^2_{L^2}$','Interpreter','latex');
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
-parfiglistInterval = '$K = \left[10^{4},10^{4.5}, ... , 10^{6}\right], \ell = [1.02,1.04, ... , 1.40]$';
+parfiglistInterval = '$K = \left[10^{4},10^{4.5}, 10^{5}\right], \ell = [1.02,1.14, ... , 2.98]$';
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
 %{
 legendlist(1) = {'$\| \phi(T;\tilde{\varphi}_{K,2\pi(1.02),T}) \|^2_{L^2}~~~~~~~~$'};
