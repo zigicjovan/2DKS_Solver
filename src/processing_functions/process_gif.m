@@ -44,14 +44,25 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     modecounter = 1;
     k1 = 1;
     k2 = 0;
-    while modecounter < (size(projcoeffradialcut,1) + 1) && sqrt(k1^2 + k2^2) < (projcoeffradialcut(end,1) + 1)
-        if ( abs( sqrt(k1^2 + k2^2) - projcoeffradialcut(modecounter,1) ) < 1e-10 )
-            radialcutmodes(modecounter,:) = [ k1 , k2 ];
+    while modecounter < (size(projcoeffradialcut,1) + 1) 
+        currentradius = sqrt(k1^2 + k2^2);
+        idx = find( abs( currentradius - projcoeffradialcut(:,1) ) < 1e-10 );
+        if ~isempty(idx) && isnan(radialcutmodes(idx,1))
+            radialcutmodes(idx,:) = [ k1 , k2 ];
             modecounter = modecounter + 1;
-            k2 = k2 + 1; 
+            if currentradius <= projcoeffradialcut(end,1)
+                k1 = k1 + 1;
+            else
+                k1 = k2 + 1;
+                k2 = k2 + 1;
+            end
         else
-            k1 = k1 + 1;
-            k2 = 0;
+            if currentradius <= projcoeffradialcut(end,1)
+                k1 = k1 + 1;
+            else
+                k1 = k2 + 1;
+                k2 = k2 + 1;
+            end
         end
     end
     modelabels = "(" + string(radialcutmodes(:,1)) + "," + string(radialcutmodes(:,2)) + ")";
@@ -264,10 +275,14 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             cla(ax(k)) 
             xmodelabels = 1:numel(modecats);
             h_proj = bar(ax(k), xmodelabels, projcoeffradialcut(:, i+1), 'BarWidth', 1.0);
-            ax(k).XTick = xmodelabels;
-            ax(k).XTickLabel = cellstr(modecats);
+            if numel(modecats) < 15
+                ax(k).XTick = xmodelabels;
+                ax(k).XTickLabel = cellstr(modecats);
+                xlabel(ax(k),'$(k_1,k_2)$' );
+            else
+                xlabel(ax(k),'$(k_1,0)$' );
+            end
             ax(k).XLim = [0.5, numel(modecats) + 0.5];
-            xlabel(ax(k),'$(k_1,k_2)$' ); 
             ylabel(ax(k),'$P(a_k)$' );
             title(ax(k),"Projection coefficient weights" );
             %xlim(ax(k), [1 idx0]);
@@ -293,21 +308,32 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             hold(ax(k), 'on')
             
             % Create text labels (one per radius) and order to prevent overlap
-            modelabelposition = NaN(size(modelabels,1),1);
-            modepush = 0;
-            for imode = size(modelabels,1):-1:1
+            modelabelposition = cell(size(modelabels,1),3);
+            figfrac = (modalfigylim(2)-modalfigylim(1))*0.07;
+            for imode = 1:size(modelabels,1)
                 idx = find(( abs( projcoeff_ypts(:,1) - projcoeffradialcut(imode,1) ) < 1e-10 ) , 1 , 'first');
-                modelabelposition(imode) = projcoeffmodeevolution(idx,end) + modepush;
-                idx = find( min(abs(modelabelposition(imode) - modelabelposition(imode + 1:end))) , 1);
-                if (imode < size(modelabels,1)) && abs(modelabelposition(imode) - modelabelposition(idx)) < (modalfigylim(2)-modalfigylim(1))*0.07
-                    modepush = modepush + (modalfigylim(2)-modalfigylim(1))*0.07;
-                    modelabelposition(imode) = modelabelposition(imode) + modepush;
-                else
-                    modepush = 0;
+                modelabelposition{imode,1} = modelabels(imode);
+                modelabelposition{imode,2} = idx;
+                modelabelposition{imode,3} = projcoeffmodeevolution(idx,end);
+            end
+            modelabelposition = sortrows(modelabelposition,3);
+            if size(modelabels,1) > 15
+                modelabelposition{1,3} = modalfigylim(1);
+            end
+            for imode = 2:size(modelabels,1)
+                posdiff = modelabelposition{imode,3} - modelabelposition{imode-1,3};
+                if posdiff < figfrac && size(modelabels,1) < 15
+                    modelabelposition{imode,3} = modelabelposition{imode,3} + figfrac - posdiff;
+                elseif size(modelabels,1) > 15
+                    modelabelposition{imode,3} = modelabelposition{imode-1,3} + figfrac;
                 end
-                text(ax(k), T, modelabelposition(imode), modelabels(imode),...
-                    'HorizontalAlignment','left', 'VerticalAlignment','middle', ...
-                    'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
+            end
+            if numel(modecats) < 15
+                for imode = 1:size(modelabels,1)
+                    text(ax(k), T, modelabelposition{imode,3}, modelabelposition{imode,1},...
+                        'HorizontalAlignment','left', 'VerticalAlignment','middle', ...
+                        'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
+                end
             end
 
             xlim(ax(k), [0 T]);
