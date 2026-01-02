@@ -35,7 +35,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     % AS strip width fit
     asstrip_fit = v_mean(:,2:end);
     for i = 2:size(v_mean,2)
-        asstrip_fit(:,i-1) = v_mean(1,i)*exp(-2*astripwidth(i-1,1)*v_mean(:,1));
+        asstrip_fit(:,i-1) = astripwidth(i-1,1)*exp(-2*astripwidth(i-1,2)*v_mean(:,1));
     end
 
     %% process
@@ -67,18 +67,21 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     fig = figure('Visible', 'on');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
-    set(groot, 'DefaultAxesLooseInset', [0 0 0 0]);
+    wordsize = 16;
+
+    set(groot, ...
+    'DefaultAxesLooseInset',            [0 0 0 0], ...
+    'DefaultLegendFontSize',            ceil(3*wordsize/4), ...
+    'DefaultTextInterpreter',           'latex', ...
+    'DefaultAxesTickLabelInterpreter',  'latex', ...
+    'DefaultLegendInterpreter',         'latex');
     
     for k = 1:number_of_plots
         ax(k) = subplot(number_of_plot_rows,maxplotcols,k);
     end
     
     for k = 1:number_of_plots
-        set(ax(k), ...
-            'Color','white', ...
-            'FontSize',16, ...
-            'LabelFontSizeMultiplier', 1, ...
-            'TitleFontSizeMultiplier', 1);
+        set(ax(k),'Color','white');
         axis(ax(k), 'square');
         pos = get(ax(k),'Position');
         pos(2) = pos(2) - 0.05;
@@ -93,7 +96,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     
     title1 = 'Forward-time 2DKS solution';
     title2 = '';
-    sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',22);
+    sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',ceil(1.25*wordsize));
     
     Ntime_remaining = Ntime;
     if utility2(3) > 0
@@ -180,8 +183,9 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             % ------------ AXIS 1: physical field ---------------
             k = 1;
             h_surf1 = surfc(ax(k), x1pi, x2pi, u_i_ps);
-            xlabel(ax(k),'$x_1$','Interpreter','latex','FontSize',16);
-            ylabel(ax(k),'$x_2$','Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'$x_1$');
+            ylabel(ax(k),'$x_2$');
+            %title(ax(k),"Periodic solution field");
             shading(ax(k),'interp');
             colormap(ax(k), redblue);
             view(ax(k),3);
@@ -190,8 +194,9 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             % ------------ AXIS 2: tiled domain -----------------
             k = 2;
             h_surf2 = surfc(ax(k), x12x, x22x, u_i2x);
-            xlabel(ax(k),'$\frac{x_1}{2\pi}$','Interpreter','latex','FontSize',16);
-            ylabel(ax(k),'$\frac{x_2}{2\pi}$','Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'$\frac{x_1}{2\pi}$' );
+            ylabel(ax(k),'$\frac{x_2}{2\pi}$' );
+            title(ax(k),"Tiled solution field" );
             shading(ax(k),'interp');
             colormap(ax(k), redblue);
             xline(ax(k), L_s1, '--');
@@ -211,13 +216,12 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             L2_xline = plot(ax(k), timewindow(1,i), energyL2(1,i), 'ko');
             hold(ax(k),'off');
     
-            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(k),'$\| \phi(t;\varphi) \|^2_{S}$','Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'Time $t$' );
+            ylabel(ax(k),'$\| \phi(t;\varphi) \|^2_{S}$' );
             xlim(ax(k), [0 T]);
             ylim(ax(k), [ymin_energy ymax_energy]);
-            title(ax(k), "Energy evolution", 'Interpreter','latex','FontSize',16);
-            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$', ...
-                   'Interpreter','latex','Location','southeast','FontSize',12);
+            title(ax(k), "Energy evolution");
+            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast');
             axis(ax(k),'square');
     
             % ------------ AXIS 4: radial spectrum --------------
@@ -226,27 +230,27 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             hold(ax(k),'on');
             h_spec2 = semilogy(ax(k), v_mean(:,1), asstrip_fit(:,i), "r-");
             hold(ax(k),'off');
-            xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$','Interpreter','latex','FontSize',16); 
-            legend(ax(k),'$E(k)$','$E(1)e^{-2\delta k}$','Interpreter','latex','FontSize',12);
-            title(ax(k),"Energy spectrum",'Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
+            legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$');
+            title(ax(k),"Energy spectrum" );
             xlim(ax(k), [1 size(v_mean,1)]);
             ylim(ax(k), [1e-20 ymax_spec]);
             axis(ax(k),'square');
             
             % ------------ AXIS 5: analyticity strip -----------
             k = 5;
-            a_strip = plot(ax(k), timewindow, astripwidth, 'b'); 
+            a_strip = plot(ax(k), timewindow, astripwidth(:,2), 'b'); 
             hold(ax(k),'on');
             %a_xline = xline(ax(k), currentT, '-');
-            a_xline = plot(ax(k), timewindow(1,i), astripwidth(1,i), 'ko');
+            a_xline = plot(ax(k), timewindow(1,i), astripwidth(i,1), 'ko');
             a_resline = yline(ax(k), max(L1/N,L2/N), '--');
-            ylim(ax(k), [0 1.5*max(astripwidth)]);
+            ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
             xlim(ax(k), [0 T]);
             hold(ax(k),'off');
     
-            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(k),'$\delta(t)$','Interpreter','latex','FontSize',16);
-            title(ax(k), "Analyticity strip width", 'Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'Time $t$' );
+            ylabel(ax(k),'$\delta(t)$' );
+            title(ax(k), "Analyticity strip width");
             axis(ax(k),'square');
 
             % ------------ AXIS 6: projection coeffs v radius ------------
@@ -257,15 +261,15 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             projcoeffradialevolution(idx0,1) = round(projcoeffradialevolution(idx0-1,1))+1;
             h_proj = plot(ax(k), projcoeffradialevolution(1:idx0,1), projcoeffradialevolution(1:idx0,i+1), "o--");
             %}
-            cla(ax(k), 'reset') 
+            cla(ax(k)) 
             xmodelabels = 1:numel(modecats);
             h_proj = bar(ax(k), xmodelabels, projcoeffradialcut(:, i+1), 'BarWidth', 1.0);
             ax(k).XTick = xmodelabels;
             ax(k).XTickLabel = cellstr(modecats);
             ax(k).XLim = [0.5, numel(modecats) + 0.5];
-            xlabel(ax(k),'$(k_1,k_2)$','Interpreter','latex','FontSize',16); 
-            ylabel(ax(k),'$P(a_k)$','Interpreter','latex','FontSize',16);
-            title(ax(k),"Projection coefficient weights",'Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'$(k_1,k_2)$' ); 
+            ylabel(ax(k),'$P(a_k)$' );
+            title(ax(k),"Projection coefficient weights" );
             %xlim(ax(k), [1 idx0]);
             ylim(ax(k), [0.9*min(min(projcoeffradialcut(:,2:end))) , 1.1*max(max(projcoeffradialcut(:,2:end)))]);
             axis(ax(k),'square');
@@ -273,6 +277,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             % ------------ AXIS 7-X: projection coeffs v time ------------
             k = 7;
             proj_strip(k,1:size(projcoeffmodeevolution,1)) = plot(ax(k), timewindow, projcoeffmodeevolution(:,3:end)'); 
+            modalfigylim = [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))];
             hold(ax(k),'on');
             
             Nmodes = size(projcoeffmodeevolution,1);
@@ -287,22 +292,31 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             proj_coeffpts(k,1:Nmodes) = plot(ax(k), projcoeff_xpts, projcoeff_ypts(:,2), 'ko');
             hold(ax(k), 'on')
             
-            % Create text labels (one per radius)
-            for imode = 1:size(modelabels,1)
+            % Create text labels (one per radius) and order to prevent overlap
+            modelabelposition = NaN(size(modelabels,1),1);
+            modepush = 0;
+            for imode = size(modelabels,1):-1:1
                 idx = find(( abs( projcoeff_ypts(:,1) - projcoeffradialcut(imode,1) ) < 1e-10 ) , 1 , 'first');
-                text(ax(k), T, projcoeffmodeevolution(idx,end), modelabels(imode), ...
-                    'HorizontalAlignment','left', ...
-                    'VerticalAlignment','middle');
+                modelabelposition(imode) = projcoeffmodeevolution(idx,end) + modepush;
+                idx = find( min(abs(modelabelposition(imode) - modelabelposition(imode + 1:end))) , 1);
+                if (imode < size(modelabels,1)) && abs(modelabelposition(imode) - modelabelposition(idx)) < (modalfigylim(2)-modalfigylim(1))*0.07
+                    modepush = modepush + (modalfigylim(2)-modalfigylim(1))*0.07;
+                    modelabelposition(imode) = modelabelposition(imode) + modepush;
+                else
+                    modepush = 0;
+                end
+                text(ax(k), T, modelabelposition(imode), modelabels(imode),...
+                    'HorizontalAlignment','left', 'VerticalAlignment','middle', ...
+                    'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
             end
 
             xlim(ax(k), [0 T]);
-            ylim(ax(k), [0.99*min(min(projcoeffmodeevolution(:,3:end))) 1.01*max(max(projcoeffmodeevolution(:,3:end)))]);
+            ylim(ax(k), modalfigylim);
             hold(ax(k),'off');
     
-            xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
-            ylabel(ax(k),'$P\left(a_k\right)$','Interpreter','latex','FontSize',16);
-            %ylabel(ax(k),'${|a_k|}/{\| \sum |a_k| \|}$','Interpreter','latex','FontSize',16);
-            title(ax(k), 'Modal Energy', 'Interpreter','latex','FontSize',16);
+            xlabel(ax(k),'Time $t$' );
+            ylabel(ax(k),'$P\left(a_k\right)$' );
+            title(ax(k), 'Modal Energy');
             %legend(ax(k), proj_coeffpts(k,1), [num2str(Nmodes) ' modes'],'Location','southwest')
             axis(ax(k),'square');
                      
@@ -323,15 +337,39 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
                 
                 hold(ax(k),'off');
         
-                xlabel(ax(k),'Time $t$','Interpreter','latex','FontSize',16);
-                ylabel(ax(k),'$P\left(a_k\right)$','Interpreter','latex','FontSize',16);
-                %ylabel(ax(k),'${|a_k|}/{\| \sum |a_k| \|}$','Interpreter','latex','FontSize',16);
-                title(ax(k), ['$k =$' num2str(radius) ' projection'], 'Interpreter','latex','FontSize',16);
+                xlabel(ax(k),'Time $t$' );
+                ylabel(ax(k),'$P\left(a_k\right)$' );
+                %ylabel(ax(k),'${|a_k|}/{\| \sum |a_k| \|}$' );
+                title(ax(k), ['$k =$' num2str(radius) ' projection']);
                 legend(ax(k), proj_coeffpts(k,1), [num2str(size(currows,1)) ' modes'],'Location','southwest')
                 axis(ax(k),'square');
             end
             %}
     
+            % ---- enforce fonts/interpreters AFTER all plotting calls ----
+            for kk = 1:number_of_plots
+                set(ax(kk), ...
+                    'FontSize', ceil(0.75*wordsize), ...
+                    'LabelFontSizeMultiplier', 1.0, ...
+                    'TitleFontSizeMultiplier', 1.0, ...
+                    'TickLabelInterpreter', 'latex');  % axes tick labels
+            
+                % Ensure existing labels/titles use LaTeX + correct size
+                ax(kk).XLabel.Interpreter = 'latex';
+                ax(kk).YLabel.Interpreter = 'latex';
+                ax(kk).Title.Interpreter  = 'latex';
+            
+                ax(kk).XLabel.FontSize = wordsize;
+                ax(kk).YLabel.FontSize = wordsize;
+                ax(kk).Title.FontSize  = wordsize;
+            end
+            
+            % Legends: force font size/interpreter (since legend does not inherit axes)
+            lg = findall(fig, 'Type', 'Legend');
+            set(lg, 'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
+            % ------------------------------------------------------------
+
+
             didInitPlots = true;
     
         else
@@ -352,7 +390,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
                     
             % Axis 5: update analyticity strip
             %a_xline.Value = currentT;
-            set(a_xline, 'XData', timewindow(1,i), 'YData', astripwidth(i,1));
+            set(a_xline, 'XData', timewindow(1,i), 'YData', astripwidth(i,2));
 
             % Axis 6: update projection coefficient spectrum
             %set(h_proj, 'YData', projcoeffradialevolution(1:idx0,i+1));

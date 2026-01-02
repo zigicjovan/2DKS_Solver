@@ -60,7 +60,7 @@ for k = 1:numel(K_vals)
     T_loglinfits(k,:) = polyfit(K_groups(1,2:T_fitlength),log10(K_groups(k+1,2:T_fitlength)), 1);
     curveplot = semilogy(K_groups(1,2:end),(K_groups(k+1,2:end)),'-o','MarkerSize',3);
     T_Legend(end+1) = curveplot;
-    T_legendlabels{end+1}  = ['$' num2str(K_groups(k+1,1),'%.0f') ' \approx 10^{' num2str(T_loglinfits(k,1),'%.3f') '\ell ' num2str(T_loglinfits(k,2),'%.3f') '}$'];
+    T_legendlabels{end+1}  = ['$\tilde{T}_{' num2str(K_groups(k+1,1),'%.0f') '} \approx 10^{' num2str(T_loglinfits(k,1),'%.3f') '\ell ' num2str(T_loglinfits(k,2),'%.3f') '}$'];
     hold on
 end
 T_loglinfits = rmmissing(T_loglinfits);
@@ -72,10 +72,10 @@ powerlawmin = min(T_loglinfits(:,1));
 powerlawmax = max(T_loglinfits(:,1));
 curveplot = semilogy(ellrange, (10.^(coeffmin + ellrange.*powerlawmin)),'b--','MarkerSize',3);
 T_Legend(end+1) = curveplot;
-T_legendlabels{end+1}  = ['$10^{' num2str(powerlawmin,'%.3f') '\ell ' num2str(coeffmin,'%.3f') '}$'];
+T_legendlabels{end+1}  = ['$\tilde{T}_{\min} \approx 10^{' num2str(powerlawmin,'%.3f') '\ell ' num2str(coeffmin,'%.3f') '}$'];
 curveplot = semilogy(ellrange, (10.^(coeffmax + ellrange.*powerlawmax)),'r--','MarkerSize',3);
 T_Legend(end+1) = curveplot;
-T_legendlabels{end+1}  = ['$10^{' num2str(powerlawmax,'%.3f') '\ell ' num2str(coeffmax,'%.3f') '}$'];
+T_legendlabels{end+1}  = ['$\tilde{T}_{\max} \approx 10^{' num2str(powerlawmax,'%.3f') '\ell ' num2str(coeffmax,'%.3f') '}$'];
 
 hold off
 
@@ -84,14 +84,14 @@ set(gcf,'color','white')
 set(gca,'color','white') 
 set(gcf,'Position',[100 100 1250 700])
 xlabel('Domain size $\ell$','Interpreter','latex'); 
-ylabel('Peak Time Window $\tilde{T}_L$','Interpreter','latex');
+ylabel('Peak Time Window $\tilde{T}_K$','Interpreter','latex');
 xlim([ellstart ellend])
 title('Optimized Finite-Time $L^2$ energy for 2D Kuramoto-Sivashinsky','Interpreter','latex')
 parfiglistInterval = ['$K = \left[10^{' num2str(Kstart) '},10^{' num2str(Kstart+0.5) '}, 10^{' num2str(Kend) '}\right], \ell = [' num2str(ellstart) ',' num2str(ellstart+ellgap) ', ... , ' num2str(ellend) ']' ...
-    ',  \tilde{T}_{L} \approx 10^{(' num2str(avgSlope,'%.3f') ' \pm ' num2str(stdSlope,'%.3f') ')\ell}$'];
+    ',  \tilde{T}_{K} \approx 10^{(' num2str(avgSlope,'%.3f') ' \pm ' num2str(stdSlope,'%.3f') ')\ell}$'];
 subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
 nCols = ceil(numel(T_Legend) / 5);
-legend(T_Legend, T_legendlabels,'Interpreter','latex','Location','southeast','NumColumns',1,'Box','off','FontSize',12)
+legend(T_Legend, T_legendlabels,'Interpreter','latex','Location','southeast','NumColumns',2,'Box','off','FontSize',12)
 
 filename = [pwd '/media/optimization/argmaxJ_T_K_' num2str(Kstart) '_' num2str(Kend) '_L_' num2str(ellstart) '_' num2str(ellend)  ];
 saveas(h,[filename '.fig'])
@@ -157,7 +157,7 @@ for i = 1:size(ell_groups,1)
         K_loglogfits(i,:) = loglogfit_i;
     end
     K_Legend(end+1) = curveplot;
-    K_legendlabels{end+1}  = ['$' num2str(ell_groups{i,1},'%.2f') ' \approx 10^{' num2str(loglogfit_i(2),'%.3f') '}K^{' num2str(loglogfit_i(1),'%.3f') '}$'];
+    K_legendlabels{end+1}  = ['$\tilde{K}_{' num2str(ell_groups{i,1},'%.2f') '} \approx 10^{' num2str(loglogfit_i(2),'%.3f') '}K^{' num2str(loglogfit_i(1),'%.3f') '}$'];
     hold on
 end
 K_loglogfits = rmmissing(K_loglogfits);
@@ -169,10 +169,10 @@ powerlawmin = min(K_loglogfits(:,1));
 powerlawmax = max(K_loglogfits(:,1));
 curveplot = loglog(Krange, 10^(coeffmin).*(Krange.^(powerlawmin)),'b--','MarkerSize',3);
 K_Legend(end+1) = curveplot;
-K_legendlabels{end+1}  = ['$10^{' num2str(coeffmin,'%.3f') '} K^{' num2str(powerlawmin,'%.3f') '}$'];
+K_legendlabels{end+1}  = ['$\tilde{K}_{\min} \approx 10^{' num2str(coeffmin,'%.3f') '} K^{' num2str(powerlawmin,'%.3f') '}$'];
 curveplot = loglog(Krange, 10^(coeffmax).*(Krange.^(powerlawmax)),'r--','MarkerSize',3);
 K_Legend(end+1) = curveplot;
-K_legendlabels{end+1}  = ['$10^{' num2str(coeffmax,'%.3f') '} K^{' num2str(powerlawmax,'%.3f') '}$'];
+K_legendlabels{end+1}  = ['$\tilde{K}_{\max} \approx 10^{' num2str(coeffmax,'%.3f') '} K^{' num2str(powerlawmax,'%.3f') '}$'];
 
 hold off
 

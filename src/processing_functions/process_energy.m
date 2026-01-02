@@ -38,7 +38,7 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
     energyL2 = NaN(Ntime,1);
     energyH1 = energyL2;
     energyH2 = energyL2;
-    astripwidth = energyL2;                               % analyticity strip width
+    astripwidth = NaN(Ntime,2);                               % analyticity strip width
     v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1, Ntime+1 ); % uniform-distance radial energy spectrum
     v_mean(:,1) = NaN;
     projcoeffradialevolution = v_mean;
@@ -118,9 +118,13 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
         v_mean = sortrows(v_mean,1);
         v_mean(:,i+1) = v_mean(:,i+1)./2;
             
-        % Width of the analyticity strip
-        astripwidth(i,1) = fit_delta(v_mean(2:end,1), v_mean(2:end,i+1));
-            
+        % Width of the analyticity strip [C , delta]
+        if i > 1
+            [astripwidth(i,1),astripwidth(i,2)] = expfit_delta(v_mean(2:end,1), v_mean(2:end,i+1), astripwidth(i-1,2));
+        else
+            [astripwidth(i,1),astripwidth(i,2)] = expfit_delta(v_mean(2:end,1), v_mean(2:end,i+1), 1e15);
+        end
+
         if i == 1
             u_IC = u_n(:,1);
         elseif i == Ntime

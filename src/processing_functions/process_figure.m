@@ -325,7 +325,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % surface plot
             surfc(x1,x2,u_T_ps); 
-            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex');
             shading interp
             %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
             fontsize(12,"points")
@@ -372,7 +372,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % surface plot
             surfc(x1,x2,u_T_ps);  
-            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex'); zlabel('u(x_1,x_2)');
+            xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex');
             shading interp
             %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
             view(3);

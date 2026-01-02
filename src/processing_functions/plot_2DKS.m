@@ -50,19 +50,19 @@ if T >= 0
     Ntime = ceil(Ntime/save_each);
 end
 
-switch IC
-    case {'optimized'}
-        savedata = 0;
-        [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
-            process_energy(savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
-            parameterlist,optparameters,parfiglist,optparfiglist);
-end
-
 switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
         savedata = 1;
         [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
             process_energy(savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+            parameterlist,optparameters,parfiglist,optparfiglist);
+end
+
+switch IC
+    case {'optimized'}
+        savedata = 0;
+        [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
+            process_energy(savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
             parameterlist,optparameters,parfiglist,optparfiglist);
 end
 
