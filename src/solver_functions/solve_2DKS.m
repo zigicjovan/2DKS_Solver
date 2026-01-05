@@ -53,60 +53,14 @@ u_n: solution vector for each time step in Physical space
     beta_E = [ 0 , -251352885992/790610919619 , -383714262797/1103637129625 , -403360439203/1888264787188 ];
     
     % impose initial and boundary conditions in physical and fourier space
-    switch IC 
-        case 'optimized'
-            u_0 = reshape( utility1, [ N , N_x2 ] );
-        case 's'
-            u_0 = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
-        case 's1'
-            u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
-        case 'sc1'
-            u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 's30'
-            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
-        case 'tg1'
-            u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 'tg30'
-            u_0 = sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
-        case 'stg1'
-            u_0 = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 'stg30'
-            u_0 = sin( (L_x1*x1 + L_x2*x2) ) +  sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
-        case 'gauss'
-            u_0 = exp(-0.1*( (x1 - 0.5*L1).^2 + (x2 - 0.5*L2).^2));
-        case 'noise'
-            u_0 = 1e-14*(2*rand(N)-ones(N));
-        case 'noise4'
-            u_0 = 1e-4*(2*rand(N)-ones(N));
-        case 'mn5'
-            u_0 = 1e-5*( sin( 1.0*(L_x1*x1 + L_x2*x2) ) + sin( 5.0*L_x1*x1 ) + sin( 10.0*L_x2*x2 ) + ...
-                                 sin( 60.0*(L_x1*x1 + L_x2*x2) ) + sin( 50.0*L_x1*x1 ) + sin( 30.0*L_x2*x2 ) + ...
-                                 sin( 80.0*(L_x1*x1 + L_x2*x2) ) + sin( 150.0*L_x1*x1 ) + sin( 90.0*L_x2*x2 ) ) ;
-    end
+    u_0 = initialcondition(IC,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap);
 
     % set initial L^2 energy magnitude
     u_0_mag = sqrt(sum( u_0(:) .* conj(u_0(:)) )*(L1*L2)/N^2);                  % compute norm of IC
     u_0 = sqrt(K)*(u_0/u_0_mag);                                                % set norm of IC equal to K
 
     % perturbation function for adjoint calculus
-    switch utility2 
-        case 'noise'
-            u_pert = (2*rand(N)-ones(N));
-        case 's'
-            u_pert = sin( (x1 + x2) ) + sin( x1 ) + sin( x2 );
-        case 's1'
-            u_pert = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) + sin( L_x2*x2 );
-        case 's30'
-            u_pert = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 30*L_x1*x1 ) + sin( 30*L_x2*x2 );
-        case 'tg1'
-            u_pert = sin( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 'tg30'
-            u_pert = sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
-        case 'stg1'
-            u_pert = sin( (L_x1*x1 + L_x2*x2) ) + sin( L_x1*x1 ) .* sin( L_x2*x2 );
-        case 'stg30'
-            u_pert = sin( (L_x1*x1 + L_x2*x2) ) +  sin( L_x1*x1 ) .* sin( 30*L_x2*x2 );
-    end      
+    u_pert = initialcondition(utility2,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap);    
 
     % normalize perturbed L^2 energy magnitude
     if exist('u_pert','var')
