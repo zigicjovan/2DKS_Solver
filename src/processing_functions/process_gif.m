@@ -75,7 +75,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     figwidth = 400*maxplotcols;
     figheight = 450*number_of_plot_rows;
 
-    fig = figure('Visible', 'on');
+    fig = figure('Visible', 'off');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
     wordsize = 16;
