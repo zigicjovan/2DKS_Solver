@@ -78,7 +78,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     fig = figure('Visible', 'off');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
-    wordsize = 16;
+    wordsize = 20;
 
     set(groot, ...
     'DefaultAxesLooseInset',            [0 0 0 0], ...
@@ -232,7 +232,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             xlim(ax(k), [0 T]);
             ylim(ax(k), [ymin_energy ymax_energy]);
             title(ax(k), "Energy evolution");
-            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast');
+            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast','Box','off');
             axis(ax(k),'square');
     
             % ------------ AXIS 4: radial spectrum --------------
@@ -242,7 +242,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             h_spec2 = semilogy(ax(k), v_mean(:,1), asstrip_fit(:,i), "r--");
             hold(ax(k),'off');
             xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
-            legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$');
+            legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$','Box','off','FontSize',wordsize);
             title(ax(k),"Energy spectrum" );
             xlim(ax(k), [1 size(v_mean,1)]);
             ylim(ax(k), [1e-20 ymax_spec]);
@@ -253,7 +253,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             a_strip = plot(ax(k), timewindow, astripwidth(:,2), 'b'); 
             hold(ax(k),'on');
             %a_xline = xline(ax(k), currentT, '-');
-            a_xline = plot(ax(k), timewindow(1,i), astripwidth(i,1), 'ko');
+            a_xline = plot(ax(k), timewindow(1,i), astripwidth(i,2), 'ko');
             a_resline = yline(ax(k), max(L1/N,L2/N), '--');
             ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
             xlim(ax(k), [0 T]);
