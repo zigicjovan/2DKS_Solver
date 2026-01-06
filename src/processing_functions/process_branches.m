@@ -194,5 +194,67 @@ saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
 
 
-%% max T law
+%% IC testing
+x_ellIC = cell2mat(ellICdata(:, 2:2:6));
+y_ellIC = cell2mat(ellICdata(:, 3:2:7));
+x_min = min(min(x_ellIC));
+y_min = min(min(y_ellIC));
+x_max = max(max(x_ellIC));
+y_max = max(max(y_ellIC));
 
+branchcolor = 0;
+h = figure;
+IC_Legend = [];     % handles to include
+IC_legendlabels  = {};     % legend labels
+numIC = size(x_ellIC,1);
+
+for i = 1:numIC
+    if mod(branchcolor,11) == 0
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'b-o','MarkerSize',7);
+    elseif mod(branchcolor,11) == 1
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'r-o','MarkerSize',7);
+    elseif mod(branchcolor,11) == 2
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'g-o','MarkerSize',7);
+    elseif mod(branchcolor,11) == 3
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'m-o','MarkerSize',7);
+    elseif mod(branchcolor,11) == 4
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'k-o','MarkerSize',7);
+    elseif mod(branchcolor,11) == 5
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'b-x','MarkerSize',7);
+    elseif mod(branchcolor,11) == 6
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'r-x','MarkerSize',7);
+    elseif mod(branchcolor,11) == 7
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'g-x','MarkerSize',7);
+    elseif mod(branchcolor,11) == 8
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'m-x','MarkerSize',7);
+    elseif mod(branchcolor,11) == 9
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'k-x','MarkerSize',7);
+    elseif mod(branchcolor,11) == 10
+        curveplot = loglog(x_ellIC(i,:),y_ellIC(i,:),'b-^','MarkerSize',7);
+    end
+    branchcolor = branchcolor + 1;
+    hold on
+    IC_Legend(end+1) = curveplot;
+    IC_legendlabels{end+1}  = sprintf(ellICdata{i,1});
+end
+hold off
+
+set(gca,'fontsize', 16) 
+set(gcf,'color','white')
+set(gca,'color','white') 
+set(gcf,'Position',[100 100 1250 700])
+xlabel('Computation Time (s)','Interpreter','latex'); 
+ylabel('Objective Functional Value','Interpreter','latex');
+ylim([0.9*y_min , 1.1*y_max])
+xlim([0.9*x_min , 1.1*x_max])
+title('Initial Data Choices for 2D Kuramoto-Sivashinsky','Interpreter','latex')
+Kstart = 4.0;
+Kend = 5.0;
+ellstart = 2.02;
+parfiglistInterval = ['$K = \left[10^{' num2str(Kstart) '},10^{' num2str(Kstart+0.5) '}, 10^{' num2str(Kend) '}\right], \ell = [' num2str(ellstart) ']$'];
+subtitle(parfiglistInterval,'Interpreter','latex','FontSize',14)
+legend(IC_Legend,IC_legendlabels,'Interpreter','latex','Location','southeast','Box','off','FontSize',12)
+
+filename = [pwd '/media/optimization/ICguess_K_' num2str(Kstart) '_' num2str(Kend) '_L_' num2str(ellstart)  ];
+saveas(h,[filename '.fig'])
+exportgraphics(h,[filename '.pdf'])

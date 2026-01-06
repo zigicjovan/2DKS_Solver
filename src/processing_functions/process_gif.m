@@ -239,7 +239,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             k = 4;
             h_spec1 = semilogy(ax(k), v_mean(:,1), v_mean(:,i+1), "-");
             hold(ax(k),'on');
-            h_spec2 = semilogy(ax(k), v_mean(:,1), asstrip_fit(:,i), "r-");
+            h_spec2 = semilogy(ax(k), v_mean(:,1), asstrip_fit(:,i), "r--");
             hold(ax(k),'off');
             xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
             legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$');

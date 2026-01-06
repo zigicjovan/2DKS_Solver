@@ -3,6 +3,7 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
     fullT = utility1(2);
     parameterlistT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_' num2str(T) '_T_' num2str(fullT) ];
     parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    parameterlistcont = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' ];
     saved = utility1(1);
     originalIC = utility2;
     switch foldername
@@ -19,23 +20,39 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file1 = read_binary(phys_file,N,N,false);   
             file2 = read_binary(four_file,N,N,true);
             file3 = read_binary(time_file,1,1,false);
-            %file1 = readmatrix(phys_file);   
-            %file2 = readmatrix(four_file);
-            %file3 = readmatrix(time_file);
         case {'optimal'}
             tol = utility1(1);
-            %phys_file = [pwd '/data/' foldername '/physIC_' parameterlist '_tol_' num2str(tol) '.bin'];
-            phys_file = sprintf('%s/data/%s/physIC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
-            %four_file = [pwd '/data/' foldername '/fourTC_' parameterlist '_tol_' num2str(tol) '.bin'];
-            four_file = sprintf('%s/data/%s/fourTC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
-            %time_file = [pwd '/data/' foldername '/time_' parameterlist '_tol_' num2str(tol) '.bin'];
-            time_file = sprintf('%s/data/%s/time_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
-            file1 = read_binary(phys_file,N,N,false);   
-            file2 = read_binary(four_file,N,N,true);
-            file3 = read_binary(time_file,1,1,false);
-            %file1 = readmatrix(phys_file);   
-            %file2 = readmatrix(four_file);
-            %file3 = readmatrix(time_file);
+            % use exact or nearest previous T
+            try
+                phys_file = sprintf('%s/data/%s/physIC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
+                four_file = sprintf('%s/data/%s/fourTC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
+                time_file = sprintf('%s/data/%s/time_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
+                file1 = read_binary(phys_file,N,N,false);   
+                file2 = read_binary(four_file,N,N,true);
+                file3 = read_binary(time_file,1,1,false);
+            catch
+                phys_filegroup = sprintf('%s/data/%s/physIC_%s*_tol_%g.bin', pwd, foldername, parameterlistcont, tol);
+                phys_files = dir(phys_filegroup);
+                
+                numfiles = numel(phys_files);
+                Tvals = zeros(numfiles,1);
+                for k = 1:numfiles
+                    tokens = regexp(phys_files(k).name, ...
+                        '_T_([0-9eE\+\-\.]+)_tol_', ...
+                        'tokens', 'once');
+                
+                    Tvals(k) = str2double(tokens{1});
+                end
+                mask = Tvals < (T+1e-10);
+                Tvals = Tvals(mask);
+                prevT = Tvals(end);
+                phys_file = sprintf('%s/data/%s/physIC_%s%g_tol_%g.bin', pwd, foldername, parameterlistcont, prevT, tol);
+                four_file = sprintf('%s/data/%s/fourTC_%s%g_tol_%g.bin', pwd, foldername, parameterlistcont, prevT, tol);
+                time_file = sprintf('%s/data/%s/time_%s%g_tol_%g.bin', pwd, foldername, parameterlistcont, prevT, tol);
+                file1 = read_binary(phys_file,N,N,false);   
+                file2 = read_binary(four_file,N,N,true);
+                file3 = read_binary(time_file,1,1,false);
+            end
         case {'energyL2','energyL2_t','spectrum'}
             tol = utility1(1);
             norm_file = [pwd '/data/' foldername '/' foldername '_' parameterlist '.dat'];
