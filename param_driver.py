@@ -15,18 +15,18 @@ import time
 # ----------------------------
 #SBATCH_TIME = "00-02:00"  # <--- requested time limit (D-HH:MM format) # 4.0
 #SBATCH_TIME = "00-10:00"  # <--- requested time limit (D-HH:MM format) # 4.5
-#SBATCH_TIME = "00-20:00"  # <--- requested time limit (D-HH:MM format) # 5.0
-SBATCH_TIME = "01-08:00"  # <--- requested time limit (D-HH:MM format) # 5.5
+SBATCH_TIME = "00-15:00"  # <--- requested time limit (D-HH:MM format) # 5.0
+#SBATCH_TIME = "01-08:00"  # <--- requested time limit (D-HH:MM format) # 5.5
 #SBATCH_TIME = "02-00:00"  # <--- requested time limit (D-HH:MM format) # 6.0
-RUN_ARRAY_NAME = "run_array_45_98.sh"
+RUN_ARRAY_NAME = "run_array_50_202.sh"
 
 # ----------------------------
 # User-editable parameter ranges
 # ----------------------------
 #K_range = np.round(np.arange(4.0, 4.4, 0.5), 1)
 #ell_range = np.round(np.arange(1.14, 1.15, 0.12), 2)
-K_range = np.round(np.array([4.5]), 1)
-ell_range = [round(x, 2) for x in [2.98]]
+K_range = np.round(np.array([5.0]), 1)
+ell_range = [round(x, 2) for x in [2.02]]
 
 # ----------------------------
 # Generate parameter tuples
@@ -62,24 +62,27 @@ def generate_tasks():
                 #dt, N, mem = 2e-4, 64, '64G'
             elif K == 4:
                 #T_range = np.round(np.arange(-0.80, -0.59, 0.1), 2)
-                T_range = np.round(np.arange(-0.76, -0.61, 0.04), 2)
-                #T_range = np.round(np.array([-1.1,-1.0]), 2)
-                dt, N, mem = 2e-5, 160, '48G'
+                #T_range = np.round(np.arange(-0.76, -0.61, 0.04), 2)
+                T_range = np.round(np.array([-1.00]), 2)
+                dt, N, mem = 1e-4, 96, '32G'
+                #dt, N, mem = 2e-5, 160, '48G'
                 #dt, N, mem = 1e-4, 96, '128G'
             elif K == 4.5:
-                T_range = np.round(np.arange(-1.20, -0.99, 0.1), 2)
+                #T_range = np.round(np.arange(-1.25, -1.24, 0.1), 2)
                 #T_range = np.round(np.arange(-1.46, -1.31, 0.04), 2)
-                #T_range = np.round(np.array([-1.1,-1.0]), 2)
+                T_range = np.round(np.array([-2.04]), 2)
+                dt, N, mem = 2e-5, 144, '32G'
                 #dt, N, mem = 5e-6, 256, '64G'
                 #dt, N, mem = 2e-6, 320, '128G'
-                dt, N, mem = 1e-6, 384, '128G'
+                #dt, N, mem = 1e-6, 384, '128G'
                 #dt, N, mem = 2e-5, 144, '192G'
             elif K == 5:
-                T_range = np.round(np.arange(-1.75, -1.54, 0.1), 2)
+                #T_range = np.round(np.arange(-1.75, -1.54, 0.1), 2)
                 #T_range = np.round(np.arange(-1.96, -1.81, 0.04), 2)
-                #T_range = np.round(np.array([-1.1,-1.0]), 2)
-                #dt, N, mem = 2e-6, 320, '80G'
-                dt, N, mem = 1e-6, 384, '128G'
+                T_range = np.round(np.array([-1.98]), 2)
+                #dt, N, mem = 2e-6, 256, '64G'
+                dt, N, mem = 2e-6, 320, '80G'
+                #dt, N, mem = 1e-6, 384, '128G'
                 #dt, N, mem = 5e-7, 512, '320G'
                 #dt, N, mem = 1e-5, 192, '192G'
             elif K == 5.5:
@@ -176,10 +179,10 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
         lines.append(f"  sbatch --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
         lines.append(f"         --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
-        lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        lines.append(f"         --array={array_spec}%1 --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
         lines.append(f"         --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh")
         lines.append("else")
-        lines.append(f"  echo \"Dry run: would sbatch --array={array_spec} --mem={mem} --cpus-per-task=8 --export=PARAM_FILE={param_file} ./run_task_array.sh\"")
+        lines.append(f"  echo \"Dry run: would sbatch --array={array_spec}%1 --mem={mem} --cpus-per-task=8 --export=PARAM_FILE={param_file} ./run_task_array.sh\"")
         lines.append("fi\n")
 
     Path(out_fname).write_text("\n".join(lines))
