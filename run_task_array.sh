@@ -25,7 +25,7 @@ mkdir -p ./slurm_logs
 
 # create unique scratch temp dir per job
 SCRATCH_BASE=${SCRATCH:-/scratch}/${USER}
-JOB_TAG="${SLURM_JOB_ID:-$$}_${SLURM_ARRAY_TASK_ID:-0}"
+JOB_TAG="${JOB_TAG:-${SLURM_JOB_ID:-$$}_${SLURM_ARRAY_TASK_ID:-0}}"
 TMPDIR_JOB="${SCRATCH_BASE}/tmp_job_${JOB_TAG}"
 mkdir -p "$TMPDIR_JOB"
 export TMPDIR="$TMPDIR_JOB"
@@ -47,9 +47,9 @@ read IDX K ell T dt N mem <<< "$LINE"
 LOG_DIR="./output"
 mkdir -p "$LOG_DIR"
 ell_str=$(printf "%.2f" "$ell")
-T_str=$(printf "%.1f" "$T")
+T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-LOG_FILE="${LOG_DIR}/maxT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+LOG_FILE="${LOG_DIR}/maxT_randfour_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 #LOG_FILE="${LOG_DIR}/longT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 
 module load matlab/2024b.1
@@ -98,7 +98,7 @@ fi
 
 # --- Append SLURM efficiency info (seff) to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
-echo "SLURM Job Efficiency Info (manual lookup)" >> "$LOG_FILE"
+echo "SLURM Job Efficiency Info (check job ID, array task is correct)" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
 echo "Job identifier: $JOB_TAG" >> "$LOG_FILE"
 
