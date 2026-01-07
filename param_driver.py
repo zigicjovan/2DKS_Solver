@@ -10,99 +10,51 @@ import os
 from pathlib import Path
 import time
 
-# User-editable global settings
-SBATCH_TIME = "00-01:00"  # <--- requested time limit (D-HH:MM format) 
-RUN_ARRAY_NAME = "35-102-branch.sh"
-
 # User-editable parameter ranges
-#K_range = np.round(np.arange(3.5, 6.4, 0.5), 1)
-#ell_range = np.round(np.arange(1.02, 1.98, 0.12), 2)
-K_range = np.round(np.array([3.5]), 1)
-ell_range = [round(x, 2) for x in [1.02]]
+K_start = 3.5
+K_end = 6.0
+K_step = 0.5
+ell_start = 2.02
+ell_end = 2.98
+ell_step = 0.12
+K_range = np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
+ell_range = np.round(np.arange(ell_start, ell_end + ell_step/2, ell_step), 2)
+#K_range = np.round(np.array([3.5]), 1)
+#ell_range = [round(x, 2) for x in [1.62]]
 
-# Generate parameter tuples
+# User-editable global settings
+SBATCH_TIME = "00-20:00"  # requested time limit (D-HH:MM) 
+RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell_start}_{ell_end}-init.sh"
+
 def generate_tasks():
+    # Parameter choice formulas for 2DKS problem
+    N_choice =  [ 48,   64,   96,   128,  160,  192,  256,  320,  384,  512,  576,  648,  720,  768,  810,  864,  900,  972,  1024 ]
+    dt_choice = [ 5e-4, 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8 ]
+    mem_choice = np.arange(32, 32001, 32)
+    N_ref = 64
+    K_ref = 3.5
+    T_width = round(0.20, 2)
+    T_step = round(0.02, 2)
+
+    # generate parameter tuples
     tasks = []
     for K in K_range:
         for ell in ell_range:
-            if K == 0:
-                dt, N, mem = 1e-3,48, '32G'
-            elif K == 1:
-                dt, N, mem = 1e-3, 48, '32G'
-            elif K == 2:
-                dt, N, mem = 1e-3, 48, '32G'
-            elif K == 3:
-                dt, N, mem = 1e-3, 48, '32G'
-            elif K == 3.5:
-                T_range = np.round(np.arange(-1.20, -0.79, 0.02), 2)
-                #T_range = np.round(np.array([-1.50]), 2)
-                dt, N, mem = 2e-4, 64, '32G'
-                #dt, N, mem = 1e-4, 96, '32G'
-                #dt, N, mem = 5e-5, 128, '32G'
-                #dt, N, mem = 2e-5, 160, '48G'
-                #dt, N, mem = 2e-4, 64, '64G'
-            elif K == 4:
-                #T_range = np.round(np.arange(-0.80, -0.59, 0.1), 2)
-                #T_range = np.round(np.arange(-0.76, -0.61, 0.04), 2)
-                T_range = np.round(np.array([-1.10]), 2)
-                #dt, N, mem = 1e-4, 96, '32G'
-                #dt, N, mem = 5e-5, 128, '32G'
-                #dt, N, mem = 2e-5, 160, '48G'
-                dt, N, mem = 1e-5, 192, '48G'
-                #dt, N, mem = 1e-4, 96, '128G'
-            elif K == 4.5:
-                #T_range = np.round(np.arange(-1.25, -1.24, 0.1), 2)
-                #T_range = np.round(np.arange(-1.46, -1.31, 0.04), 2)
-                T_range = np.round(np.array([-1.60]), 2)
-                #dt, N, mem = 2e-5, 160, '32G'
-                #dt, N, mem = 1e-5, 192, '48G'
-                #dt, N, mem = 5e-6, 256, '64G'
-                dt, N, mem = 2e-6, 320, '64G'
-                #dt, N, mem = 1e-6, 384, '128G'
-                #dt, N, mem = 2e-5, 144, '192G'
-            elif K == 5:
-                #T_range = np.round(np.arange(-1.75, -1.54, 0.1), 2)
-                #T_range = np.round(np.arange(-1.96, -1.81, 0.04), 2)
-                T_range = np.round(np.array([-2.10]), 2)
-                #dt, N, mem = 5e-6, 256, '64G'
-                #dt, N, mem = 2e-6, 320, '80G'
-                #dt, N, mem = 1e-6, 384, '128G'
-                dt, N, mem = 5e-7, 512, '256G'
-                #dt, N, mem = 1e-5, 192, '192G'
-            elif K == 5.5:
-                #T_range = np.round(np.arange(-3.20, -2.99, 0.1), 2)
-                #T_range = np.round(np.arange(-2.16, -2.01, 0.04), 2)
-                T_range = np.round(np.array([-2.60]), 2)
-                #dt, N, mem = 2e-6, 320, '64G'
-                #dt, N, mem = 1e-6, 384, '96G'
-                #dt, N, mem = 5e-7, 512, '128G'
-                dt, N, mem = 4e-7, 576, '128G'
-                #dt, N, mem = 5e-7, 320, '2048G'
-            elif K == 6:
-                #T_range = np.round(np.arange(-3.60, -3.39, 0.1), 2)
-                #T_range = np.round(np.arange(-2.16, -2.01, 0.04), 2)
-                T_range = np.round(np.array([-3.10]), 2)
-                #dt, N, mem = 5e-7, 384, '96G'
-                #dt, N, mem = 5e-7, 512, '128G'
-                #dt, N, mem = 4e-7, 576, '128G'
-                dt, N, mem = 3e-7, 648, '128G'
-                #dt, N, mem = 1e-7, 360, '2048G'
-            elif K == 6.5:
-                dt, N, mem = 1e-8, 360, '96G'
-                #dt, N, mem = 1e-8, 360, '4096G'
-            elif K == 7:
-                dt, N, mem = 1e-9, 360, '128G'
-                #dt, N, mem = 1e-9, 360, '4096G'
-            else:
-                continue
-
+            T_target = 0.5*ell + 2
+            #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width + 1e-5) - K, T_step), 2)
+            T_range = np.round(np.array([(T_target / 2) - K]), 2)
+            idx = max( 0 , min( int( np.round(ell + 2*(K - K_ref) + 3.01 ) ) , len(N_choice) - 1) ) 
+            N = N_choice[idx] 
+            dt = dt_choice[idx]
             for T in T_range:
-                tasks.append((K, float(ell), float(T), dt, int(N), mem))
+                rel_T = ( np.power(10.0,T) - np.power(10.0,T_target) ) /  np.power(10.0,T_target)
+                idxm = max( 0 , int( rel_T * idx ) )
+                mem_max = mem_choice[idxm]
+                mem = f"{mem_max}G" 
+                tasks.append((float(K), float(ell), float(T), float(dt), int(N), mem))
     return tasks
 
-# ----------------------------
 # Write runscripts/ and param files
-# ----------------------------
 def write_runscripts(tasks, out_dir='runscripts'):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -122,7 +74,7 @@ def write_runscripts(tasks, out_dir='runscripts'):
         param_fname = out / f"task_params_{mem_tag}_{tag}.txt"
         with param_fname.open('w') as pf:
             for (idx, (K, ell, T, dt, N, mem)) in items:
-                output_file = f"output/run_{K}_{ell:.2f}_{T:.1f}_{dt}_{N}.mat"
+                output_file = f"output/run_{K}_{ell:.2f}_{T:.2f}_{dt:.0e}_{N}.mat"
                 pf.write(f"{idx} {K} {ell:.2f} {T:.2f} {dt:.0e} {N} {mem} {output_file}\n")
 
     # placeholder scripts
@@ -142,9 +94,7 @@ module load matlab/2024b.1
 """)
     return groups, tag
 
-# ----------------------------
 # Write run_array.sh driver
-# ----------------------------
 def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
     lines = [
         "#!/bin/bash",
@@ -166,8 +116,8 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         lines.append(f"  sbatch --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
         lines.append(f"         --job-name={RUN_ARRAY_NAME} \\")
         lines.append(f"         --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
-        #lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
-        lines.append(f"         --array={array_spec}%1 --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\") # for concurrent tasks
+        #lines.append(f"         --array={array_spec}%1 --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\") # for sequential tasks
         lines.append(f"         --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh")
         lines.append("else")
         lines.append(f"  echo \"Dry run: would sbatch --array={array_spec}%1 --mem={mem} --cpus-per-task=8 --export=PARAM_FILE={param_file} ./run_task_array.sh\"")
@@ -176,9 +126,7 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
     Path(out_fname).write_text("\n".join(lines))
     os.chmod(out_fname, 0o755)
 
-# ----------------------------
 # Main
-# ----------------------------
 def main():
     tasks = generate_tasks()
     print(f"Total parameter combinations: {len(tasks)}")
