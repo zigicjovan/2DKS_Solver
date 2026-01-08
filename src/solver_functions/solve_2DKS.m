@@ -363,6 +363,18 @@ u_n: solution vector for each time step in Physical space
                     count = count + 1;                    
                 end
             end
-
     end
+    %{
+    % check memory usage
+    w = whos;
+    workspace_bytes = sum([w.bytes]);
+    fprintf('Workspace memory: %.2f GB\n', workspace_bytes / 1e9);
+
+    [~, idx] = sort([w.bytes], 'descend');
+
+    for k = idx(1:min(3,numel(idx)))
+        fprintf('%-20s %8.2f MB  %s\n', ...
+            w(k).name, w(k).bytes/1e6, w(k).class);
+    end
+    %}
 end
