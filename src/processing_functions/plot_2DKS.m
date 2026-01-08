@@ -60,10 +60,15 @@ end
 
 switch IC
     case {'optimized'}
-        savedata = 0;
-        [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
-            process_energy(savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
-            parameterlist,optparameters,parfiglist,optparfiglist);
+        switch solplot
+            case 'norms'
+                % do not compute
+            otherwise
+                savedata = 0;
+                [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
+                    process_energy(savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+                    parameterlist,optparameters,parfiglist,optparfiglist);
+        end
 end
 
 switch solplot
@@ -150,10 +155,10 @@ switch solplot
                 parameterlist,optparameters,parfiglist,optparfiglist)
 
         %% original gif
-        
+        %{
         process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     energyL2_og,energyH1_og,energyH2_og,v_mean_og,astripwidth_og,projcoeffradialevolution_og,projcoeffmodeevolution_og,...
                     parameterlist,optparameters,parfiglist,optparfiglist);
         fprintf('Saved original evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
-
+        %}
 end

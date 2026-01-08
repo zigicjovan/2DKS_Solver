@@ -78,7 +78,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     fig = figure('Visible', 'off');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
-    wordsize = 20;
+    wordsize = 16;
 
     set(groot, ...
     'DefaultAxesLooseInset',            [0 0 0 0], ...
@@ -454,13 +454,11 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
         sg.String = {title1, title2};
     
         drawnow limitrate;   % lighter than bare drawnow
-    
+
         if i == 1
             gif(filename,'overwrite',true);
         else
             gif;
-        end
-    
+        end 
     end
-
 end
