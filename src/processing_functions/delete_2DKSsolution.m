@@ -1,42 +1,32 @@
 function delete_2DKSsolution(foldername, IC, dt, T, N, K, L_s1, L_s2, utility1, utility2)
 
-    Ntime_save_max = utility1(1);
     fullT = utility1(2);
     originalIC = utility2;
-    parameterlistT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_' num2str(T) '_T_' num2str(fullT) ];
     parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    parameterlistanyT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_*_T_' num2str(T) ];
     switch foldername
         case {'forward','backward'}
-            phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples*'];
-            four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples*'];
-            time_file = [pwd '/data/' foldername '/time_' parameterlistT '_samples*'];
+            folderpath = [pwd '/data/' foldername '/'];
+            phys_file = [folderpath 'phys_' parameterlistanyT '_samples_*.bin'];
+            four_file = [folderpath 'four_' parameterlistanyT '_samples_*.bin'];
+            time_file = [folderpath 'time_' parameterlistanyT '_samples_*.bin'];
             switch IC
                 case 'optimized'
-                    phys_file = [pwd '/data/' foldername '/phys_' originalIC '_' parameterlistT '_samples*'];
-                    four_file = [pwd '/data/' foldername '/four_' originalIC '_' parameterlistT '_samples*'];
-                    time_file = [pwd '/data/' foldername '/time_' originalIC '_' parameterlistT '_samples*'];
+                    phys_file = [folderpath 'phys_' originalIC '_' parameterlistanyT '_samples_*.bin'];
+                    four_file = [folderpath 'four_' originalIC '_' parameterlistanyT '_samples_*.bin'];
+                    time_file = [folderpath 'time_' originalIC '_' parameterlistanyT '_samples_*.bin'];
             end
-            delete(phys_file);   
-            delete(four_file);           
-            delete(time_file);
-            try
-                part = dt*Ntime_save_max;
-                for Tpart = part:part:T
-                        parameterlistT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_' num2str(Tpart) '_T_' num2str(fullT) ];
-                        phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples*'];
-                        four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples*'];
-                        time_file = [pwd '/data/' foldername '/time_' parameterlistT '_samples*'];
-                        switch IC
-                            case 'optimized'
-                                phys_file = [pwd '/data/' foldername '/phys_' originalIC '_' parameterlistT '_samples*'];
-                                four_file = [pwd '/data/' foldername '/four_' originalIC '_' parameterlistT '_samples*'];
-                                time_file = [pwd '/data/' foldername '/time_' originalIC '_' parameterlistT '_samples*'];
-                        end
-                        delete(phys_file);
-                        delete(four_file);
-                        delete(time_file);
-                end
-            catch
+            allphysfiles = dir(phys_file);
+            allfourfiles = dir(four_file);
+            alltimefiles = dir(time_file);
+            numfiles = size(allphysfiles,1);
+            for i = 1:numfiles
+                cur_phys = fullfile(folderpath, allphysfiles(i).name);
+                cur_four = fullfile(folderpath, allfourfiles(i).name);
+                cur_time = fullfile(folderpath, alltimefiles(i).name);
+                delete(cur_phys);   
+                delete(cur_four);           
+                delete(cur_time);
             end
         case 'energyL2'
             try
