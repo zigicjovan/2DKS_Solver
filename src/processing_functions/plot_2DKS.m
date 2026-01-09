@@ -74,9 +74,9 @@ end
 switch solplot
     case 'gif'
 
-        process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+        process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
-                    parameterlist,optparameters,parfiglist,optparfiglist);
+                    parameterlist,optparameters);
 
     case 'diagnostics'
 
@@ -119,9 +119,9 @@ switch solplot
         close all
         %% opt gif
 
-        process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+        process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
-                    parameterlist,optparameters,parfiglist,optparfiglist);
+                    parameterlist,optparameters);
         fprintf('Saved optimized evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
         close all
@@ -156,9 +156,9 @@ switch solplot
 
         %% original gif
         %{
-        process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+        process_gif(u_IC_og, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     energyL2_og,energyH1_og,energyH2_og,v_mean_og,astripwidth_og,projcoeffradialevolution_og,projcoeffmodeevolution_og,...
-                    parameterlist,optparameters,parfiglist,optparfiglist);
+                    parameterlist,optparameters);
         fprintf('Saved original evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
         %}
 end

@@ -1,6 +1,8 @@
-function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
     energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
-    parameterlist,optparameters,parfiglist,optparfiglist)
+    parameterlist,optparameters)
+
+    %% Note: cheaper to recompute rather than read from file!
 
     %% setup
     
@@ -12,25 +14,62 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     L2 = 2*pi*L_s2;
     
     % unit physical space domain
-    x1_pts = L_s1*linspace( 0 , 1 - 1/N , N ); 
-    x2_pts = L_s2*linspace( 0 , 1 - 1/N , N ); 
+    x1_pts = L1*linspace( 0 , 1 - 1/N , N ); 
+    x2_pts = L2*linspace( 0 , 1 - 1/N , N ); 
     [ x1 , x2 ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
     
-    % unit physical space domain
-    x1_pts = 2*pi*L_s1*linspace( 0 , 1 - 1/N , N ); 
-    x2_pts = 2*pi*L_s2*linspace( 0 , 1 - 1/N , N ); 
-    [ x1pi , x2pi ] = meshgrid(x1_pts,x2_pts); % 2-dimensional grid
+    %% solution grid
+    % fourier space domain for nonlinear term
+    k1_n_pts = 2*pi/L1*[ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
+    k2_n_pts = 2*pi/L2*[ 0 : N/2-1 , 0 , -N/2+1 : -1]; 
+    [ k1_n , k2_n ] = meshgrid(k1_n_pts,k2_n_pts);              % 2-dimensional grid
+
+    % fourier space domain for linear term
+    k1_l_pts = 2*pi/L1*[0:N/2 -N/2+1:-1];
+    k2_l_pts = 2*pi/L2*[0:N/2 -N/2+1:-1];
+    [ k1_l , k2_l ] = meshgrid(k1_l_pts,k2_l_pts);              % 2-dimensional grid
+
+    % reshape
+    k1vecN = k1_n(:);
+    k2vecN = k2_n(:);
+    Klap = k1_l.^2 + k2_l.^2;                                   % for 2nd order linear term (Laplacian) 
+    kvecl2 = Klap(:);
+    KK = (k1_l.^2 + k2_l.^2).^2;                                % for 4th order linear term (bi-Laplacian)
+    kvecl4 = KK(:);         
     
-    % Fourier space domain
-    kx = (2*pi/L1) * (-N/2 : N/2-1);   
-    ky = (2*pi/L2) * (-N/2 : N/2-1);
-    [KX, KY] = meshgrid(kx, ky);       
-    K2 = KX.^2 + KY.^2;                % |k|^2
+    % Fourier space operators
+    Lin = 1i^2 * (kvecl2) + 1i^4 * (kvecl4);                    % Linear operator
+    D1vec = 1i*k1vecN;                                          % Differential operator
+    D2vec = 1i*k2vecN;                                          % Differential operator
     
+    % coefficient terms (Alimo et al. 2021, Table 2)
+    alpha_I = [ 343038331393/1130875731271 , 288176579239/1140253497719 , 253330171251/677500478386 , 189462239225/1091147436423 ];
+    beta_I = [ 35965327958/140127563663 , 19632212512/2700543775099 , -173747147147/351772688865 , 91958533623/727726057489 ];
+    alpha_E = [ 14/25 , 777974228744/1346157007247 , 251277807242/1103637129625 , 113091689455/220187950967 ];
+    beta_E = [ 0 , -251352885992/790610919619 , -383714262797/1103637129625 , -403360439203/1888264787188 ];
+    
+    % impose initial and boundary conditions in physical and fourier space
+    u_0 = reshape( u_IC, [ N , N ]);
+    v_0 = fft2(u_0);            % FFT of physical initial condition
+    v_step = v_0(:);
+
+    % number of timesteps
+    save_each = 1;
+    time1 = ceil(T/dt); 
+    time2 = ceil(time1/save_each);
+    Ntime = max(time1,time2);
+    Ntime_save = min(time1,time2);
+    save_each = ceil(Ntime/Ntime_save);
+    Ntime_save = ceil(Ntime/save_each);
+    Ntime = save_each*Ntime_save;
+    %%
+
+    %% plot grid
     % 4-period physical space domain
     x12_pts = 2*L_s1*linspace( 0 , 1 - 1/N , 2*N ); 
     x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N ); 
     [ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
+    %%
 
     % AS strip width fit
     asstrip_fit = v_mean(:,2:end);
@@ -103,7 +142,6 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     ymax_energy = 1.5 * max(energyH2);
     
     ymax_spec = 1.5 * max(v_mean(:));
-    ymax_proj = 1.5 * max(projcoeffradialevolution(:));
     
     title1 = 'Forward-time 2DKS solution';
     title2 = '';
@@ -132,22 +170,39 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     dcol = 0;
     
     % ---------- NEW: handles for graphics objects ----------
-    h_surf1 = []; h_surf2 = [];
-    h_H2 = []; h_H1 = []; h_L2 = []; h_xline = [];
-    a_strip = []; a_xline = []; a_resline = [];
+    h_surf1 = []; h_surf2 = []; a_xline = []; 
     h_spec1 = []; h_proj = []; h_spec2 = [];
     proj_strip = []; proj_coeffpts = [];
     didInitPlots = false;
     % ------------------------------------------------------
-    
-    
+    for i = 1:Ntime
+
+        % nonlinear terms and solution substeps
+        if i > 1
+            v_1 = ks_nonlinear_fwd( v_step, D1vec, D2vec, N, Lin, dt, alpha_I, beta_I, alpha_E, beta_E );
+        else
+            v_1 = v_step;
+        end
+
+        % correction of non-zero mean solution
+        if abs(mean(v_1)) > 1e-5 
+            v_1(1) = 0;
+        end
+
+        % save solution step to workspace
+        v_12 = reshape( v_1, [ N , N ] );
+        u_n = real(ifft2(v_12));  
+        v_step = v_1;
+
+        currentT = (i-1)/(Ntime-1)*T;
+        u_i = u_n;
+    %{
     for i = 1 : ceil(Ntime/frames) : Ntime+1
     
         if i == Ntime + 1
             i = Ntime;
         end
-    
-        % ---------- loading logic unchanged ----------
+        % ---------- reading from file ----------
         if Ntime < Ntime_save_max && i == 1
             [u_n, ~] = load_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime T], utility1);
         else
@@ -162,9 +217,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             end
         end
         % --------------------------------------------
-    
-        currentT = (i-1)/(Ntime-1)*T;
-    
+
         if mod(i,Ntime_save_max) ~= 0
             imod = mod(i,Ntime_save_max);
         else
@@ -172,6 +225,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
         end
     
         u_i = reshape(u_n(:,imod), [N, N]);
+        %}
     
         if i == 1
             [~, min_idx] = min(u_i(:));
@@ -193,7 +247,7 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
         if ~didInitPlots
             % ------------ AXIS 1: physical field ---------------
             k = 1;
-            h_surf1 = surfc(ax(k), x1pi, x2pi, u_i_ps);
+            h_surf1 = surfc(ax(k), x1, x2, u_i_ps);
             xlabel(ax(k),'$x_1$');
             ylabel(ax(k),'$x_2$');
             %title(ax(k),"Periodic solution field");
@@ -217,14 +271,14 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
     
             % ------------ AXIS 3: energy evolution -------------
             k = 3;
-            h_H2 = semilogy(ax(k), timewindow, energyH2, 'g'); 
+            semilogy(ax(k), timewindow, energyH2, 'g'); 
             hold(ax(k),'on');
-            h_H1 = semilogy(ax(k), timewindow, energyH1, 'r');
-            h_L2 = semilogy(ax(k), timewindow, energyL2, 'b');
+            semilogy(ax(k), timewindow, energyH1, 'r');
+            semilogy(ax(k), timewindow, energyL2, 'b');
             %h_xline = xline(ax(k), currentT, '-');
-            H2_xline = plot(ax(k), timewindow(1,i), energyH2(1,i), 'ko');
-            H1_xline = plot(ax(k), timewindow(1,i), energyH1(1,i), 'ko');
-            L2_xline = plot(ax(k), timewindow(1,i), energyL2(1,i), 'ko');
+            H2_xline = plot(ax(k), timewindow(1,i), energyH2(i,1), 'ko');
+            H1_xline = plot(ax(k), timewindow(1,i), energyH1(i,1), 'ko');
+            L2_xline = plot(ax(k), timewindow(1,i), energyL2(i,1), 'ko');
             hold(ax(k),'off');
     
             xlabel(ax(k),'Time $t$' );
@@ -250,11 +304,11 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             
             % ------------ AXIS 5: analyticity strip -----------
             k = 5;
-            a_strip = plot(ax(k), timewindow, astripwidth(:,2), 'b'); 
+            plot(ax(k), timewindow, astripwidth(:,2), 'b'); 
             hold(ax(k),'on');
             %a_xline = xline(ax(k), currentT, '-');
             a_xline = plot(ax(k), timewindow(1,i), astripwidth(i,2), 'ko');
-            a_resline = yline(ax(k), max(L1/N,L2/N), '--');
+            yline(ax(k), max(L1/N,L2/N), '--');
             ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
             xlim(ax(k), [0 T]);
             hold(ax(k),'off');
@@ -395,10 +449,30 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             set(lg, 'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
             % ------------------------------------------------------------
 
+            % ------------ Update LaTeX sgtitle --------------------
+            if strcmp(IC,'optimized')
+                phi_str = '\tilde{\varphi}';
+            else
+                phi_str = ['\varphi_{' IC '}'];
+            end
+        
+            title2 = sprintf( ...
+                '$\\varphi = %s, N = %d, {\\Delta}t = %.5g, K = %.0f, L_1 = 2\\pi(%.2f), L_2 = 2\\pi(%.2f), T = %.5f$', ...
+                phi_str, N, dt, K, L_s1, L_s2, currentT);
+        
+            sg.String = {title1, title2};
+        
+            drawnow limitrate;   % lighter than bare drawnow
+    
+            if i == 1
+                gif(filename,'overwrite',true);
+            else
+                gif;
+            end 
 
             didInitPlots = true;
     
-        else
+        elseif mod(i,ceil(Ntime/frames)) == 0
             % ================= UPDATE ONLY =====================
             % Axis 1 & 2 surfaces:
             set(h_surf1, 'ZData', u_i_ps);
@@ -437,28 +511,26 @@ function process_gif(IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_
             end
             %}
 
-            % ==================================================
+            % ------------ Update LaTeX sgtitle --------------------
+            if strcmp(IC,'optimized')
+                phi_str = '\tilde{\varphi}';
+            else
+                phi_str = ['\varphi_{' IC '}'];
+            end
+        
+            title2 = sprintf( ...
+                '$\\varphi = %s, N = %d, {\\Delta}t = %.5g, K = %.0f, L_1 = 2\\pi(%.2f), L_2 = 2\\pi(%.2f), T = %.5f$', ...
+                phi_str, N, dt, K, L_s1, L_s2, currentT);
+        
+            sg.String = {title1, title2};
+        
+            drawnow limitrate;   % lighter than bare drawnow
+    
+            if i == 1
+                gif(filename,'overwrite',true);
+            else
+                gif;
+            end 
         end
-    
-        % ------------ Update LaTeX sgtitle --------------------
-        if strcmp(IC,'optimized')
-            phi_str = '\tilde{\varphi}';
-        else
-            phi_str = ['\varphi_{' IC '}'];
-        end
-    
-        title2 = sprintf( ...
-            '$\\varphi = %s, N = %d, {\\Delta}t = %.5g, K = %.0f, L_1 = 2\\pi(%.2f), L_2 = 2\\pi(%.2f), T = %.5f$', ...
-            phi_str, N, dt, K, L_s1, L_s2, currentT);
-    
-        sg.String = {title1, title2};
-    
-        drawnow limitrate;   % lighter than bare drawnow
-
-        if i == 1
-            gif(filename,'overwrite',true);
-        else
-            gif;
-        end 
     end
 end
