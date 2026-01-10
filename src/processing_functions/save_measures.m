@@ -23,27 +23,27 @@ function save_measures(foldername, measure1, measure2, measure3, IC, N, dt, T, K
             Klist = unique(measure1(:,1));
             Llist = unique(measure1(:,2));
             %Tlist = unique(measure1(:,3));
-            for IC_i = 1:length(IC)
-                IC_cur = strjoin(IC(IC_i));
-                %parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.5f') '_' num2str(Tlist(end),'%.5f') ];
-                parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') ];
-                Jinit_file = [pwd '/data/' foldername '/branches/Jinit_' parameterlist '.dat'];
-                Jopt_file = [pwd '/data/' foldername '/branches/Jopt_' parameterlist '.dat'];
-                try
-                    oldJopt = readmatrix(Jopt_file);
-                    oldJinit = readmatrix(Jinit_file);
-                    newJopt = [ oldJopt ; [measure2(:,1:3),measure2(:,(IC_i-1)*3+4:(IC_i-1)*3+6)] ];
-                    newJinit = [ oldJinit ; [measure1(:,1:3),measure1(:,IC_i+3)] ];
-                    sortedJopt = sortrows(newJopt,3);
-                    sortedJinit = sortrows(newJinit,3);
-                    uniqueJopt = unique(sortedJopt,"rows");
-                    uniqueJinit = unique(sortedJinit,"rows");
-                    writematrix(uniqueJopt, Jopt_file,'Delimiter','tab');
-                    writematrix(uniqueJinit, Jinit_file,'Delimiter','tab');
-                catch 
-                    writematrix([measure2(:,1:3),measure2(:,(IC_i-1)*3+4:(IC_i-1)*3+6)], Jopt_file,'Delimiter','tab');
-                    writematrix([measure1(:,1:3),measure1(:,IC_i+3)], Jinit_file,'Delimiter','tab');
-                end
+            IC_cur = IC;
+            %parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') '_T_' num2str(Tlist(1),'%.5f') '_' num2str(Tlist(end),'%.5f') ];
+            parameterlist = [IC_cur '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(Klist(1),'%.0f') '_' num2str(Klist(end),'%.0f') '_L_' num2str(Llist(1),'%.2f') '_' num2str(Llist(end),'%.2f') ];
+            Jinit_file = [pwd '/data/' foldername '/branches/Jinit_' parameterlist '.dat'];
+            Jopt_file = [pwd '/data/' foldername '/branches/Jopt_' parameterlist '.dat'];
+            try
+                oldJopt = readmatrix(Jopt_file);
+                oldJinit = readmatrix(Jinit_file);
+                newJopt = [ oldJopt ; [measure2(:,1:3),measure2(:,4:6)] ];
+                newJinit = [ oldJinit ; [measure1(:,1:3),measure1(:,3)] ];
+                newJopt = sortrows(newJopt,[3,-4]);
+                newJinit = sortrows(newJinit,[3,-4]);
+                [~, idxJopt] = unique(newJopt(:,3), 'stable');
+                [~, idxJinit] = unique(newJinit(:,3), 'stable');
+                newJopt = newJopt(idxJopt,:);
+                newJinit = newJinit(idxJinit,:);
+                writematrix(newJopt, Jopt_file,'Delimiter','tab');
+                writematrix(newJinit, Jinit_file,'Delimiter','tab');
+            catch 
+                writematrix([measure2(:,1:3),measure2(:,4:6)], Jopt_file,'Delimiter','tab');
+                writematrix([measure1(:,1:3),measure1(:,3)], Jinit_file,'Delimiter','tab');
             end
         case 'energygrowth'
             L_scale = dt;

@@ -227,9 +227,29 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
         u_i = reshape(u_n(:,imod), [N, N]);
         %}
     
+        % appropriate phase-shift to center any local minima
         if i == 1
-            [~, min_idx] = min(u_i(:));
-            [rowmin, colmin] = ind2sub(size(u_i), min_idx);
+            minctr = 1;
+            [~,minidx] = mink(u_i(:),20);
+            while minctr < size(minidx,1)
+                minidx = [minidx(1:minctr) ; minidx(abs(minidx(minctr) - minidx(minctr:end)) > .05*size(u_i(:),1))];
+                minctr = minctr + 1;
+            end
+            [row, col] = ind2sub(size(u_i), minidx);
+            sz = size(u_i);
+            
+            % periodic mean for rows
+            theta_r = 2*pi*(row-1)/sz(1);
+            rowmin = mod(atan2(mean(sin(theta_r)), mean(cos(theta_r))) ...
+                         * sz(1)/(2*pi), sz(1)) + 1;
+            
+            % periodic mean for columns
+            theta_c = 2*pi*(col-1)/sz(2);
+            colmin = mod(atan2(mean(sin(theta_c)), mean(cos(theta_c))) ...
+                         * sz(2)/(2*pi), sz(2)) + 1;
+            
+            rowmin = round(rowmin);
+            colmin = round(colmin);
             [Ny, Nx] = size(u_i);
             rowc = floor((Ny+1)/2) + 1;
             colc = floor((Nx+1)/2) + 1;
