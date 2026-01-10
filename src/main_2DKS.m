@@ -1,4 +1,4 @@
-function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
+function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,guessc,tolc,optTc)
 
 % --- paths ---
 root = pwd;
@@ -14,7 +14,7 @@ tic
 %%% choose test settings %%%
 restart = 1;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
-Ntime_save_max = 4;                            % choose maximum number of samples per data file
+Ntime_save_max = 10;                            % choose maximum number of samples per data file
 run = runc;                               	    % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
 continuation = continuationc;                   % 'IC' for optimal IC from file, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
@@ -27,7 +27,7 @@ optT = 10^(optTc);                              % T parameter of optimal IC for 
 initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
 L_scale = ellstart:ellgap:ellend;                        % domain sizes
 timewindow = logspace(Tstart,Tend,Tnum);         % time windows
-initialcondition = {'randfour'}; % initial conditions
+initialcondition = guessc; % initial conditions
 
 %timewindow = timewindow(2);
 switch run
@@ -58,8 +58,8 @@ if restart == 1
     testcounter = 0;
     testrow = 0;
     
-    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale),3+3*length(initialcondition));
-    Jinitdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale),3+1*length(initialcondition));
+    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale)*length(initialcondition),3+3);
+    Jinitdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale)*length(initialcondition),3+1);
 end
 
 for energy_i = 1 : length(initialKmagnitude)
@@ -296,21 +296,21 @@ for energy_i = 1 : length(initialKmagnitude)
                         fprintf('----------------------------------------------------------------------------------------------------------\n')
                         fprintf('%02d \t %.4f\t %.4f \t ', length(J_history), J_history(1,1), J_history(end,1) )
                         disp(datetime)
-                        Jinitdata(testrow,1) = K;
-                        Joptdata(testrow,1) = Jinitdata(testrow,1);
-                        Jinitdata(testrow,2) = L_s1;
-                        Joptdata(testrow,2) = Jinitdata(testrow,2);
-                        Jinitdata(testrow,3) = T;
-                        Joptdata(testrow,3) = Jinitdata(testrow,3);
-                        Jinitdata(testrow,param_i+3) = J_history(1,1);
-                        Joptdata(testrow,(param_i-1)*3+4) = J_history(end,1);
+                        currentrow = testrow + (param_i-1)*length(initialKmagnitude)*length(timewindow)*length(L_scale); 
+                        Jinitdata(currentrow,1) = K;
+                        Joptdata(currentrow,1) = Jinitdata(currentrow,1);
+                        Jinitdata(currentrow,2) = L_s1;
+                        Joptdata(currentrow,2) = Jinitdata(currentrow,2);
+                        Jinitdata(currentrow,3) = T;
+                        Joptdata(currentrow,3) = Jinitdata(currentrow,3);
+                        Jinitdata(currentrow,3) = J_history(1,1);
+                        Joptdata(currentrow,4) = J_history(end,1);
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
                         newopt = 1;
                         
                         maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);
-                        Joptdata(testrow,(param_i-1)*3+5:(param_i-1)*3+6) = maxL2inT;
-                        rowend = testcounter/(length(initialcondition));
-                        save_measures('optimization', Jinitdata(rowend,:), Joptdata(rowend,:), 1, initialcondition, N, dt, timewindow, K, L_s1, L_s2);
+                        Joptdata(currentrow,5:6) = maxL2inT;
+                        save_measures('optimization', Jinitdata(currentrow,:), Joptdata(currentrow,:), 1, IC, N, dt, timewindow, K, L_s1, L_s2);
                         fprintf('Saved objective data to file.\n')
                         fprintf('Saving diagnostic figures... ')
                         if optfigs == 1
