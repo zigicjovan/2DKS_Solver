@@ -25,6 +25,8 @@ function u_0 = initialcondition(IC,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap)
             u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'shf'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( kmax*L_x2*x2 );
+        case 'shfn'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 0.1*kmax*L_x1*x1 ) + sin( 0.1*kmax*L_x2*x2 );
         case 'tg1'
             u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'tghf'
