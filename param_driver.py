@@ -12,9 +12,9 @@ import time
 
 # User-editable parameter ranges
 K_start = 3.5
-K_end = 6.0
+K_end = 3.5
 K_step = 0.5
-ell_start = 2.02
+ell_start = 2.50
 ell_end = 2.98
 ell_step = 0.12
 K_range = np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
@@ -23,8 +23,8 @@ ell_range = np.round(np.arange(ell_start, ell_end + ell_step/2, ell_step), 2)
 #ell_range = [round(x, 2) for x in [1.62]]
 
 # User-editable global settings
-SBATCH_TIME = "00-20:00"  # requested time limit (D-HH:MM) 
-RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell_start}_{ell_end}-init.sh"
+SBATCH_TIME = "02-00:00"  # requested time limit (D-HH:MM) 
+RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell_start}_{ell_end}-UB.sh"
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
@@ -34,23 +34,25 @@ def generate_tasks():
     N_ref = 64
     K_ref = 3.5
     T_width = round(0.20, 2)
-    T_step = round(0.02, 2)
+    T_step = round(2.02, 2)
 
     # generate parameter tuples
     tasks = []
     for K in K_range:
         for ell in ell_range:
             T_target = 0.5*ell + 2
-            #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width + 1e-5) - K, T_step), 2)
-            T_range = np.round(np.array([(T_target / 2) - K]), 2)
-            idx = max( 0 , min( int( np.round(ell + 2*(K - K_ref) + 3.01 ) ) , len(N_choice) - 1) ) 
+            #T_range = np.round(np.array([(T_target / 2) - K ]), 2) # init
+            #T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
+            T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
+            #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
+            idx = max( 0 , min( int( np.round(ell + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
             N = N_choice[idx] 
             dt = dt_choice[idx]
             for T in T_range:
-                rel_T = ( np.power(10.0,T) - np.power(10.0,T_target) ) /  np.power(10.0,T_target)
-                idxm = max( 0 , int( rel_T * idx ) )
-                mem_max = mem_choice[idxm]
-                mem = f"{mem_max}G" 
+                mem_est = 8 * np.ceil((1.25 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * ell
+                                            + 0.23432402 * K + 0.18691756 * ell * np.log10((N**2) * (10.0**T) / dt) ) + 2.0) / 8.0 )
+                mem_req = int(np.maximum( 32 , mem_est ))
+                mem = f"{mem_req}G" 
                 tasks.append((float(K), float(ell), float(T), float(dt), int(N), mem))
     return tasks
 
