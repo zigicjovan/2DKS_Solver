@@ -312,19 +312,39 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             set(gcf,'Position',[100 100 900 750])
     
             % inspect physical solution 
-            u_T = reshape( u_IC , [ N , N ] );
-            % phase-shift
-            [~, min_idx] = min(u_T(:));
-            [rowmin, colmin] = ind2sub(size(u_T), min_idx);
-            [Ny, Nx] = size(u_T);
+            u_i = reshape( u_IC , [ N , N ] );
+            %% appropriate phase-shift to center any local minima
+            minctr = 1;
+            [~,minidx] = mink(u_i(:),20);
+            while minctr < size(minidx,1)
+                minidx = [minidx(1:minctr) ; minidx(abs(minidx(minctr) - minidx(minctr:end)) > .05*size(u_i(:),1))];
+                minctr = minctr + 1;
+            end
+            [row, col] = ind2sub(size(u_i), minidx);
+            sz = size(u_i);
+            
+            % periodic mean for rows
+            theta_r = 2*pi*(row-1)/sz(1);
+            rowmin = mod(atan2(mean(sin(theta_r)), mean(cos(theta_r))) ...
+                         * sz(1)/(2*pi), sz(1)) + 1;
+            
+            % periodic mean for columns
+            theta_c = 2*pi*(col-1)/sz(2);
+            colmin = mod(atan2(mean(sin(theta_c)), mean(cos(theta_c))) ...
+                         * sz(2)/(2*pi), sz(2)) + 1;
+            
+            rowmin = round(rowmin);
+            colmin = round(colmin);
+            [Ny, Nx] = size(u_i);
             rowc = floor((Ny+1)/2) + 1;
             colc = floor((Nx+1)/2) + 1;
             drow = rowc - rowmin;
             dcol = colc - colmin;
-            u_T_ps = circshift(u_T, [drow, dcol]);
+            u_I_ps = circshift(u_i, [drow, dcol]);
+            %%
     
             % surface plot
-            surfc(x1,x2,u_T_ps); 
+            surfc(x1,x2,u_I_ps); 
             xlabel('$\frac{x_1}{2\pi}$','Interpreter','latex'); ylabel('$\frac{x_2}{2\pi}$','Interpreter','latex');
             shading interp
             %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
@@ -360,14 +380,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % inspect physical solution
             u_T = reshape( u_TC , [ N , N ] );
-            % phase-shift
-            [~, min_idx] = min(u_T(:));
-            [rowmin, colmin] = ind2sub(size(u_T), min_idx);
-            [Ny, Nx] = size(u_T);
-            rowc = floor((Ny+1)/2) + 1;
-            colc = floor((Nx+1)/2) + 1;
-            drow = rowc - rowmin;
-            dcol = colc - colmin;
+            % appropriate phase-shift to center any local minima
             u_T_ps = circshift(u_T, [drow, dcol]);
     
             % surface plot
