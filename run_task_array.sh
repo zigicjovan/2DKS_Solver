@@ -49,13 +49,16 @@ mkdir -p "$LOG_DIR"
 ell_str=$(printf "%.2f" "$ell")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-LOG_FILE="${LOG_DIR}/maxT_randfour_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+IC_str="randfour"
+LOG_FILE="${LOG_DIR}/maxT_${IC_str}_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 #LOG_FILE="${LOG_DIR}/longT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 
 module load matlab/2024b.1
 
 # MATLAB command for max energy optimization:
-MATLAB_CMD="try; addpath('src'); main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+
+
+MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
 #MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
@@ -98,7 +101,7 @@ fi
 
 # --- Append SLURM efficiency info (seff) to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
-echo "SLURM Job Efficiency Info (check job ID, array task is correct)" >> "$LOG_FILE"
+echo "SLURM Job Efficiency Info (check Job ID only, ignore array task)" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
 echo "Job identifier: $JOB_TAG" >> "$LOG_FILE"
 
