@@ -25,7 +25,7 @@ mkdir -p ./slurm_logs
 
 # create unique scratch temp dir per job
 SCRATCH_BASE=${SCRATCH:-/scratch}/${USER}
-JOB_TAG="${JOB_TAG:-${SLURM_JOB_ID:-$$}_${SLURM_ARRAY_TASK_ID:-0}}"
+JOB_TAG="${JOB_TAG:-${SLURM_JOB_ID:-$$}}"
 TMPDIR_JOB="${SCRATCH_BASE}/tmp_job_${JOB_TAG}"
 mkdir -p "$TMPDIR_JOB"
 export TMPDIR="$TMPDIR_JOB"
@@ -49,15 +49,19 @@ mkdir -p "$LOG_DIR"
 ell_str=$(printf "%.2f" "$ell")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-IC_str="randfour"
+IC_str="s1"
 LOG_FILE="${LOG_DIR}/maxT_${IC_str}_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
 #LOG_FILE="${LOG_DIR}/longT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+
+# --- Write SLURM Job ID to log file ---
+echo -e "\n=============================" >> "$LOG_FILE"
+echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-N/A}  JOB_TAG: ${JOB_TAG}" >> "$LOG_FILE"
+echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-N/A}  SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID:-N/A}" >> "$LOG_FILE"
+echo "=============================" >> "$LOG_FILE"
 
 module load matlab/2024b.1
 
 # MATLAB command for max energy optimization:
-
-
 MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
 #MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
@@ -98,11 +102,3 @@ if [[ $rc -ne 0 ]]; then
     echo "[$(date)] TASK ${TASK_ID} finished with error (rc=${rc}). See $LOG_FILE" >&2
     exit $rc
 fi
-
-# --- Append SLURM efficiency info (seff) to log file ---
-echo -e "\n=============================" >> "$LOG_FILE"
-echo "SLURM Job Efficiency Info (check Job ID only, ignore array task)" >> "$LOG_FILE"
-echo "=============================" >> "$LOG_FILE"
-echo "Job identifier: $JOB_TAG" >> "$LOG_FILE"
-
-exit 0
