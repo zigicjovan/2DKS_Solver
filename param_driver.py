@@ -11,39 +11,41 @@ from pathlib import Path
 import time
 
 # User-editable parameter ranges
-K_start = 3.5
-K_end = 3.5
+K_start = 1.0
+K_end = 1.0
 K_step = 0.5
-ell_start = 2.50
-ell_end = 2.98
+ell_start = 1.01
+ell_end = 1.01
 ell_step = 0.12
 K_range = np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
 ell_range = np.round(np.arange(ell_start, ell_end + ell_step/2, ell_step), 2)
 #K_range = np.round(np.array([3.5]), 1)
-#ell_range = [round(x, 2) for x in [1.62]]
+#ell_range = [round(x, 2) for x in [2.04]] 
 
 # User-editable global settings
-SBATCH_TIME = "02-00:00"  # requested time limit (D-HH:MM) 
-RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell_start}_{ell_end}-UB.sh"
+SBATCH_TIME = "00-00:10"  # requested time limit (D-HH:MM) 
+RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell_start}_{ell_end}-test.sh"
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
     N_choice =  [ 48,   64,   96,   128,  160,  192,  256,  320,  384,  512,  576,  648,  720,  768,  810,  864,  900,  972,  1024 ]
     dt_choice = [ 5e-4, 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8 ]
-    mem_choice = np.arange(32, 32001, 32)
     N_ref = 64
     K_ref = 3.5
-    T_width = round(0.20, 2)
-    T_step = round(2.02, 2)
+    T_width = round(0.10, 2)
+    T_step = round(0.02, 2)
 
     # generate parameter tuples
     tasks = []
+    filecount = 0.0
+    memcount = 0.0
     for K in K_range:
         for ell in ell_range:
             T_target = 0.5*ell + 2
-            #T_range = np.round(np.array([(T_target / 2) - K ]), 2) # init
+            #T_target = 0.5*1.02 + 2
+            T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # init
             #T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
-            T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
+            #T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
             #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
             idx = max( 0 , min( int( np.round(ell + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
             N = N_choice[idx] 
@@ -53,8 +55,12 @@ def generate_tasks():
                                             + 0.23432402 * K + 0.18691756 * ell * np.log10((N**2) * (10.0**T) / dt) ) + 2.0) / 8.0 )
                 mem_req = int(np.maximum( 32 , mem_est ))
                 mem = f"{mem_req}G" 
+                addmemcount = mem_req
+                addfilecount = 0.6 * 1e-3 * np.power(10.0,T) / dt
+                memcount += addmemcount
+                filecount += addfilecount
                 tasks.append((float(K), float(ell), float(T), float(dt), int(N), mem))
-    return tasks
+    return tasks, int(filecount), int(memcount)
 
 # Write runscripts/ and param files
 def write_runscripts(tasks, out_dir='runscripts'):
@@ -130,11 +136,15 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
 
 # Main
 def main():
-    tasks = generate_tasks()
-    print(f"Total parameter combinations: {len(tasks)}")
+    [tasks,filecount,memcount] = generate_tasks()
+    print(f"Parameter combinations: {len(tasks)}")
+    print(f"Filespace required: {(filecount)}K")
+    print(f"Memory requested: {(memcount)}GB")
     groups, tag = write_runscripts(tasks)
     write_run_array_sh(groups, tag, out_fname=RUN_ARRAY_NAME, max_concurrent=0)
-    print(f"Wrote runscripts/ (task param files with tag {tag}) and run_array.sh")
+    print(f"Wrote runscripts/ (task param files with tag {tag})")
+    print(f"Execution script: bash {RUN_ARRAY_NAME}")
+    print("Priority check: sshare -l -A def-bprotas_cpu -u zigicj")
 
 if __name__ == "__main__":
     main()
