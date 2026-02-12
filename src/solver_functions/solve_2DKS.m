@@ -115,7 +115,7 @@ u_n: solution vector for each time step in Physical space
         save_each = time1;
     end
 
-    % solution vectors in fourier and physical spectrum (max 10k columns)
+    % solution vectors in fourier and physical spectrum (Ntime_save_max columns)
     switch solver
         case {'forward','kappa'}  
             if Ntime_save > Ntime_save_max

@@ -2,7 +2,7 @@ function u_0 = initialcondition(IC,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap)
 
     u_0 = 0;
     kabs = sqrt(Klap);              % absolute radii
-    kmax = max(kabs(:));            % maximum radius
+    kmax = (max(kabs(:)));            % maximum radius
     switch IC 
         case 'optimized'
             u_0 = reshape( utility1, [ N , N_x2 ] );
@@ -25,10 +25,33 @@ function u_0 = initialcondition(IC,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap)
             u_0 = cos( L_x1*x1 ) .* sin( L_x2*x2 );
         case 'shf'
             u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( kmax*L_x2*x2 );
-        case 'shfn'
-            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( 0.1*kmax*L_x1*x1 ) + sin( 0.1*kmax*L_x2*x2 );
-        case 'tg1'
-            u_0 = sin( L_x1*x1 ) .* sin( L_x2*x2 );
+        case 'sp0hf'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( (kmax+0)*L_x2*x2 );
+        case 's1,.8hf'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( .8*kmax*L_x2*x2 );
+        case 's1,.9hf'
+            u_0 = sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( .9*kmax*L_x2*x2 );
+        case 'sp2hf'
+            u_0 = .2*sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( kmax*L_x2*x2 );
+        case 'sp5hf'
+            u_0 = .5*sin( 1*(L_x1*x1 + L_x2*x2) ) + sin( kmax*L_x1*x1 ) + sin( kmax*L_x2*x2 );
+        case 'dipole1'
+            L1 = 2*pi/L_x1; L2 = 2*pi/L_x2;
+            
+            x0a = 0.35*L1; y0a = 0.5*L2;
+            x0b = 0.7*L1; y0b = 0.5*L2;
+            x0c = 0.5*L1; y0c = 0.9*L2;
+            
+            
+            u_0 = 3*exp(-5*((L_x1*(x1 - x0a)).^2 + (L_x2*(x2 - y0a)).^2)) ...
+                + 3*exp(-5*((L_x1*(x1 - x0b)).^2 + (L_x2*(x2 - y0b)).^2)) ...
+                + 3*exp(-5*((L_x1*(x1 - x0c)).^2 + (L_x2*(x2 - y0c)).^2));
+        case 'xy22'
+            u_0 = sin( 2*L_x1*x1 ) + sin( 2*L_x2*x2 );
+        case 'xy21'
+            u_0 = sin( 2*L_x1*x1 ) + sin( 1*L_x2*x2 );
+        case 'tg11'
+            u_0 = sin( 1*L_x1*x1 ) .* sin( 1*L_x2*x2 );
         case 'tghf'
             u_0 = sin( L_x1*x1 ) .* sin( kmax*L_x2*x2 );
         case 'stg1'
