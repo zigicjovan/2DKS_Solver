@@ -287,7 +287,8 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             xline(ax(k), L_s1, '--');
             yline(ax(k), L_s2, '--');
             view(ax(k),2);
-            axis(ax(k),'square');
+            axis(ax(k), [0 2*L_s1 0 2*L_s2])
+            axis(ax(k), 'equal')
     
             % ------------ AXIS 3: energy evolution -------------
             k = 3;
