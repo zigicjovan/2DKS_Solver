@@ -1,4 +1,4 @@
-function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,guessc,tolc,optTc)
+function main_2DKS(dtc,Nc,Kstart,Kend,Knum,ell1start,ell1end,ell1gap,ell2start,ell2end,ell2gap,Tstart,Tend,Tnum,runc,continuationc,guessc,tolc,optTc)
 
 % --- paths ---
 root = pwd;
@@ -25,7 +25,10 @@ optT = 10^(optTc);                              % T parameter of optimal IC for 
 
 %%% choose parameter testing ranges %%%
 initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
-L_scale = ellstart:ellgap:ellend;                        % domain sizes
+%initialKmagnitude = initialKmagnitude*(.25);
+L1_scale = ell1start:ell1gap:ell1end;                        % domain sizes
+L2_scale = ell2start:ell2gap:ell2end;
+%L1_scale = L_scale*sqrt(2);
 timewindow = logspace(Tstart,Tend,Tnum);         % time windows
 initialcondition = guessc; % initial conditions
 
@@ -38,8 +41,8 @@ end
 
 %%% choose default parameters %%%
 K = initialKmagnitude(1);                       % magnitude of initial condition L^2 energy, use K=0 for default IC norm
-L_s1 = L_scale(1);                              % length-scale parameter in dim 1
-L_s2 = L_scale(1);                              % length-scale parameter in dim 2
+L_s1 = L1_scale(1);                              % length-scale parameter in dim 1
+L_s2 = L2_scale(1);                              % length-scale parameter in dim 2
 T = timewindow(1);                              % length of simulation time window
 IC = strjoin(initialcondition(1),'');           % initial condition
 dt = timestep(1);                               % length of time-step
@@ -54,12 +57,12 @@ switch optmethod
 end
 
 if restart == 1
-    numberoftests = length(initialcondition)*length(initialKmagnitude)*length(timewindow)*length(L_scale);
+    numberoftests = length(initialcondition)*length(initialKmagnitude)*length(timewindow)*length(L1_scale)*length(L2_scale);
     testcounter = 0;
     testrow = 0;
     
-    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale)*length(initialcondition),3+3);
-    Jinitdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L_scale)*length(initialcondition),3+1);
+    Joptdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L1_scale)*length(L2_scale)*length(initialcondition),3+3);
+    Jinitdata = NaN(length(initialKmagnitude)*length(timewindow)*length(L1_scale)*length(L2_scale)*length(initialcondition),3+1);
 end
 
 for energy_i = 1 : length(initialKmagnitude)
@@ -70,10 +73,10 @@ for energy_i = 1 : length(initialKmagnitude)
     end
     K = initialKmagnitude(energy_i);                 % adjust initial L^2 energy magnitude
 
-    for domain_i = 1 : length(L_scale)
+    for domain_i = 1 : length(L1_scale)
     
-        L_s1 = L_scale(domain_i);                         % adjust length-scale parameter in dim 1
-        L_s2 = L_s1;                                    % adjust length-scale parameter in dim 2
+        L_s1 = L1_scale(domain_i);                         % adjust length-scale parameter in dim 1
+        L_s2 = L2_scale(1);                                    % adjust length-scale parameter in dim 2
     
         %% start window block
         for window_i = 1 : length(timewindow)
@@ -82,7 +85,7 @@ for energy_i = 1 : length(initialKmagnitude)
     
             switch run                                  % set which test to run
                 case 'L'
-                    test_parameter = L_scale;           % (dynamical behavior)
+                    test_parameter = L1_scale;           % (dynamical behavior)
                 case 'N'
                     test_parameter = gridsize;          % (spatial convergence)
                 case 'dt'
@@ -98,7 +101,7 @@ for energy_i = 1 : length(initialKmagnitude)
                 %%% set variable parameters %%%
                 switch run 
                     case 'L'
-                        L_s2 = L_scale(param_i);                      % length-scale parameter in dim 2 
+                        L_s2 = L1_scale(param_i);                      % length-scale parameter in dim 2 
                     case 'N'
                         N = gridsize(param_i);                        % number of grid points 
                     case 'dt'
@@ -218,8 +221,8 @@ for energy_i = 1 : length(initialKmagnitude)
                 switch run 
                     case 'energygrowth'
                         if exist('l2norms_avg','var') == 0
-                            l2norms_avg = NaN(length(L_scale),length(test_parameter)+1);
-                            l2norms_mode = NaN(length(L_scale),length(test_parameter)+1);
+                            l2norms_avg = NaN(length(L1_scale),length(test_parameter)+1);
+                            l2norms_mode = NaN(length(L1_scale),length(test_parameter)+1);
                             l2norms_guess = NaN(T/dt,numberoftests);
                             l2norms_opt = NaN(T/dt,numberoftests);
                         end
@@ -296,7 +299,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         fprintf('----------------------------------------------------------------------------------------------------------\n')
                         fprintf('%02d \t %.4f\t %.4f \t ', length(J_history), J_history(1,1), J_history(end,1) )
                         disp(datetime)
-                        currentrow = testrow + (param_i-1)*length(initialKmagnitude)*length(timewindow)*length(L_scale); 
+                        currentrow = testrow + (param_i-1)*length(initialKmagnitude)*length(timewindow)*length(L1_scale)*length(L2_scale); 
                         Jinitdata(currentrow,1) = K;
                         Joptdata(currentrow,1) = Jinitdata(currentrow,1);
                         Jinitdata(currentrow,2) = L_s1;
@@ -353,7 +356,7 @@ end
 switch run 
     case 'energygrowth'     % designed for comparing two initial conditions only 
         if exist('L_target','var')
-            plot_measures('energygrowth', L_scale, initialcondition, l2norms_mode, T, K, L_target, L_s2, l2norms_avg, length(timewindow), 0, 0);
+            plot_measures('energygrowth', L1_scale, initialcondition, l2norms_mode, T, K, L_target, L_s2, l2norms_avg, length(timewindow), 0, 0);
             save_measures('energygrowth', l2norms_mode, l2norms_avg, 0, initialcondition, 0, K, L_scale, T, L_target, 0);
         end
     case 'N'                % spatial convergence: error analysis and computational time
