@@ -2,7 +2,11 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
 
     if not(isfolder([pwd  '/data/optimization' ]))                                           % create local directories for data storage
         mkdir([pwd  '/data/optimization' ]);
+        mkdir([pwd  '/data/optimization/diagnostics' ]);
+        mkdir([pwd  '/data/optimization/linesearch' ]);
         addpath([pwd  '/data/optimization' ]);
+        addpath([pwd  '/data/optimization/diagnostics' ]);
+        addpath([pwd  '/data/optimization/linesearch' ]);
     end
 
     switch method
@@ -128,8 +132,8 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     % save diagnostics
     parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
     optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
-    diagnostics_file = [pwd '/data/optimization/diagnostics_' optparameters '.dat'];
+    diagnostics_file = [pwd '/data/optimization/diagnostics/diagnostics_' optparameters '.dat'];
     writematrix(diagnostics_history, diagnostics_file,'Delimiter','tab');
-    linesearchJ_file = [pwd '/data/optimization/linesearchJ_' optparameters '.dat'];
+    linesearchJ_file = [pwd '/data/optimization/linesearch/linesearchJ_' optparameters '.dat'];
     writematrix(linesearchJ_history, linesearchJ_file,'Delimiter','tab');
 end
