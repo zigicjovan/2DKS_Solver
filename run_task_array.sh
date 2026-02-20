@@ -42,29 +42,31 @@ if [[ -z "$LINE" ]]; then
 fi
 
 # expected line: idx K ell T dt N mem
-read IDX K ell T dt N mem <<< "$LINE"
+read IDX K ell1 ell2 T dt N mem <<< "$LINE"
 
 LOG_DIR="./output"
 mkdir -p "$LOG_DIR"
-ell_str=$(printf "%.2f" "$ell")
+ell1_str=$(printf "%.2f" "$ell1")
+ell2_str=$(printf "%.2f" "$ell2")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-IC_str="s1"
-LOG_FILE="${LOG_DIR}/maxT_${IC_str}_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
-#LOG_FILE="${LOG_DIR}/longT_${K}_${ell_str}_${T_str}_${dt_str}_${N}.log"
+IC_str="xy162"
+Kscale=1
+LOG_FILE="${LOG_DIR}/branch${Kscale}maxT_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
+#LOG_FILE="${LOG_DIR}/longT_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
 
 # --- Write SLURM Job ID to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
-echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-N/A}  JOB_TAG: ${JOB_TAG}" >> "$LOG_FILE"
-echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-N/A}  SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID:-N/A}" >> "$LOG_FILE"
-echo "=============================" >> "$LOG_FILE"
+#echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-N/A} >> "$LOG_FILE"
+#echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-N/A}  SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID:-N/A}" >> "$LOG_FILE"
+#echo "=============================" >> "$LOG_FILE"
 
 module load matlab/2024b.1
 
 # MATLAB command for max energy optimization:
-MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},log10(10^${K}/${Kscale}),log10(10^${K}/${Kscale}),1,${ell1},${ell1},0.02,${ell2},${ell2},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,0.0); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
-#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell},${ell},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell1},${ell2},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
 # --- Retry loop with success-string check ---
 attempt=0
