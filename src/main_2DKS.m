@@ -25,10 +25,8 @@ optT = 10^(optTc);                              % T parameter of optimal IC for 
 
 %%% choose parameter testing ranges %%%
 initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
-%initialKmagnitude = initialKmagnitude*(.25);
 L1_scale = ell1start:ell1gap:ell1end;                        % domain sizes
 L2_scale = ell2start:ell2gap:ell2end;
-%L1_scale = L_scale*sqrt(2);
 timewindow = logspace(Tstart,Tend,Tnum);         % time windows
 initialcondition = guessc; % initial conditions
 
