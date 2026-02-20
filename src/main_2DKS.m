@@ -312,8 +312,8 @@ for energy_i = 1 : length(initialKmagnitude)
                         maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);
                         Joptdata(currentrow,5:6) = maxL2inT;
                         save_measures('optimization', Jinitdata(currentrow,:), Joptdata(currentrow,:), 1, IC, N, dt, timewindow, K, L_s1, L_s2);
-                        fprintf('Saved objective data to file.\n')
-                        fprintf('Saving diagnostic figures... ')
+                        fprintf('Saved objective data to file at ')
+                        fprintf('%01dh%02dm%02ds\t\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                         if optfigs == 1
                             plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);                                         
                         end
