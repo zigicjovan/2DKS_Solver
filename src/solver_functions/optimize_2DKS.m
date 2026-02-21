@@ -77,6 +77,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
                 momentum_size = 0;                                                                      % reset accumulated momentum after modulo 20 iterations
             end
         elseif iter == 1
+            delete_2DKSsolution('forward', IC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],IC);
             IC = 'optimized';                                                                           % set IC to optimized
             J_change(1,1) = NaN;                                                                        % fix initial change in objective functional value 
             step_size = 1e5;% ((K*exp(0.25*T))^2 - J_cur) / J_cur;%                                     % initialize current step-size
