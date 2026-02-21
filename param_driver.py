@@ -62,7 +62,7 @@ def generate_tasks():
                     mem_req = int(np.maximum( 32 , mem_est ))
                     mem = f"{mem_req}G" 
                     addmemcount = mem_req
-                    addfilecount = 0.6 * 1e-3 * np.power(10.0,T) / dt
+                    addfilecount = 0.1 * 1e-3 * np.power(10.0,T) / dt
                     memcount += addmemcount
                     filecount += addfilecount
                     tasks.append((float(K), float(ell1), float(ell2), float(T), float(dt), int(N), mem))
