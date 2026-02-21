@@ -129,7 +129,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                 [ u_IC , ~ ] = load_2DKSsolution('optimal', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, [opttol optT], 0);
                                 tic
                                 disp(['Using chosen optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
-                                solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                %solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
                                 originalIC = IC;
                                 IC = 'optimized';
                                 [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
@@ -146,8 +146,8 @@ for energy_i = 1 : length(initialKmagnitude)
                                         timeTC = time1;
                                         time2 = T;
                                     end
-                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
-                                    u_IC = u(:,1);
+                                    [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
+                                    u_IC = real(ifft2(v(:,1))); 
                                     tic
                                     disp(['Continuing from loaded optimized solution for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                                 catch
@@ -170,7 +170,7 @@ for energy_i = 1 : length(initialKmagnitude)
                                     [ u_IC , ~ ] = load_2DKSsolution('optimal', IC, dt, T, N, K, L_s1, L_s2, [tol T], 0);
                                     tic
                                     disp(['Continuing from loaded optimal IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
-                                    solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                    %solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
                                     IC = 'optimized';
                                     [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
                                     disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
@@ -192,9 +192,9 @@ for energy_i = 1 : length(initialKmagnitude)
                                         timeTC = time1;
                                         time2 = T;
                                     end
-                                    [ u , ~ ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
+                                    [ ~ , v1 ] = load_2DKSsolution('forward', 'optimized', dt, time2, N, K, L_s1, L_s2, [timeIC time2], IC);
                                     [ ~ , v ] = load_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [timeTC T], IC);
-                                    u_IC = u(:,1);
+                                    u_IC = real(ifft2(v1(:,1)));
                                     v_TC = v(:,end);
                                     u_TC = real(ifft2(v_TC));
                                     IC = 'optimized';
@@ -309,13 +309,13 @@ for energy_i = 1 : length(initialKmagnitude)
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
                         newopt = 1;
                         
-                        maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);
+                        maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC_opt,u_IC,[tol,RCGon,100,newopt]);
                         Joptdata(currentrow,5:6) = maxL2inT;
                         save_measures('optimization', Jinitdata(currentrow,:), Joptdata(currentrow,:), 1, IC, N, dt, timewindow, K, L_s1, L_s2);
                         fprintf('Saved objective data to file at ')
                         fprintf('%01dh%02dm%02ds\t\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
                         if optfigs == 1
-                            plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,[tol,RCGon,100,newopt]);                                         
+                            plot_2DKS(save_each, 'optdiag', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC_opt,u_IC,[tol,RCGon,100,newopt]);                                         
                         end
                         close all
                         switch optmethod
@@ -324,9 +324,9 @@ for energy_i = 1 : length(initialKmagnitude)
                             otherwise
                                 RCGon = 0;
                         end
+                        fprintf('Deleting all evolution data stored in directory...\n')
                         delete_2DKSsolution('forward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         delete_2DKSsolution('backward', 'optimized', dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
-                        delete_2DKSsolution('forward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         delete_2DKSsolution('backward', originalIC, dt, T, N, K, L_s1, L_s2, [Ntime_save_max T],originalIC);
                         fprintf('Optimization run complete.\n')
                 end
