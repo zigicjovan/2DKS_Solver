@@ -1,8 +1,7 @@
-function maxL2inT = plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, utility2)
+function maxL2inT = plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, u_IC_input , u_IC_og_input, utility2)
 
-if not(isfolder([pwd  '/data/energyL2' ]))                                           % create local directories for data storage
-    mkdir([pwd  '/data/energyL2' ])
-    mkdir([pwd  '/data/energyL2_t' ]);
+if not(isfolder([pwd  '/data/energy' ]))                                           % create local directories for data storage
+    mkdir([pwd  '/data/energy' ])
     mkdir([pwd  '/data/spectrum' ]);
     mkdir([pwd  '/data/kappa' ]);
     mkdir([pwd  '/media' ]);
@@ -54,7 +53,7 @@ switch solplot
     case {'norms','gif','diagnostics','initial','terminal','optdiag'}
         savedata = 1;
         [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
-            process_energy(savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+            process_energy(u_IC_input,savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
             parameterlist,optparameters,parfiglist,optparfiglist);
 end
 
@@ -66,10 +65,12 @@ switch IC
             otherwise
                 savedata = 0;
                 [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
-                    process_energy(savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+                    process_energy(u_IC_og_input,savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     parameterlist,optparameters,parfiglist,optparfiglist);
         end
 end
+
+fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
 switch solplot
     case 'gif'

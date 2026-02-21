@@ -8,18 +8,20 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
     originalIC = utility2;
     switch foldername
         case {'forward','backward'}
-            phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples_' num2str(saved) '.bin'];
+            %phys_file = [pwd '/data/' foldername '/phys_' parameterlistT '_samples_' num2str(saved) '.bin'];
             four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples_' num2str(saved) '.bin'];
-            time_file = [pwd '/data/' foldername '/time_' parameterlistT '_samples_' num2str(saved) '.bin'];
+            %time_file = [pwd '/data/' foldername '/time_' parameterlistT '_samples_' num2str(saved) '.bin'];
             switch IC
                 case 'optimized'
-                    phys_file = [pwd '/data/' foldername '/phys_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
+                    %phys_file = [pwd '/data/' foldername '/phys_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
                     four_file = [pwd '/data/' foldername '/four_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
-                    time_file = [pwd '/data/' foldername '/time_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
+                    %time_file = [pwd '/data/' foldername '/time_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
             end
-            file1 = read_binary(phys_file,N,N,false);   
+            %file1 = read_binary(phys_file,N,N,false);   
+            file1 = 0;
             file2 = read_binary(four_file,N,N,true);
-            file3 = read_binary(time_file,1,1,false);
+            %file3 = read_binary(time_file,1,1,false);
+            file3 = 0;
         case {'optimal'}
             tol = utility1(1);
             % use exact or nearest previous T

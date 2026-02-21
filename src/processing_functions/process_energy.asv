@@ -118,16 +118,16 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
                 fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
             end
         end
+        %}
 
         if mod(i,Ntime_save_max) ~= 0
             imod = mod(i,Ntime_save_max);
         else
             imod = Ntime_save_max;
         end
-        %}
 
         % projection coefficients and unstable modes
-        [~,projcoeffs,unstablemodes] = eigenfunction_validation(u_n(:),L_s1, N, T,IC,'full');
+        [~,projcoeffs,unstablemodes] = eigenfunction_validation(u_n(:,imod),L_s1, N, T,IC,'full');
         if size(projcoeffmodeevolution,1) ~= size(unstablemodes,1)
             projcoeffmodeevolution = [projcoeffmodeevolution ; zeros(size(unstablemodes,1)-size(projcoeffmodeevolution,1),Ntime+2)];
         end
@@ -155,9 +155,9 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
 
         end
 
-        u_i = reshape( u_n(:) , [ N , N ] );
+        u_i = reshape( u_n(:,imod) , [ N , N ] );
         v = fftshift(abs(fft2(u_i)).^2);
-        %energyL2(i,1) = (sum( u_n(:) .* conj(u_n(:)) )*(L1*L2)/(N*N));
+        %energyL2(i,1) = (sum( u_n(:,imod) .* conj(u_n(:,imod)) )*(L1*L2)/(N*N));
         energyL2(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
         energyH1(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
         energyH2(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
@@ -186,9 +186,9 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
         end
 
         if i == 1
-            u_IC = u_n;
+            u_IC = u_n(:,1);
         elseif i == Ntime
-            u_TC = u_n;
+            u_TC = u_n(:,end);
         end
 
     end
