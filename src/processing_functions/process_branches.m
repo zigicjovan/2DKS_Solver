@@ -6,7 +6,7 @@ ellrange = ellstart:ellgap:ellend;
 
 %% sort all files by T and collect argmax Jopt(T)
 branchDir = [pwd '/data/branches'];
-branchfiles = dir(fullfile(branchDir, 'Jopt_*.dat'));
+branchfiles = dir(fullfile(branchDir, 'Jopt_s1*.dat'));
 
 maxJopt = NaN(numel(branchfiles),6);
 branch_groups = cell(numel(branchfiles),3);
@@ -194,6 +194,7 @@ saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
 
 
+%{
 %% IC testing
 x_ellIC = cell2mat(ellICdata(:, 2:2:6));
 y_ellIC = cell2mat(ellICdata(:, 3:2:7));
@@ -258,3 +259,4 @@ legend(IC_Legend,IC_legendlabels,'Interpreter','latex','Location','southeast','B
 filename = [pwd '/media/optimization/ICguess_K_' num2str(Kstart) '_' num2str(Kend) '_L_' num2str(ellstart)  ];
 saveas(h,[filename '.fig'])
 exportgraphics(h,[filename '.pdf'])
+%}

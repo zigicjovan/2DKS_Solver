@@ -50,7 +50,7 @@ if T >= 0
 end
 
 switch solplot
-    case {'norms','gif','diagnostics','initial','terminal','optdiag'}
+    case {'norms','gif','diagnostics','initial','terminal','optdiag','plotOptIC'}
         savedata = 1;
         [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
             process_energy(u_IC_input,savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
@@ -60,7 +60,7 @@ end
 switch IC
     case {'optimized'}
         switch solplot
-            case 'norms'
+            case {'norms','plotOptIC'}
                 % do not compute
             otherwise
                 savedata = 0;
@@ -73,6 +73,15 @@ end
 fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
 switch solplot
+    case 'plotOptIC'
+        
+        process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
+                    energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
+                    parameterlist,optparameters);
+        process_figure('state',originalIC, IC, dt, T, N, K, L_s1, L_s2, u_IC,u_TC,Ntime,Ntime_save_max,tol,... 
+                energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
+                parameterlist,optparameters,parfiglist,optparfiglist)
+
     case 'gif'
 
         process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
