@@ -101,9 +101,9 @@ u_n: solution vector for each time step in Physical space
 %%% (2) solve time-dependent problem %%%
 
     % number of timesteps
-    time1 = ceil(T/dt); 
-    time2 = ceil(time1/save_each);
-    if T >= 0
+    if save_each > 0
+        time1 = ceil(T/dt); 
+        time2 = ceil(time1/save_each);
         Ntime = max(time1,time2);
         Ntime_save = min(time1,time2);
         save_each = ceil(Ntime/Ntime_save);
@@ -111,8 +111,7 @@ u_n: solution vector for each time step in Physical space
         Ntime = save_each*Ntime_save;
     else
         Ntime_save = 1;
-        Ntime = time1;
-        save_each = time1;
+        Ntime = ceil(T/dt);
     end
 
     % solution vectors in fourier and physical spectrum (Ntime_save_max columns)

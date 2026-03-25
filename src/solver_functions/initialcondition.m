@@ -4,6 +4,22 @@ function u_0 = initialcondition(IC,utility1,x1,x2,N,N_x2,L_x1,L_x2,Klap)
     kabs = sqrt(Klap);              % absolute radii
     kmax = (max(kabs(:)));            % maximum radius
     switch IC 
+        case 'art'
+            N_old = sqrt(size(utility1,1));
+            N_x2_old = N_old;
+
+            u_0 = reshape( utility1, [ N_old , N_x2_old ] );
+            x1_pts = 2*pi/L_x1*linspace( 0 , 1 - 1/N_old , N_old ); 
+            x2_pts = 2*pi/L_x2*linspace( 0 , 1 - 1/N_x2_old , N_x2_old ); 
+            [ x1_old , x2_old ] = meshgrid(x1_pts,x2_pts);                      % 2-dimensional grid
+            
+            % New grid (higher or lower resolution)
+            x1_pts = 2*pi/L_x1*linspace( 0 , 1 - 1/N , N ); 
+            x2_pts = 2*pi/L_x2*linspace( 0 , 1 - 1/N_x2 , N_x2 ); 
+            [ x1 , x2 ] = meshgrid(x1_pts,x2_pts);                      % 2-dimensional grid
+            
+            % interpolate
+            u_0 = interp2(x1_old, x2_old, u_0, x1, x2, "spline");
         case 'optimized'
             u_0 = reshape( utility1, [ N , N_x2 ] );
         case 'noise'
