@@ -88,7 +88,7 @@ for energy_i = 1 : length(initialKmagnitude)
                     test_parameter = gridsize;          % (spatial convergence)
                 case 'dt'
                     test_parameter = timestep;          % (temporal convergence)
-                case {'IC', 'energygrowth','kappa','optimize','plotOptIC'}
+                otherwise
                     test_parameter = initialcondition;  
             end
         
@@ -104,11 +104,11 @@ for energy_i = 1 : length(initialKmagnitude)
                         N = gridsize(param_i);                        % number of grid points 
                     case 'dt'
                         dt = timestep(param_i);                       % length of time-step
-                    case {'IC', 'energygrowth','optimize','plotOptIC'}
-                        IC = strjoin(initialcondition(param_i),'');   % choice of initial condition
                     case {'kappa'}
                         save_each = 1;
                         IC = strjoin(initialcondition(param_i),'');   % choice of initial condition
+                    otherwise
+                        IC = strjoin(initialcondition(param_i),'');   % default choice of initial condition
                 end
                 
                 testcounter = testcounter + 1;
@@ -130,7 +130,36 @@ for energy_i = 1 : length(initialKmagnitude)
                         newopt = 0;
                         plot_2DKS(save_each, 'plotOptIC', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC,u_IC,[tol,RCGon,100,newopt]);
                         fprintf('Simulation run complete.\n')
-                    case {'L','N','dt','IC','kappa'} 
+                    case {'IC'}
+                        disp(['Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                        save_each = 0;
+                        tic
+                        [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                        disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+                        save_2DKSsolution('art', u_IC, u_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol);
+                        newopt = 0;
+                        %plot_2DKS(save_each, 'plotOptIC', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC,u_IC,[tol,RCGon,100,newopt]);
+                        fprintf('Simulation run complete.\n')
+                    case {'art'}
+                        initIC = IC;
+                        optdt = dt;
+                        %optT = optT;
+                        optN = N;
+                        optK = K;
+                        optL_s1 = L_s1;
+                        optL_s2 = L_s2;
+                        opttol = 1; 
+                        [ ~ , u_IC ] = load_2DKSsolution('art', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, [opttol optT], 0);
+                        tic
+                        save_each = 0;
+                        [ v_TC , u_TC , u_IC ] = solve_2DKS('art','forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,0);
+                        disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+                        save_2DKSsolution('art', u_IC, u_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol);
+                        disp(['Using chosen artificial IC for forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                        newopt = 0;
+                        plot_2DKS(save_each, 'plotOptIC', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC,u_IC,[tol,RCGon,100,newopt]);
+                        fprintf('Simulation run complete.\n')
+                    case {'L','N','dt','kappa'} 
                         switch continuation
                             case 'IC' % choose which parameters define optimized initial data
                                 initIC = IC;
@@ -168,10 +197,27 @@ for energy_i = 1 : length(initialKmagnitude)
                                     [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,originalIC);
                                     disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
                                 catch
-                                    disp(['No saved solution. Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
-                                    tic
-                                    [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
-                                    disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+                                    try
+                                        % set manually
+                                        initIC = 's1';
+                                        optdt = 1e-3;
+                                        optT = 10^(1.50);
+                                        optN = 64;
+                                        optK = 10^(1);
+                                        optL_s1 = 3.02;
+                                        optL_s2 = 3.02;
+                                        opttol = 1; 
+                                        [ ~ , u_IC ] = load_2DKSsolution('art', initIC, optdt, optT, optN, optK, optL_s1, optL_s2, [opttol optT], 0);
+                                        tic
+                                        disp(['Using artificial solution. Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                                        [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,u_IC,0);
+                                        disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+                                    catch
+                                        disp(['No saved solution. Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
+                                        tic
+                                        [ v_TC , u_TC , u_IC ] = solve_2DKS(IC,'forward',N,K,L_s1,L_s2,dt,T,save_each,Ntime_save_max,0,0);
+                                        disp(['Solved forward problem at ' num2str(floor(toc/3600)) 'h' num2str(floor(mod(toc/60,60))) 'm' num2str(floor(mod(toc,60))) 's'])
+                                    end
                                 end
                             case 'off'
                                 disp(['Solving forward-time problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
@@ -203,8 +249,8 @@ for energy_i = 1 : length(initialKmagnitude)
                             l2norms_avg(domain_i,param_i+1) = std(l2norms_avg(domain_i,1:param_i));
                             l2norms_mode(domain_i,param_i+1) = std(l2norms_mode(domain_i,1:param_i));
                         end
-                    case {'L','N','dt','IC'}                
-                        %save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, K, L_s1, L_s2,[0 T],0);                      % save solution
+                    case {'L','N','dt'}                
+                        save_2DKSsolution('time_evolution', u_n, time, IC, dt, T, N, K, L_s1, L_s2,[0 T],0);                      % save solution
                         %plot_2DKS(save_each, 'state', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                % save/inspect state                             % save/inspect terminal state
                         plot_2DKS(save_each, 'diagnostics', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                            % save/inspect dynamical characteristics
                         %plot_2DKS(save_each, 'norms', IC, N, dt, T, K, L_s1, L_s2,Ntime_save_max, 0,0);                                  % save/inspect dynamical characteristics
