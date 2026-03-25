@@ -40,13 +40,16 @@ else
 end
 
 % number of timesteps
-time1 = ceil(T/dt); 
-time2 = ceil(time1/save_each);
-if T >= 0
+if save_each > 0
+    time1 = ceil(T/dt); 
+    time2 = ceil(time1/save_each);
     Ntime = max(time1,time2);
     Ntime_save = min(time1,time2);
     save_each = ceil(Ntime/Ntime_save);
-    Ntime = ceil(Ntime/save_each);
+    Ntime = save_each*Ntime_save;
+else
+    Ntime_save = 1;
+    Ntime = ceil(T/dt);
 end
 
 switch solplot
@@ -55,6 +58,7 @@ switch solplot
         [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
             process_energy(u_IC_input,savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
             parameterlist,optparameters,parfiglist,optparfiglist);
+        save_2DKSsolution('art', u_TC, u_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol);
 end
 
 switch IC
@@ -78,6 +82,7 @@ switch solplot
         process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
                     parameterlist,optparameters);
+        fprintf('Saved optimized evolution video at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
         process_figure('state',originalIC, IC, dt, T, N, K, L_s1, L_s2, u_IC,u_TC,Ntime,Ntime_save_max,tol,... 
                 energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
                 parameterlist,optparameters,parfiglist,optparfiglist)

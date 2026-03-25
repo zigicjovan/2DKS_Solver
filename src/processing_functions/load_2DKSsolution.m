@@ -22,6 +22,15 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file2 = read_binary(four_file,N,N,true);
             %file3 = read_binary(time_file,1,1,false);
             file3 = 0;
+        case {'art'}
+            four_file = [pwd '/data/' foldername '/four_' parameterlistT '_samples_' num2str(saved) '.bin'];
+            switch IC
+                case 'optimized'
+                    four_file = [pwd '/data/' foldername '/four_' originalIC '_' parameterlistT '_samples_' num2str(saved) '.bin'];
+            end
+            file1 = 0;
+            file2 = read_binary(four_file,N,N,false);
+            file3 = 0;
         case {'optimal'}
             tol = utility1(1);
             % use exact or nearest previous T
