@@ -2,8 +2,8 @@ function delete_2DKSsolution(foldername, IC, dt, T, N, K, L_s1, L_s2, utility1, 
 
     fullT = utility1(2);
     originalIC = utility2;
-    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-    parameterlistanyT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_*_T_' num2str(T) ];
+    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    parameterlistanyT = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_t_*_T_' num2str(T) ];
     switch foldername
         case {'forward','backward'}
             folderpath = [pwd '/data/' foldername '/'];

@@ -58,7 +58,7 @@ switch solplot
         [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
             process_energy(u_IC_input,savedata,IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
             parameterlist,optparameters,parfiglist,optparfiglist);
-        save_2DKSsolution('art', u_TC, u_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol);
+        %save_2DKSsolution('art', u_TC, u_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol);
 end
 
 switch IC
