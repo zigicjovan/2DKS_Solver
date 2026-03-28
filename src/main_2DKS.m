@@ -118,7 +118,6 @@ for energy_i = 1 : length(initialKmagnitude)
                     case {'plotOptIC'}
                         initIC = IC;
                         optdt = dt;
-                        %optT = optT;
                         optN = N;
                         optK = K;
                         optL_s1 = L_s1;
@@ -164,7 +163,6 @@ for energy_i = 1 : length(initialKmagnitude)
                             case 'IC' % choose which parameters define optimized initial data
                                 initIC = IC;
                                 optdt = dt;
-                                %optT = optT;
                                 optN = N;
                                 optK = K;
                                 optL_s1 = L_s1;
@@ -199,9 +197,8 @@ for energy_i = 1 : length(initialKmagnitude)
                                 catch
                                     try
                                         % set manually
-                                        initIC = 's1';
+                                        initIC = 'randfour';
                                         optdt = 1e-3;
-                                        optT = 10^(1.50);
                                         optN = 64;
                                         optK = 10^(1);
                                         optL_s1 = 3.02;
