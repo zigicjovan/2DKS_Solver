@@ -11,24 +11,26 @@ from pathlib import Path
 import time
 
 # User-editable parameter ranges
-K_start =  4.0
-K_end =  4.0
-K_step = 0.5
-ell1_start = 1.02*np.sqrt(256)
-ell1_end = ell1_start
-ell1_step = 0.12
-ell2_start = 1.02*np.sqrt(4)
-ell2_end = ell2_start
-ell2_step = 0.12
-K_range = np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
-ell1_range = np.round(np.arange(ell1_start, ell1_end + ell1_step/2, ell1_step), 2)
-ell2_range = np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_step), 2)
+K_start =           -5.0
+K_end =             -3.0
+K_step =            0.5
+num_modes_start =   10
+num_modes_end =     15
+ell1_start =        num_modes_start + 0.02
+ell1_end =          num_modes_end + 0.02
+ell1_step =         5
+ell2_start =        ell1_start
+ell2_end =          ell1_end
+ell2_step =         ell1_step
+K_range =           np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
+ell1_range =        np.round(np.arange(ell1_start, ell1_end + ell1_step/2, ell1_step), 2)
+ell2_range =        np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_step), 2)
 #K_range = np.round(np.array([3.5]), 1)
 #ell1_range = [round(x, 2) for x in [2.04]] 
 
 # User-editable global settings
 SBATCH_TIME = "02-00:00"  # requested time limit (D-HH:MM) 
-RUN_ARRAY_NAME = f"{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-branch.sh"
+RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-branch.sh"
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
@@ -44,28 +46,31 @@ def generate_tasks():
     memcount = 0.0
     for K in K_range:
         for ell1 in ell1_range:
-            for ell2 in ell2_range:
-                #T_target = 0.5*ell1 + 2.08
-                targettemp = 1.8*np.sqrt(1)
-                T_target = 0.5*targettemp + 2.08
-                #T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # init
-                #T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
-                T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
-                #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
-                elltemp = 1.02
-                idx = max( 0 , min( int( np.round(elltemp + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
-                N = N_choice[idx] 
-                dt = dt_choice[idx]
-                for T in T_range:
-                    mem_est = 8 * np.ceil((1.25 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
-                                                + 0.23432402 * K + 0.18691756 * elltemp * np.log10((N**2) * (10.0**T) / dt) ) + 2.0) / 8.0 )
-                    mem_req = int(np.maximum( 32 , mem_est ))
-                    mem = f"{mem_req}G" 
-                    addmemcount = mem_req
-                    addfilecount = 0.1 * 1e-3 * np.power(10.0,T) / dt
-                    memcount += addmemcount
-                    filecount += addfilecount
-                    tasks.append((float(K), float(ell1), float(ell2), float(T), float(dt), int(N), mem))
+            #for ell2 in ell2_range:
+            ell2 = ell1
+            elltemp = ell1
+            #T_target = 0.5*ell1 + 2.1
+            targettemp = 1.02*np.sqrt(1)
+            T_target = 0.5*targettemp + 2.1
+            #T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # symmetry
+            #T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
+            T_range = np.round(np.array([(2*T_target / 3) - 1 ]), 2) # init
+            #T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
+            #T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
+            #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
+            idx = max( 0 , min( int( np.round(elltemp + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
+            N = N_choice[idx] 
+            dt = dt_choice[0]
+            for T in T_range:
+                mem_est = 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
+                                            + 0.23432402 * K + 0.18691756 * elltemp * np.log10((N**2) * (10.0**T) / dt) )) / 8.0 )
+                mem_req = int(np.maximum( 32 , mem_est ))
+                mem = f"{mem_req}G" 
+                addmemcount = mem_req
+                addfilecount = 0.1 * 1e-3 * np.power(10.0,T) / dt
+                memcount += addmemcount
+                filecount += addfilecount
+                tasks.append((float(K), float(ell1), float(ell2), float(T), float(dt), int(N), mem))
     return tasks, int(filecount), int(memcount)
 
 # Write runscripts/ and param files
