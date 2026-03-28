@@ -24,9 +24,9 @@ if not(isfolder([pwd  '/data/energy' ]))                                        
     addpath([pwd  '/media/kappa' ]);
 end
 
-parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
-optparfiglist = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K) ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+optparfiglist = ['$\varphi = \tilde{\varphi}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K) ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 originalIC = utility1;
 tol = utility2(1);
 if length(utility2) > 1
@@ -161,8 +161,8 @@ switch solplot
         
         %% finish opt plots
         IC = originalIC;
-        parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
-        parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K,'%.0f') ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
+        parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+        parfiglist = ['$\varphi = \varphi_{' IC '}, N = ' num2str(N) ', {\Delta}t = ' num2str(dt) ', K = ' num2str(K) ', L_1 = 2\pi(' num2str(L_s1,'%.2f') '), L_2 = 2\pi(' num2str(L_s2,'%.2f') '), T = ' num2str(T,'%.2f') '$'];
 
         %% original states
         process_figure('state',originalIC, IC, dt, T, N, K, L_s1, L_s2, u_IC_og,u_TC_og,Ntime,Ntime_save_max,tol,... 
