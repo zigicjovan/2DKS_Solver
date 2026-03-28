@@ -131,7 +131,7 @@ function [J_cur , J_history , v_TC , u_IC] = optimize_2DKS(method,IC,N,K,L_s1,L_
     linesearchJ_history = linesearchJ_history(:,1:(iter-1));                                            % remove NaN columns
     
     % save diagnostics
-    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K,'%.0f') '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
+    parameterlist = [IC '_N_' num2str(N) '_dt_' num2str(dt) '_K_' num2str(K) '_Ls1_' num2str(L_s1,'%.2f') '_Ls2_' num2str(L_s2,'%.2f') '_T_' num2str(T) ];
     optparameters = [ originalIC '_' parameterlist '_tol_' num2str(tol) ];
     diagnostics_file = [pwd '/data/optimization/diagnostics/diagnostics_' optparameters '.dat'];
     writematrix(diagnostics_history, diagnostics_file,'Delimiter','tab');
