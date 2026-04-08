@@ -33,15 +33,20 @@ function [file1, file2, file3] = load_2DKSsolution(foldername, IC, dt, T, N, K, 
             file3 = 0;
         case {'optimal'}
             tol = utility1(1);
-            % use exact or nearest previous T
-            try
-                phys_file = sprintf('%s/data/%s/physIC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
-                four_file = sprintf('%s/data/%s/fourTC_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
+            try % Find smallest tolerance at exact T
+                phys_file = sprintf('%s/data/%s/physIC_%s_tol_*.bin', pwd, foldername, parameterlist);                
+                phys_filelist = {dir(phys_file).name};
+                tokens = regexp(phys_filelist, 'tol_([0-9eE\+\-\.]+)(?=\.bin)', 'tokens');
+                tols = cellfun(@(x) str2double(x{1}), tokens);
+                tolsel = min(tols); 
+
+                phys_file = sprintf('%s/data/%s/physIC_%s_tol_%g.bin', pwd, foldername, parameterlist, tolsel);
+                four_file = sprintf('%s/data/%s/fourTC_%s_tol_%g.bin', pwd, foldername, parameterlist, tolsel);
                 %time_file = sprintf('%s/data/%s/time_%s_tol_%g.bin', pwd, foldername, parameterlist, tol);
                 file1 = read_binary(phys_file,N,N,false);   
                 file2 = read_binary(four_file,N,N,true);
                 file3 = 0;%read_binary(time_file,1,1,false);
-            catch
+            catch % use earlier time window
                 phys_filegroup = sprintf('%s/data/%s/physIC_%s*_tol_%g.bin', pwd, foldername, parameterlistcont, tol);
                 phys_files = dir(phys_filegroup);
                 
