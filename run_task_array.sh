@@ -50,10 +50,10 @@ ell1_str=$(printf "%.2f" "$ell1")
 ell2_str=$(printf "%.2f" "$ell2")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-IC_str="art"
+IC_str="s1"
 Kscale=1
-optT=1.50
-LOG_FILE="${LOG_DIR}/artT_${optT}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
+optT=-2
+LOG_FILE="${LOG_DIR}/maxT_${optT}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
 #LOG_FILE="${LOG_DIR}/longT_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
 
 # --- Write SLURM Job ID to log file ---
