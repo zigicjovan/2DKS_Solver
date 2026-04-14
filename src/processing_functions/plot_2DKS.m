@@ -64,7 +64,7 @@ end
 switch IC
     case {'optimized'}
         switch solplot
-            case {'norms','plotOptIC'}
+            case {'plotOptIC'}
                 % do not compute
             otherwise
                 savedata = 0;
