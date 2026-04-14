@@ -289,7 +289,7 @@ for energy_i = 1 : length(initialKmagnitude)
                         disp(['Solved optimization problem for K = ' num2str(K) ', L = ' num2str(L_s1) ', T = ' num2str(T) ', IC = ' IC ', dt = ' num2str(dt) ', N = ' num2str(N)])
                         fprintf('Iterations \t Initial J \t Optimal J \t Wall Clock \n ')
                         fprintf('----------------------------------------------------------------------------------------------------------\n')
-                        fprintf('%02d \t %.4f\t %.4f \t ', length(J_history), J_history(1,1), J_history(end,1) )
+                        fprintf('%02d \t %.4f\t %f \t ', length(J_history), J_history(1,1), J_history(end,1) )
                         disp(datetime)
                         currentrow = testrow + (param_i-1)*length(initialKmagnitude)*length(timewindow)*length(L1_scale)*length(L2_scale); 
                         Jinitdata(currentrow,1) = K;
@@ -303,8 +303,14 @@ for energy_i = 1 : length(initialKmagnitude)
                         save_2DKSsolution('optimal', u_IC_opt, v_TC_opt, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
                         newopt = 1;
                         
-                        maxL2inT = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC_opt,u_IC,[tol,RCGon,100,newopt]);
+                        [maxL2inT,optwin] = plot_2DKS(save_each, 'norms', 'optimized', N, dt, T, K, L_s1, L_s2,Ntime_save_max,IC,u_IC_opt,u_IC,[tol,RCGon,100,newopt]);
+                        if optwin == 0
+                            fprintf('Optimization did not amplify initial guess within time window.\n')
+                            save_2DKSsolution('optimal', u_IC, v_TC, 0, IC, dt, T, N, K, L_s1, L_s2, [1 T], tol); % save solution to machine
+                        end
                         Joptdata(currentrow,5:6) = maxL2inT;
+                        fprintf('Maximum amplification: %f', Joptdata(currentrow,6))
+                        fprintf('\n')
                         save_measures('optimization', Jinitdata(currentrow,:), Joptdata(currentrow,:), 1, IC, N, dt, timewindow, K, L_s1, L_s2);
                         fprintf('Saved objective data to file at ')
                         fprintf('%01dh%02dm%02ds\t\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
