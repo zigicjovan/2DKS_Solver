@@ -363,7 +363,8 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % contour plot
             view(2);
-            axis square;
+            axis([0 L_s1 0 L_s2])
+            axis equal
             % Save image
             filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_contour'];
             switch IC
@@ -403,7 +404,8 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     
             % contour plot
             view(2);
-            axis square;
+            axis([0 L_s1 0 L_s2])
+            axis equal
             % Save image
             filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_contour'];
             switch IC
