@@ -11,25 +11,28 @@ from pathlib import Path
 import time
 
 # User-editable parameter ranges
-K_start =           -5.0
-K_end =             -3.0
+K_start =           4.0
+K_end =             4.0
 K_step =            0.5
-num_modes_start =   10
-num_modes_end =     15
-ell1_start =        num_modes_start + 0.02
-ell1_end =          num_modes_end + 0.02
-ell1_step =         5
+num_modes_start =   1.98#np.sqrt(13)#
+num_modes_end =     num_modes_start#np.sqrt(20)#
+ell1_start =        num_modes_start
+ell1_end =          num_modes_end
+ell1_step =         0.12
 ell2_start =        ell1_start
 ell2_end =          ell1_end
 ell2_step =         ell1_step
 K_range =           np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
 ell1_range =        np.round(np.arange(ell1_start, ell1_end + ell1_step/2, ell1_step), 2)
-ell2_range =        np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_step), 2)
+#ell2_range =        np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_step), 2)
 #K_range = np.round(np.array([3.5]), 1)
-#ell1_range = [round(x, 2) for x in [2.04]] 
+#ell1_range = [round(x, 2) for x in [np.sqrt(2),np.sqrt(3),np.sqrt(4),np.sqrt(6),np.sqrt(8),np.sqrt(9),np.sqrt(10),np.sqrt(13),np.sqrt(16), 
+#               np.sqrt(17),np.sqrt(18),np.sqrt(19),np.sqrt(20),np.sqrt(23),np.sqrt(26),np.sqrt(29),np.sqrt(32)]]
+#ell1_range = [round(x, 2) for x in [np.sqrt(13),np.sqrt(16),np.sqrt(18),np.sqrt(20)]]
+ell2_range = ell1_range
 
 # User-editable global settings
-SBATCH_TIME = "02-00:00"  # requested time limit (D-HH:MM) 
+SBATCH_TIME = "03-00:00"  # requested time limit (D-HH:MM) 
 RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-branch.sh"
 
 def generate_tasks():
@@ -37,7 +40,7 @@ def generate_tasks():
     N_choice =  [ 48,   64,   96,   128,  160,  192,  256,  320,  384,  512,  576,  648,  720,  768,  810,  864,  900,  972,  1024 ]
     dt_choice = [ 5e-4, 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8 ]
     K_ref = 3.5
-    T_width = round(0.02, 2)
+    T_width = round(0.4, 2)
     T_step = round(0.02, 2)
 
     # generate parameter tuples
@@ -49,18 +52,19 @@ def generate_tasks():
             #for ell2 in ell2_range:
             ell2 = ell1
             elltemp = ell1
-            #T_target = 0.5*ell1 + 2.1
-            targettemp = 1.02*np.sqrt(1)
-            T_target = 0.5*targettemp + 2.1
+            T_target = 0.5*ell1 + 2.1
+            #targettemp = 1.02*np.sqrt(1)
+            #T_target = 0.5*targettemp + 2.1
             #T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # symmetry
             #T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
-            T_range = np.round(np.array([(2*T_target / 3) - 1 ]), 2) # init
+            #T_range = np.round(np.arange(0.7, 1.4, 0.1), 2) # fixed
+            #T_range = np.round(np.array([-2.85,-2.83,-2.81,-2.79,-2.77,-2.75,-2.71,-2.69,-2.67,-2.65,-2.63,-2.61,-2.59,-2.57,-2.55]), 2) # fixed
             #T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
             #T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
-            #T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
+            T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
             idx = max( 0 , min( int( np.round(elltemp + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
             N = N_choice[idx] 
-            dt = dt_choice[0]
+            dt = dt_choice[idx]
             for T in T_range:
                 mem_est = 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
                                             + 0.23432402 * K + 0.18691756 * elltemp * np.log10((N**2) * (10.0**T) / dt) )) / 8.0 )
@@ -128,19 +132,33 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         mem_tag = mem.replace('G', 'G')
         param_file = f"runscripts/task_params_{mem_tag}_{tag}.txt"
         count = len(items)
-        array_spec = f"0-{count-1}%{max_concurrent}" if max_concurrent > 0 else f"0-{count-1}"
+        array_spec = f"0-{count-1}%1"  # for sequential tasks
+        #array_spec = f"0-{count-1}"  # for concurrent tasks
 
         lines.append(f"echo \"Group memory={mem}: tasks={count}, param_file={param_file}\"")
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
-        lines.append(f"  sbatch --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
-        lines.append(f"         --job-name={RUN_ARRAY_NAME} \\")
-        lines.append(f"         --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
-        lines.append(f"         --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\") # for concurrent tasks
-        #lines.append(f"         --array={array_spec}%1 --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\") # for sequential tasks
-        lines.append(f"         --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh")
+        lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        lines.append(f"    prev_jobid=$(sbatch --parsable --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
+        lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
+        lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
+        lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
+        lines.append("  else")
+        lines.append(f"    prev_jobid=$(sbatch --parsable --dependency=afterany:${{prev_jobid}} --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
+        lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
+        lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
+        lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
+        lines.append("  fi")
+        lines.append("  echo \"Submitted job: $prev_jobid\"")
         lines.append("else")
-        lines.append(f"  echo \"Dry run: would sbatch --array={array_spec}%1 --mem={mem} --cpus-per-task=8 --export=PARAM_FILE={param_file} ./run_task_array.sh\"")
-        lines.append("fi\n")
+        lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        lines.append(f"    echo \"Dry run: would sbatch --parsable --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
+        lines.append("  else")
+        lines.append(f"    echo \"Dry run: would sbatch --parsable --dependency=afterany:$prev_jobid --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
+        lines.append("  fi")
+        lines.append("fi")
+        lines.append("")
 
     Path(out_fname).write_text("\n".join(lines))
     os.chmod(out_fname, 0o755)
