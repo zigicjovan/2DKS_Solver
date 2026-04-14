@@ -68,11 +68,13 @@ switch IC
                 % do not compute
             otherwise
                 savedata = 0;
-                [~,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
+                [maxL2inT_og,u_IC_og,u_TC_og,energyL2_og,energyH1_og,energyH2_og,astripwidth_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
                     process_energy(u_IC_og_input,savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     parameterlist,optparameters,parfiglist,optparfiglist);
         end
 end
+
+maxL2inT = max(maxL2inT,maxL2inT_og);
 
 fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
