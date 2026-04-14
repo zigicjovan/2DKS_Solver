@@ -1,4 +1,4 @@
-function maxL2inT = plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, u_IC_input , u_IC_og_input, utility2)
+function [maxL2inT,optwin] = plot_2DKS(save_each, solplot, IC, N, dt, T, K, L_s1, L_s2, Ntime_save_max, utility1, u_IC_input , u_IC_og_input, utility2)
 
 if not(isfolder([pwd  '/data/energy' ]))                                           % create local directories for data storage
     mkdir([pwd  '/data/energy' ])
@@ -74,7 +74,20 @@ switch IC
         end
 end
 
-maxL2inT = max(maxL2inT,maxL2inT_og);
+optwin = 1;
+if maxL2inT < maxL2inT_og
+    optwin = 0;
+    maxL2inT = maxL2inT_og;
+    u_IC = u_IC_og;
+    u_TC = u_TC_og;
+    energyL2 = energyL2_og;
+    energyH1 = energyH1_og;
+    energyH2 = energyH2_og;
+    astripwidth = astripwidth_og;
+    v_mean = v_mean_og;
+    projcoeffradialevolution = projcoeffradialevolution_og;
+    projcoeffmodeevolution = projcoeffmodeevolution_og;
+end
 
 fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))
 
