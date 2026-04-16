@@ -12,13 +12,13 @@ import time
 
 # User-editable parameter ranges
 K_start =           4.0
-K_end =             4.0
+K_end =             5.5
 K_step =            0.5
-num_modes_start =   1.98#np.sqrt(13)#
+num_modes_start =   1.95#np.sqrt(13)#
 num_modes_end =     num_modes_start#np.sqrt(20)#
 ell1_start =        num_modes_start
 ell1_end =          num_modes_end
-ell1_step =         0.12
+ell1_step =         0.1
 ell2_start =        ell1_start
 ell2_end =          ell1_end
 ell2_step =         ell1_step
@@ -132,31 +132,43 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         mem_tag = mem.replace('G', 'G')
         param_file = f"runscripts/task_params_{mem_tag}_{tag}.txt"
         count = len(items)
-        array_spec = f"0-{count-1}%1"  # for sequential tasks
-        #array_spec = f"0-{count-1}"  # for concurrent tasks
+        #array_spec = f"0-{count-1}%1"  # for sequential tasks
+        array_spec = f"0-{count-1}"  # for concurrent tasks
 
         lines.append(f"echo \"Group memory={mem}: tasks={count}, param_file={param_file}\"")
         lines.append("if [[ $DRY_RUN -eq 0 ]]; then")
-        lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        ### concurrent groups ###
         lines.append(f"    prev_jobid=$(sbatch --parsable --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
         lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
         lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
         lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
         lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
-        lines.append("  else")
-        lines.append(f"    prev_jobid=$(sbatch --parsable --dependency=afterany:${{prev_jobid}} --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
-        lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
-        lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
-        lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
-        lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
-        lines.append("  fi")
+        ### sequential groups ###
+        #lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        #lines.append(f"    prev_jobid=$(sbatch --parsable --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
+        #lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
+        #lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
+        #lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        #lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
+        #lines.append("  else")
+        #lines.append(f"    prev_jobid=$(sbatch --parsable --dependency=afterany:${{prev_jobid}} --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
+        #lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
+        #lines.append(f"                     --ntasks=1 --cpus-per-task=8 --time={SBATCH_TIME} --mem={mem} \\")
+        #lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
+        #lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
+        #lines.append("  fi")
+        ###
         lines.append("  echo \"Submitted job: $prev_jobid\"")
         lines.append("else")
-        lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        ### concurrent groups ###
         lines.append(f"    echo \"Dry run: would sbatch --parsable --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
-        lines.append("  else")
-        lines.append(f"    echo \"Dry run: would sbatch --parsable --dependency=afterany:$prev_jobid --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
-        lines.append("  fi")
+        ### sequential groups ###
+        #lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+        #lines.append(f"    echo \"Dry run: would sbatch --parsable --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
+        #lines.append("  else")
+        #lines.append(f"    echo \"Dry run: would sbatch --parsable --dependency=afterany:$prev_jobid --job-name={RUN_ARRAY_NAME} --mem={mem} --cpus-per-task=8 --time={SBATCH_TIME} --array={array_spec} --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh\"")
+        #lines.append("  fi")
+        ###
         lines.append("fi")
         lines.append("")
 
