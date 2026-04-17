@@ -33,6 +33,8 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
     x22_pts = 2*L_s2*linspace( 0 , 1 - 1/N , 2*N ); 
     [ x12x , x22x ] = meshgrid(x12_pts,x22_pts); % 2-dimensional grid
 
+    wordsize = 16;
+
     %% process
 
     switch figuretype
@@ -51,7 +53,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             ylim([1e-20 max(v_mean(1,2:end))+1e5 ])
             ylabel('$\frac{1}{j}\sum_{j} |{\widehat\phi_k}|$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of Fourier spectrum','Interpreter','latex')
@@ -81,7 +83,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             ylim([ 1e-20 max(v_mean(1,2:end))+1e5 ])
             set(gcf,'Position',[100 100 900 750])
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Initial Fourier spectrum','Interpreter','latex')
@@ -107,7 +109,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             ylim([ 1e-20 max(v_mean(1,2:end))+1e5 ])
             set(gcf,'Position',[100 100 900 750])
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Terminal Fourier spectrum','Interpreter','latex')
@@ -132,7 +134,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([0 T])
             ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of $L^2$ energy','Interpreter','latex')
@@ -165,7 +167,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([0 T])
             ylabel('$\| {\phi(t;\varphi)} \|^2_{L^2}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of optimized $L^2$ energy','Interpreter','latex')
@@ -184,7 +186,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
@@ -202,7 +204,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\frac{\mathcal{J}_T(\varphi^{(n+1)}) - \mathcal{J}_T(\varphi^{(n)})}{\mathcal{J}_T(\varphi^{(n)})}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Relative change in objective functional $\mathcal{J}_T(\varphi^{(n)})= \| {\phi^{(n)}(T)} \|^2_{L^2}$','Interpreter','latex')
@@ -220,7 +222,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\tau^{(n)}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Optimal step-size $\tau^{(n)}$','Interpreter','latex')
@@ -238,7 +240,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of initial condition magnitude $K= \| \varphi^{(n)} \|^2_{L^2}$','Interpreter','latex')
@@ -256,7 +258,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of objective gradient magnitude $\| \nabla \mathcal{J}_T(\varphi^{(n)}) \|^2_{L^2}$','Interpreter','latex')
@@ -274,7 +276,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of momentum magnitude $\|\beta^{(n)}\|^2_{L^2}$','Interpreter','latex')
@@ -296,7 +298,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             xlim([1 length(plotdata)])
             ylabel('$\mathcal{J}_T(\varphi^{(n)})$','Interpreter','latex');
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white')    
             title('Evolution of Brent''s method objective functional evaluation','Interpreter','latex')
@@ -352,7 +354,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             shading interp
             %pbaspect( [ max(max(x1)), max(max(x2)), max(max(u_T)) ] );
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white') 
             colormap(redblue)
@@ -394,7 +396,7 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
             %pbaspect( [ abs(max(max(x1))), abs(max(max(x2))), abs(max(max(u_T)))] );
             view(3);
             fontsize(12,"points")
-            set(gca,'fontsize', 16) 
+            set(gca,'fontsize', wordsize) 
             set(gcf,'color','white')
             set(gca,'color','white') 
             colormap(redblue)
