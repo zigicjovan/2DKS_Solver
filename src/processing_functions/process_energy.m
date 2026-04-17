@@ -1,4 +1,4 @@
-function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
+function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmodeevolution] = ...
     process_energy(u_IC, savedata, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
     parameterlist,optparameters,parfiglist,optparfiglist)
 
@@ -45,6 +45,7 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
     
     % Fourier space operators
     Lin = 1i^2 * (kvecl2) + 1i^4 * (kvecl4);                    % Linear operator
+    Lap = 1i^2 * (kvecl2);                                      % Laplace operator
     D1vec = 1i*k1vecN;                                          % Differential operator
     D2vec = 1i*k2vecN;                                          % Differential operator
     
@@ -76,6 +77,7 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
     energyL2 = NaN(Ntime,1);
     energyH1 = energyL2;
     energyH2 = energyL2;
+    energyL2_lap = energyL2;
     astripwidth = NaN(Ntime,2);                               % analyticity strip width
     v_mean = zeros(round(sqrt((N/2)^2+(N/2)^2)) + 1, Ntime+1 ); % uniform-distance radial energy spectrum
     v_mean(:,1) = NaN;
@@ -161,6 +163,7 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
         energyL2(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
         energyH1(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
         energyH2(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
+        energyL2_lap(i,1) = sum( (K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
 
         for j = 1:N
             for k = 1:N
@@ -194,20 +197,22 @@ function [maxL2inT,u_IC,u_TC,energyL2,energyH1,energyH2,astripwidth,v_mean,projc
     end
     v_mean = v_mean(2:end,:);
     
+    %{
     % L2 energy time derivative computation
     energyL2_t = NaN(Ntime-1,1);
     dt_save = T/(Ntime-1);
     for i = 2:length(energyL2)
         energyL2_t(i-1,1) = ( energyL2(i,1) - energyL2(i-1,1) ) / dt_save;
     end
+    %}
 
     % max energy in time window
     [ maxL2, maxL2index ] = max(energyL2);
     maxL2time = timewindow(maxL2index);
     maxL2inT = [ maxL2time , maxL2 ];
 
-    energy = [ timewindow', energyL2 , energyH1 , energyH2 , astripwidth(:,1) , astripwidth(:,2) ];
-    
+    energy = [ timewindow', energyL2 , energyH1 , energyH2, energyL2_lap, astripwidth(:,1) , astripwidth(:,2) ];
+
     if savedata == 1
         energydata_file = [pwd '/data/energy/energy_' parameterlist '.dat'];
         spectrum_file = [pwd '/data/spectrum/spectrum_' parameterlist '.dat'];

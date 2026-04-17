@@ -1,6 +1,9 @@
 function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,tol,... 
-    energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
+    energy,v_mean,projcoeffradialevolution,projcoeffmodeevolution,...
     parameterlist,optparameters,parfiglist,optparfiglist)
+
+    % energy = [ timewindow', energyL2 , energyH1 , energyH2, energyL2_lap, astripwidth(:,1) , astripwidth(:,2) ];
+    energyL2 = energy(:,2);
 
     % time window
     timewindow = linspace(0,T,Ntime);

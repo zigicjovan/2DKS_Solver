@@ -1,8 +1,14 @@
 function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
-    energyL2,energyH1,energyH2,v_mean,astripwidth,projcoeffradialevolution,projcoeffmodeevolution,...
+    energy,v_mean,projcoeffradialevolution,projcoeffmodeevolution,...
     parameterlist,optparameters)
 
     %% Note: cheaper to recompute rather than read from file!
+    % energy = [ timewindow', energyL2 , energyH1 , energyH2, energyL2_lap, astripwidth(:,1) , astripwidth(:,2) ];
+    energyL2        = energy(:,2);
+    energyH1        = energy(:,3);
+    energyH2        = energy(:,4);
+    energyL2_lap    = energy(:,5);
+    astripwidth     = energy(:,6:7);
 
     %% setup
     
@@ -39,6 +45,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
     
     % Fourier space operators
     Lin = 1i^2 * (kvecl2) + 1i^4 * (kvecl4);                    % Linear operator
+    Lap = 1i^2 * (kvecl2);                                      % Laplace operator
     D1vec = 1i*k1vecN;                                          % Differential operator
     D2vec = 1i*k2vecN;                                          % Differential operator
     
@@ -117,7 +124,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
     fig = figure('Visible', 'off');
     set(fig, 'Position', [100 100 figwidth figheight], 'Color', 'white', 'Resize', 'off');
     
-    wordsize = 16;
+    wordsize = 20;
 
     set(groot, ...
     'DefaultAxesLooseInset',            [0 0 0 0], ...
@@ -138,7 +145,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
         set(ax(k),'Position',pos);
     end
     
-    ymin_energy = 0.5 * min(energyL2);
+    ymin_energy = 0.5 * min(energyL2_lap);
     ymax_energy = 1.5 * max(energyH2);
     
     ymax_spec = 1.5 * max(v_mean(:));
@@ -274,7 +281,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             shading(ax(k),'interp');
             colormap(ax(k), redblue);
             view(ax(k),3);
-            axis(ax(k),'square');
+            axis(ax(k), 'square')
     
             % ------------ AXIS 2: tiled domain -----------------
             k = 2;
@@ -296,10 +303,12 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             hold(ax(k),'on');
             semilogy(ax(k), timewindow, energyH1, 'r');
             semilogy(ax(k), timewindow, energyL2, 'b');
+            semilogy(ax(k), timewindow, energyL2_lap, 'm');
             %h_xline = xline(ax(k), currentT, '-');
             H2_xline = plot(ax(k), timewindow(1,i), energyH2(i,1), 'ko');
             H1_xline = plot(ax(k), timewindow(1,i), energyH1(i,1), 'ko');
             L2_xline = plot(ax(k), timewindow(1,i), energyL2(i,1), 'ko');
+            L2lap_xline = plot(ax(k), timewindow(1,i), energyL2_lap(i,1), 'ko');
             hold(ax(k),'off');
     
             xlabel(ax(k),'Time $t$' );
@@ -307,7 +316,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             xlim(ax(k), [0 T]);
             ylim(ax(k), [ymin_energy ymax_energy]);
             title(ax(k), "Energy evolution");
-            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast','Box','off');
+            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','$S=L^2, \Delta \phi$','Location','southeast','Box','off');
             axis(ax(k),'square');
     
             % ------------ AXIS 4: radial spectrum --------------
@@ -504,6 +513,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             set(H2_xline, 'XData', timewindow(1,i), 'YData', energyH2(i,1));
             set(H1_xline, 'XData', timewindow(1,i), 'YData', energyH1(i,1));
             set(L2_xline, 'XData', timewindow(1,i), 'YData', energyL2(i,1));
+            set(L2lap_xline, 'XData', timewindow(1,i), 'YData', energyL2_lap(i,1));
     
             % Axis 4: update spectrum
             set(h_spec1, 'YData', v_mean(:,i+1));
