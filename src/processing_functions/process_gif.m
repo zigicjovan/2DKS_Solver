@@ -145,8 +145,8 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
         set(ax(k),'Position',pos);
     end
     
-    ymin_energy = 0.5 * min(energyL2_lap);
-    ymax_energy = 1.5 * max(energyH2);
+    ymin_energy = 0.5 * min(min(energy(:,2:5)));
+    ymax_energy = 1.5 * max(max(energy(:,2:5)));
     
     ymax_spec = 1.5 * max(v_mean(:));
     
