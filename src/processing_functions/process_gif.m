@@ -303,12 +303,12 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             hold(ax(k),'on');
             semilogy(ax(k), timewindow, energyH1, 'r');
             semilogy(ax(k), timewindow, energyL2, 'b');
-            semilogy(ax(k), timewindow, energyL2_lap, 'm');
+            %semilogy(ax(k), timewindow, energyL2_lap, 'm');
             %h_xline = xline(ax(k), currentT, '-');
             H2_xline = plot(ax(k), timewindow(1,i), energyH2(i,1), 'ko');
             H1_xline = plot(ax(k), timewindow(1,i), energyH1(i,1), 'ko');
             L2_xline = plot(ax(k), timewindow(1,i), energyL2(i,1), 'ko');
-            L2lap_xline = plot(ax(k), timewindow(1,i), energyL2_lap(i,1), 'ko');
+            %L2lap_xline = plot(ax(k), timewindow(1,i), energyL2_lap(i,1), 'ko');
             hold(ax(k),'off');
     
             xlabel(ax(k),'Time $t$' );
@@ -316,12 +316,12 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             xlim(ax(k), [0 T]);
             ylim(ax(k), [ymin_energy ymax_energy]);
             title(ax(k), "Energy evolution");
-            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','$S=L^2, \Delta \phi$','Location','southeast','Box','off');
+            legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast','Box','off');
             axis(ax(k),'square');
     
             % ------------ AXIS 4: radial spectrum --------------
             k = 4;
-            h_spec1 = semilogy(ax(k), v_mean(:,1), v_mean(:,i+1), "-");
+            h_spec1 = semilogy(ax(k), v_mean(:,1), v_mean(:,i+1), "--");
             hold(ax(k),'on');
             h_spec2 = semilogy(ax(k), v_mean(:,1), asstrip_fit(:,i), "r--");
             hold(ax(k),'off');
@@ -513,7 +513,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             set(H2_xline, 'XData', timewindow(1,i), 'YData', energyH2(i,1));
             set(H1_xline, 'XData', timewindow(1,i), 'YData', energyH1(i,1));
             set(L2_xline, 'XData', timewindow(1,i), 'YData', energyL2(i,1));
-            set(L2lap_xline, 'XData', timewindow(1,i), 'YData', energyL2_lap(i,1));
+            %set(L2lap_xline, 'XData', timewindow(1,i), 'YData', energyL2_lap(i,1));
     
             % Axis 4: update spectrum
             set(h_spec1, 'YData', v_mean(:,i+1));
