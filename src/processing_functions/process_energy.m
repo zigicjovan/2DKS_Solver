@@ -94,11 +94,11 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
 
         % nonlinear terms and solution substeps
         if i > 1
-            v_1 = ks_nonlinear_fwd( v_step, D1vec, D2vec, N, Lin, dt, alpha_I, beta_I, alpha_E, beta_E );
+            [v_1,Nonlin_v1,v_1_t] = ks_nonlinear_fwd( v_step, D1vec, D2vec, N, Lin, dt, alpha_I, beta_I, alpha_E, beta_E );
         else
             v_1 = v_step;
             v_02 = reshape( v_1, [ N , N ] );   % old term
-            u_nm1 = real(ifft2(v_02));          % old term
+            %u_nm1 = real(ifft2(v_02));          % old term
         end
 
         % correction of non-zero mean solution
@@ -114,70 +114,74 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
         v_step = v_1;                       % new term
 
         % compute 2D KS terms
-        v_step2x 	= reshape( D1vec .* v_step, [ N , N ] ); % f_x 
-        v_step2y 	= reshape( D2vec .* v_step, [ N , N ] ); % f_y 
-        v_2lap 		= reshape( Lap .* v_step, [ N , N ] ); 	 % lap(f) 
-        v_2bilap 	= reshape( Bilap .* v_step, [ N , N ] ); % bilap(f) 
-        w1_r 		= multiply2D( v_step2x , v_step2x , 'fourier2real' ); 	% f_x * f_x in physical space (pseudospectral) 
-        w1s_r 		= multiply2D( v_step2y , v_step2y , 'fourier2real' ); 	% f_y * f_y in physical space (pseudospectral) 
-        Nonlin_v1_r = (1/2) * ( w1_r + w1s_r ); 				            % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
-        Nonlin_v1 	= multiply2D( fft2(Nonlin_v1_r) , 0 ,'dealias'); 	    % 2/3 dealias 
-        
-        u_t         = (u_n - u_nm1) / dt;           % physical time derivative
-        u_nonlin 	= real(ifft2(Nonlin_v1)); 		% physical nonlinear term
-        u_lap 		= real(ifft2(v_2lap)); 			% physical laplacian term
-        u_bilap 	= real(ifft2(v_2bilap));		% physical bilaplacian term
-        sum_u       = u_t + u_nonlin + u_lap + u_bilap; 
-        sumf = fft2(sum_u); 
-        sumf(1,1) = 0; 
-        sum_u = real(ifft2(sumf));                  % check mean-zero sum equal to 0
-
-        % sample indices
-        if i == 1
-            [~,maxidx] = max(abs(u_n(:)));
-            [i1, j1] = ind2sub(size(u_n), maxidx);
-            i2 = 1; j2 = 1;
-            i3 = ceil(N/2); j3 = ceil(N/2);
+        if i > 1
+            %v_step2x 	= reshape( D1vec .* v_step, [ N , N ] ); % f_x 
+            %v_step2y 	= reshape( D2vec .* v_step, [ N , N ] ); % f_y 
+            v_2lap 		= reshape( Lap .* v_step, [ N , N ] ); 	 % lap(f) 
+            v_2bilap 	= reshape( Bilap .* v_step, [ N , N ] ); % bilap(f) 
+            %{
+            w1_r 		= multiply2D( v_step2x , v_step2x , 'fourier2real' ); 	% f_x * f_x in physical space (pseudospectral) 
+            w1s_r 		= multiply2D( v_step2y , v_step2y , 'fourier2real' ); 	% f_y * f_y in physical space (pseudospectral) 
+            Nonlin_v1_r = (1/2) * ( w1_r + w1s_r ); 				            % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
+            Nonlin_v1 	= multiply2D( fft2(Nonlin_v1_r) , 0 ,'dealias'); 	    % 2/3 dealias 
+            %}
+    
+            %u_t         = (u_n - u_nm1) / dt;           % physical time derivative
+            u_t 	    = real(ifft2(v_1_t)); 		    % physical time derivative
+            u_nonlin 	= real(ifft2(Nonlin_v1)); 		% physical nonlinear term
+            u_lap 		= real(ifft2(v_2lap)); 			% physical laplacian term
+            u_bilap 	= real(ifft2(v_2bilap));		% physical bilaplacian term
+            sum_u       = u_t + u_nonlin + u_lap + u_bilap; 
+            sumf = fft2(sum_u); 
+            sumf(1,1) = 0; 
+            sum_u = real(ifft2(sumf));                  % check mean-zero sum equal to 0
+    
+            % sample indices
+            if i == 2
+                [~,maxidx] = max(abs(u_n(:)));
+                [i1, j1] = ind2sub(size(u_n), maxidx);
+                i2 = 1; j2 = 1;
+                i3 = ceil(N/2); j3 = ceil(N/2);
+            end
+    
+            u_n_s1      = u_n(i1,j1);       % solution sample 1
+            u_t_s1      = u_t(i1,j1);       % physical time derivative sample 1
+            u_nonlin_s1 = u_nonlin(i1,j1);  % physical nonlinear term sample 1
+            u_lap_s1    = u_lap(i1,j1); 	% physical laplacian term sample 1
+            u_bilap_s1 	= u_bilap(i1,j1);	% physical bilaplacian term sample 1
+            sum_s1      = sum_u(i1,j1);     % check sum equal to 0
+            mean_sum_s1 = (mean_sum_s1 + sum_s1)/i; % check average sum equal to 0
+            rel_s1 = abs(sum_s1) / (abs(u_t_s1) + abs(u_nonlin_s1) + abs(u_lap_s1) + abs(u_bilap_s1) );
+    
+            u_n_s2      = u_n(i2,j2);       % solution sample 2
+            u_t_s2      = u_t(i2,j2);       % physical time derivative sample 2
+            u_nonlin_s2 = u_nonlin(i2,j2);  % physical nonlinear term sample 2
+            u_lap_s2    = u_lap(i2,j2); 	% physical laplacian term sample 2
+            u_bilap_s2 	= u_bilap(i2,j2);	% physical bilaplacian term sample 2
+            sum_s2      = sum_u(i2,j2);     % check sum equal to 0
+            mean_sum_s2 = (mean_sum_s2 + sum_s2)/i; % check average sum equal to 0
+            rel_s2 = abs(sum_s2) / (abs(u_t_s2) + abs(u_nonlin_s2) + abs(u_lap_s2) + abs(u_bilap_s2) );
+    
+            u_n_s3      = u_n(i3,j3);       % solution sample 3
+            u_t_s3      = u_t(i3,j3);       % physical time derivative sample 3
+            u_nonlin_s3 = u_nonlin(i3,j3);  % physical nonlinear term sample 3
+            u_lap_s3    = u_lap(i3,j3); 	% physical laplacian term sample 3
+            u_bilap_s3 	= u_bilap(i3,j3);	% physical bilaplacian term sample 3
+            sum_s3      = sum_u(i3,j3);     % check sum equal to 0
+            mean_sum_s3 = (mean_sum_s3 + sum_s3)/i; % check average sum equal to 0
+            rel_s3 = abs(sum_s3) / (abs(u_t_s3) + abs(u_nonlin_s3) + abs(u_lap_s3) + abs(u_bilap_s3) );
+    
+            sol_samples3(i,:) = [ u_n_s1 , u_n_s2 , u_n_s3 , ...
+                u_t_s1 , u_t_s2 , u_t_s3 , ...
+                u_nonlin_s1 , u_nonlin_s2 , u_nonlin_s3 , ...
+                u_lap_s1 , u_lap_s2 , u_lap_s3 , ...
+                u_bilap_s1 , u_bilap_s2 , u_bilap_s3 , ...
+                sum_s1 , sum_s2 , sum_s3 , ...
+                mean_sum_s1 , mean_sum_s2 , mean_sum_s3 , ...
+                rel_s1 , rel_s2 , rel_s3  ];
+    
+            %u_nm1 = u_n;
         end
-
-        u_n_s1      = u_n(i1,j1);       % solution sample 1
-        u_t_s1      = u_t(i1,j1);       % physical time derivative sample 1
-        u_nonlin_s1 = u_nonlin(i1,j1);  % physical nonlinear term sample 1
-        u_lap_s1    = u_lap(i1,j1); 	% physical laplacian term sample 1
-        u_bilap_s1 	= u_bilap(i1,j1);	% physical bilaplacian term sample 1
-        sum_s1      = sum_u(i1,j1);     % check sum equal to 0
-        mean_sum_s1 = (mean_sum_s1 + sum_s1)/i; % check average sum equal to 0
-        rel_s1 = abs(sum_s1) / (abs(u_t_s1) + abs(u_nonlin_s1) + abs(u_lap_s1) + abs(u_bilap_s1) );
-
-        u_n_s2      = u_n(i2,j2);       % solution sample 2
-        u_t_s2      = u_t(i2,j2);       % physical time derivative sample 2
-        u_nonlin_s2 = u_nonlin(i2,j2);  % physical nonlinear term sample 2
-        u_lap_s2    = u_lap(i2,j2); 	% physical laplacian term sample 2
-        u_bilap_s2 	= u_bilap(i2,j2);	% physical bilaplacian term sample 2
-        sum_s2      = sum_u(i2,j2);     % check sum equal to 0
-        mean_sum_s2 = (mean_sum_s2 + sum_s2)/i; % check average sum equal to 0
-        rel_s2 = abs(sum_s2) / (abs(u_t_s2) + abs(u_nonlin_s2) + abs(u_lap_s2) + abs(u_bilap_s2) );
-
-        u_n_s3      = u_n(i3,j3);       % solution sample 3
-        u_t_s3      = u_t(i3,j3);       % physical time derivative sample 3
-        u_nonlin_s3 = u_nonlin(i3,j3);  % physical nonlinear term sample 3
-        u_lap_s3    = u_lap(i3,j3); 	% physical laplacian term sample 3
-        u_bilap_s3 	= u_bilap(i3,j3);	% physical bilaplacian term sample 3
-        sum_s3      = sum_u(i3,j3);     % check sum equal to 0
-        mean_sum_s3 = (mean_sum_s3 + sum_s3)/i; % check average sum equal to 0
-        rel_s3 = abs(sum_s3) / (abs(u_t_s3) + abs(u_nonlin_s3) + abs(u_lap_s3) + abs(u_bilap_s3) );
-
-        sol_samples3(i,:) = [ u_n_s1 , u_n_s2 , u_n_s3 , ...
-            u_t_s1 , u_t_s2 , u_t_s3 , ...
-            u_nonlin_s1 , u_nonlin_s2 , u_nonlin_s3 , ...
-            u_lap_s1 , u_lap_s2 , u_lap_s3 , ...
-            u_bilap_s1 , u_bilap_s2 , u_bilap_s3 , ...
-            sum_s1 , sum_s2 , sum_s3 , ...
-            mean_sum_s1 , mean_sum_s2 , mean_sum_s3 , ...
-            rel_s1 , rel_s2 , rel_s3  ];
-
-        u_nm1 = u_n;
-
         %%% end equation check %%%
 
 

@@ -281,7 +281,7 @@ function process_gif(u_IC, IC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,
             shading(ax(k),'interp');
             colormap(ax(k), redblue);
             view(ax(k),3);
-            axis(ax(k), 'square')
+            pbaspect(ax(k), [ L_s1 L_s2 max(L_s1, L_s2) ])
     
             % ------------ AXIS 2: tiled domain -----------------
             k = 2;
