@@ -119,6 +119,53 @@ static mxArray* compute_nonlinear(
 }
 
 /* ============================================================
+   Time derivative
+============================================================ */
+
+static mxArray* compute_time_derivative(
+    const mxArray *v_mx,
+    const mxArray *Nonlin_mx,
+    const mxArray *Lin_mx,
+    mwSize N)
+{
+    mxArray *vt_mx = mxCreateDoubleMatrix(N,N,mxCOMPLEX);
+
+    const double *v_r  = mxGetPr(v_mx);
+    const double *v_i  = mxGetPi(v_mx);
+    const double *n_r  = mxGetPr(Nonlin_mx);
+    const double *n_i  = mxGetPi(Nonlin_mx);
+    const double *L_r  = mxGetPr(Lin_mx);
+    const double *L_i  = mxGetPi(Lin_mx);
+
+    double *vt_r = mxGetPr(vt_mx);
+    double *vt_i = mxGetPi(vt_mx);
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (mwSize i=0; i<N*N; ++i) {
+        double vr = v_r[i];
+        double vi = (v_i ? v_i[i] : 0.0);
+
+        double nr = n_r[i];
+        double ni = (n_i ? n_i[i] : 0.0);
+
+        double Lr = L_r[i];
+        double Li = (L_i ? L_i[i] : 0.0);
+
+        /* Lv = L * v */
+        double Lv_r = Lr*vr - Li*vi;
+        double Lv_i = Lr*vi + Li*vr;
+
+        /* phi_t = -N(phi) - L phi */
+        vt_r[i] = -nr - Lv_r;
+        vt_i[i] = -ni - Lv_i;
+    }
+
+    return vt_mx;
+}
+
+/* ============================================================
    MEX ENTRY: FULL RK4 STEP (new interface)
 ============================================================ */
 void mexFunction(int nlhs, mxArray *plhs[],
@@ -198,5 +245,19 @@ void mexFunction(int nlhs, mxArray *plhs[],
         Nonlin_v0 = Nonlin_v1;
     }
 
-    plhs[0]=v_step;
+        /* Compute nonlinear term and time derivative at final state */
+    
+    plhs[0] = v_step;
+
+    if (nlhs >= 2) {
+        mxArray *Nonlin_final = compute_nonlinear(v_step,D1_mx,D2_mx,N);
+        plhs[1] = Nonlin_final;
+
+        if (nlhs >= 3) {
+            mxArray *vt_final =
+                compute_time_derivative(v_step,Nonlin_final,Lin_mx,N);
+            plhs[2] = vt_final;
+        }
+    }
+
 }
