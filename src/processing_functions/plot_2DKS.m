@@ -71,19 +71,19 @@ switch IC
                 [maxL2inT_og,u_IC_og,u_TC_og,energy_og,v_mean_og,projcoeffradialevolution_og,projcoeffmodeevolution_og] = ...
                     process_energy(u_IC_og_input,savedata,originalIC, dt, T, N, K, L_s1, L_s2, utility1,utility2,Ntime,Ntime_save_max,... 
                     parameterlist,optparameters,parfiglist,optparfiglist);
-        end
-end
 
-optwin = 1;
-if maxL2inT < maxL2inT_og
-    optwin = 0;
-    maxL2inT = maxL2inT_og;
-    u_IC = u_IC_og;
-    u_TC = u_TC_og;
-    energy = energy_og;
-    v_mean = v_mean_og;
-    projcoeffradialevolution = projcoeffradialevolution_og;
-    projcoeffmodeevolution = projcoeffmodeevolution_og;
+                optwin = 1;
+                if maxL2inT < maxL2inT_og
+                    optwin = 0;
+                    maxL2inT = maxL2inT_og;
+                    u_IC = u_IC_og;
+                    u_TC = u_TC_og;
+                    energy = energy_og;
+                    v_mean = v_mean_og;
+                    projcoeffradialevolution = projcoeffradialevolution_og;
+                    projcoeffmodeevolution = projcoeffmodeevolution_og;
+                end
+        end
 end
 
 fprintf('Computed energy evolution at %01dh%02dm%02ds\n',floor(toc/3600),floor(mod(toc/60,60)),floor(mod(toc,60)))

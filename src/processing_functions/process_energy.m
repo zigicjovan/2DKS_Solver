@@ -75,10 +75,11 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
     %% process
 
     % compute L2 energy and Fourier mode evolution
-    sol_samples3 = NaN(Ntime,8*3);
-    mean_sum_s1 = 0;
-    mean_sum_s2 = 0;
-    mean_sum_s3 = 0;
+    %sol_samples3 = NaN(Ntime,8*3);
+    sol_samplemax = NaN(Ntime,8*1);
+    %mean_sum_s1 = 0;
+    %mean_sum_s2 = 0;
+    %mean_sum_s3 = 0;
     energyL2 = NaN(Ntime,1);
     energyH1 = energyL2;
     energyH2 = energyL2;
@@ -115,8 +116,8 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
 
         % compute 2D KS terms
         if i > 1
-            %v_step2x 	= reshape( D1vec .* v_step, [ N , N ] ); % f_x 
-            %v_step2y 	= reshape( D2vec .* v_step, [ N , N ] ); % f_y 
+            v_step2x 	= reshape( D1vec .* v_step, [ N , N ] ); % f_x 
+            v_step2y 	= reshape( D2vec .* v_step, [ N , N ] ); % f_y 
             v_2lap 		= reshape( Lap .* v_step, [ N , N ] ); 	 % lap(f) 
             v_2bilap 	= reshape( Bilap .* v_step, [ N , N ] ); % bilap(f) 
             %{
@@ -131,6 +132,8 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
             u_nonlin 	= real(ifft2(Nonlin_v1)); 		% physical nonlinear term
             u_lap 		= real(ifft2(v_2lap)); 			% physical laplacian term
             u_bilap 	= real(ifft2(v_2bilap));		% physical bilaplacian term
+            u_x         = real(ifft2(v_step2x));		% physical dim 1 derivative
+            u_y         = real(ifft2(v_step2y));		% physical dim 2 derivative
             sum_u       = u_t + u_nonlin + u_lap + u_bilap; 
             sumf = fft2(sum_u); 
             sumf(1,1) = 0; 
@@ -140,8 +143,8 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
             if i == 2
                 [~,maxidx] = max(abs(u_n(:)));
                 [i1, j1] = ind2sub(size(u_n), maxidx);
-                i2 = 1; j2 = 1;
-                i3 = ceil(N/2); j3 = ceil(N/2);
+                %i2 = 1; j2 = 1;
+                %i3 = ceil(N/2); j3 = ceil(N/2);
             end
     
             u_n_s1      = u_n(i1,j1);       % solution sample 1
@@ -150,9 +153,12 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
             u_lap_s1    = u_lap(i1,j1); 	% physical laplacian term sample 1
             u_bilap_s1 	= u_bilap(i1,j1);	% physical bilaplacian term sample 1
             sum_s1      = sum_u(i1,j1);     % check sum equal to 0
-            mean_sum_s1 = (mean_sum_s1 + sum_s1)/i; % check average sum equal to 0
-            rel_s1 = abs(sum_s1) / (abs(u_t_s1) + abs(u_nonlin_s1) + abs(u_lap_s1) + abs(u_bilap_s1) );
-    
+            u_x_s1      = u_x(i1,j1);       % physical dim 1 derivative sample 1
+            u_y_s1      = u_y(i1,j1);       % physical dim 2 derivative sample 1
+
+            sol_samplemax(i,:) = [ u_n_s1 , u_t_s1 , u_nonlin_s1 , u_lap_s1 , u_bilap_s1 , sum_s1 , u_x_s1 , u_y_s1 ];
+
+            %{
             u_n_s2      = u_n(i2,j2);       % solution sample 2
             u_t_s2      = u_t(i2,j2);       % physical time derivative sample 2
             u_nonlin_s2 = u_nonlin(i2,j2);  % physical nonlinear term sample 2
@@ -179,6 +185,7 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
                 sum_s1 , sum_s2 , sum_s3 , ...
                 mean_sum_s1 , mean_sum_s2 , mean_sum_s3 , ...
                 rel_s1 , rel_s2 , rel_s3  ];
+            %}
     
             %u_nm1 = u_n;
         end
@@ -301,7 +308,7 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
     maxL2inT = [ maxL2time , maxL2 ];
 
     energy = [ timewindow', energyL2 , energyH1 , energyH2, energyL2_lap, ...
-        astripwidth(:,1) , astripwidth(:,2), energyL2_bilap, sol_samples3 ];
+        astripwidth(:,1) , astripwidth(:,2), energyL2_bilap, sol_samplemax ];
 
     if savedata == 1
         energydata_file = [pwd '/data/energy/energy_' parameterlist '.dat'];
