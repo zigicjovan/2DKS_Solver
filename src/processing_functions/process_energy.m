@@ -75,11 +75,10 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
     %% process
 
     % compute L2 energy and Fourier mode evolution
-    %sol_samples3 = NaN(Ntime,8*3);
-    sol_samplemax = NaN(Ntime,8*1);
-    %mean_sum_s1 = 0;
-    %mean_sum_s2 = 0;
-    %mean_sum_s3 = 0;
+    L_ref = 1.02;
+    fraclist = [];%[ 1/2, 1/3, 1/4, 1/6, 1/12, 1/16 ];
+    samplecount = length(fraclist) + 1;
+    sol_samplemax = NaN(Ntime,8*(samplecount+1));
     energyL2 = NaN(Ntime,1);
     energyH1 = energyL2;
     energyH2 = energyL2;
@@ -116,82 +115,137 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
 
         % compute 2D KS terms
         if i > 1
-            v_step2x 	= reshape( D1vec .* v_step, [ N , N ] ); % f_x 
-            v_step2y 	= reshape( D2vec .* v_step, [ N , N ] ); % f_y 
-            v_2lap 		= reshape( Lap .* v_step, [ N , N ] ); 	 % lap(f) 
-            v_2bilap 	= reshape( Bilap .* v_step, [ N , N ] ); % bilap(f) 
-            %{
-            w1_r 		= multiply2D( v_step2x , v_step2x , 'fourier2real' ); 	% f_x * f_x in physical space (pseudospectral) 
-            w1s_r 		= multiply2D( v_step2y , v_step2y , 'fourier2real' ); 	% f_y * f_y in physical space (pseudospectral) 
-            Nonlin_v1_r = (1/2) * ( w1_r + w1s_r ); 				            % (1/2)*(f_x * f_x + f_y * f_y) in physical space 
-            Nonlin_v1 	= multiply2D( fft2(Nonlin_v1_r) , 0 ,'dealias'); 	    % 2/3 dealias 
-            %}
-    
-            %u_t         = (u_n - u_nm1) / dt;           % physical time derivative
-            u_t 	    = real(ifft2(v_1_t)); 		    % physical time derivative
-            u_nonlin 	= real(ifft2(Nonlin_v1)); 		% physical nonlinear term
-            u_lap 		= real(ifft2(v_2lap)); 			% physical laplacian term
-            u_bilap 	= real(ifft2(v_2bilap));		% physical bilaplacian term
-            u_x         = real(ifft2(v_step2x));		% physical dim 1 derivative
-            u_y         = real(ifft2(v_step2y));		% physical dim 2 derivative
-            sum_u       = u_t + u_nonlin + u_lap + u_bilap; 
-            sumf = fft2(sum_u); 
-            sumf(1,1) = 0; 
-            sum_u = real(ifft2(sumf));                  % check mean-zero sum equal to 0
+            v_step2x 	= reshape( D1vec .* v_step, [ N , N ] );    % f_x 
+            v_step2y 	= reshape( D2vec .* v_step, [ N , N ] );    % f_y 
+            v_2lap 		= reshape( Lap .* v_step, [ N , N ] ); 	    % lap(f) 
+            v_2bilap 	= reshape( Bilap .* v_step, [ N , N ] );    % bilap(f) 
+            u_t 	    = real(ifft2(v_1_t)); 		                % physical time derivative
+            u_nonlin 	= real(ifft2(Nonlin_v1)); 		            % physical nonlinear term
+            u_lap 		= real(ifft2(v_2lap)); 			            % physical laplacian term
+            u_bilap 	= real(ifft2(v_2bilap));		            % physical bilaplacian term
+            u_x         = real(ifft2(v_step2x));		            % physical dim 1 derivative
+            u_y         = real(ifft2(v_step2y));		            % physical dim 2 derivative
+            sum_u       = u_t + u_nonlin + u_lap + u_bilap;         % residual of solution
+            sumf        = fft2(sum_u); 
+            sumf(1,1)   = 0;                                        % mean-zero correction of residual
+            sum_u       = real(ifft2(sumf));                        % check mean-zero residual equal to 0
     
             % sample indices
             if i == 2
+
+                idxlist = NaN(samplecount,2);
+
                 [~,maxidx] = max(abs(u_n(:)));
-                [i1, j1] = ind2sub(size(u_n), maxidx);
-                %i2 = 1; j2 = 1;
-                %i3 = ceil(N/2); j3 = ceil(N/2);
+                [idxlist(1,1), idxlist(1,2)] = ind2sub(size(u_n), maxidx);
+
+                for ii = 2:samplecount
+                    fracidx = fraclist(ii-1);
+                    geoshift = round(N*fracidx*(L_ref/L_s1)*(L_ref/L_s2));
+                    if startsWith(optparameters,'tg')
+                        idxlist(ii,1) = max( mod(idxlist(1,1) + geoshift,N) , 1);
+                    else
+                        idxlist(ii,1) = idxlist(1,1);
+                    end
+                    idxlist(ii,2) = max( mod(idxlist(1,2) + geoshift,N) , 1);
+                end
+
+                row = idxlist(1,1);
+                col = idxlist(1,2);
+                sz = size(u_n);
+                
+                % periodic mean for rows
+                theta_r = 2*pi*(row-1)/sz(1);
+                rowmin = mod(atan2(mean(sin(theta_r)), mean(cos(theta_r))) ...
+                             * sz(1)/(2*pi), sz(1)) + 1;
+                
+                % periodic mean for columns
+                theta_c = 2*pi*(col-1)/sz(2);
+                colmin = mod(atan2(mean(sin(theta_c)), mean(cos(theta_c))) ...
+                             * sz(2)/(2*pi), sz(2)) + 1;
+                
+                rowmin = round(rowmin);
+                colmin = round(colmin);
+                [Ny, Nx] = size(u_n);
+                rowc = floor((Ny+1)/2) + 1;
+                colc = floor((Nx+1)/2) + 1;
+                %drow = rowc - rowmin;
+                %dcol = colc - colmin;
+
             end
     
-            u_n_s1      = u_n(i1,j1);       % solution sample 1
-            u_t_s1      = u_t(i1,j1);       % physical time derivative sample 1
-            u_nonlin_s1 = u_nonlin(i1,j1);  % physical nonlinear term sample 1
-            u_lap_s1    = u_lap(i1,j1); 	% physical laplacian term sample 1
-            u_bilap_s1 	= u_bilap(i1,j1);	% physical bilaplacian term sample 1
-            sum_s1      = sum_u(i1,j1);     % check sum equal to 0
-            u_x_s1      = u_x(i1,j1);       % physical dim 1 derivative sample 1
-            u_y_s1      = u_y(i1,j1);       % physical dim 2 derivative sample 1
-
-            sol_samplemax(i,:) = [ u_n_s1 , u_t_s1 , u_nonlin_s1 , u_lap_s1 , u_bilap_s1 , sum_s1 , u_x_s1 , u_y_s1 ];
+            for idx = 1:samplecount
+                u_n_s1      = u_n(idxlist(idx,1),idxlist(idx,2));       % solution sample 1
+                u_t_s1      = u_t(idxlist(idx,1),idxlist(idx,2));       % physical time derivative sample 1
+                u_nonlin_s1 = u_nonlin(idxlist(idx,1),idxlist(idx,2));  % physical nonlinear term sample 1
+                u_lap_s1    = u_lap(idxlist(idx,1),idxlist(idx,2)); 	% physical laplacian term sample 1
+                u_bilap_s1 	= u_bilap(idxlist(idx,1),idxlist(idx,2));	% physical bilaplacian term sample 1
+                sum_s1      = sum_u(idxlist(idx,1),idxlist(idx,2));     % check sum equal to 0
+                u_x_s1      = u_x(idxlist(idx,1),idxlist(idx,2));       % physical dim 1 derivative sample 1
+                u_y_s1      = u_y(idxlist(idx,1),idxlist(idx,2));       % physical dim 2 derivative sample 1
+    
+                sol_samplemax(i,(idx)*8 + 1:(idx)*8 + 8) = [ u_n_s1 , u_t_s1 , u_nonlin_s1 , u_lap_s1 , u_bilap_s1 , sum_s1 , u_x_s1 , u_y_s1 ];
+            end
 
             %{
-            u_n_s2      = u_n(i2,j2);       % solution sample 2
-            u_t_s2      = u_t(i2,j2);       % physical time derivative sample 2
-            u_nonlin_s2 = u_nonlin(i2,j2);  % physical nonlinear term sample 2
-            u_lap_s2    = u_lap(i2,j2); 	% physical laplacian term sample 2
-            u_bilap_s2 	= u_bilap(i2,j2);	% physical bilaplacian term sample 2
-            sum_s2      = sum_u(i2,j2);     % check sum equal to 0
-            mean_sum_s2 = (mean_sum_s2 + sum_s2)/i; % check average sum equal to 0
-            rel_s2 = abs(sum_s2) / (abs(u_t_s2) + abs(u_nonlin_s2) + abs(u_lap_s2) + abs(u_bilap_s2) );
-    
-            u_n_s3      = u_n(i3,j3);       % solution sample 3
-            u_t_s3      = u_t(i3,j3);       % physical time derivative sample 3
-            u_nonlin_s3 = u_nonlin(i3,j3);  % physical nonlinear term sample 3
-            u_lap_s3    = u_lap(i3,j3); 	% physical laplacian term sample 3
-            u_bilap_s3 	= u_bilap(i3,j3);	% physical bilaplacian term sample 3
-            sum_s3      = sum_u(i3,j3);     % check sum equal to 0
-            mean_sum_s3 = (mean_sum_s3 + sum_s3)/i; % check average sum equal to 0
-            rel_s3 = abs(sum_s3) / (abs(u_t_s3) + abs(u_nonlin_s3) + abs(u_lap_s3) + abs(u_bilap_s3) );
-    
-            sol_samples3(i,:) = [ u_n_s1 , u_n_s2 , u_n_s3 , ...
-                u_t_s1 , u_t_s2 , u_t_s3 , ...
-                u_nonlin_s1 , u_nonlin_s2 , u_nonlin_s3 , ...
-                u_lap_s1 , u_lap_s2 , u_lap_s3 , ...
-                u_bilap_s1 , u_bilap_s2 , u_bilap_s3 , ...
-                sum_s1 , sum_s2 , sum_s3 , ...
-                mean_sum_s1 , mean_sum_s2 , mean_sum_s3 , ...
-                rel_s1 , rel_s2 , rel_s3  ];
+            geoshift_ref = round(N*1/2*(L_ref/L_s1)*(L_ref/L_s2));
+            Nstart = max(round(N/2 - geoshift_ref + 1),1);
+            Nend = min(round(N/2 + geoshift_ref),N);
+            if startsWith(optparameters,'tg')
+                u_n_ps = circshift(u_n, [drow, dcol]);
+                subN = Nend-Nstart+1;
+                u_n_ref = zeros(subN);
+                x0 = N/2;
+                y0 = 0;
+                xs = 1;
+                for xshift = 1:N/2
+                    ys = 1;
+                    for yshift = 1:N/2
+                        u_n_ref(xs,ys) = u_n_ps(x0+yshift,y0+yshift);
+                        ys = ys + 1;
+                    end
+                    xs = xs + 1;
+                    x0 = N/2 - xshift;
+                    y0 = 0 + xshift;
+                end
+
+
+            else
+                u_n_ps = circshift(u_n, [drow, dcol]);
+                u_n_ref = u_n_ps(Nstart:Nend,:);
+
+
+            end
             %}
-    
-            %u_nm1 = u_n;
+
+            %v_12_ref = fft2(u_n_ref);
+            v = fftshift(abs(v_12).^2);
+            u_n_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(v_1_t).^2);
+            u_t_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(Nonlin_v1).^2);
+            u_nonlin_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(v_2lap).^2);
+            u_lap_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(v_2bilap).^2);
+            u_bilap_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(sumf).^2);
+            sum_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(v_step2x).^2);
+            u_x_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            v = fftshift(abs(v_step2y).^2);
+            u_y_L2 = sum( v(:) )*(L1*L2)/(N*N)^2;
+
+            sol_samplemax(i, 1:8) = [ u_n_L2 , u_t_L2 , u_nonlin_L2 , u_lap_L2 , u_bilap_L2 , sum_L2 , u_x_L2 , u_y_L2 ];
+
         end
         %%% end equation check %%%
-
-
 
         % save solution step to workspace
         v_12 = reshape( v_1, [ N , N ] );   % new term
@@ -253,8 +307,8 @@ function [maxL2inT,u_IC,u_TC,energy,v_mean,projcoeffradialevolution,projcoeffmod
         end
 
         u_i = reshape( u_n(:) , [ N , N ] );
-        v = fftshift(abs(fft2(u_i)).^2);
         %energyL2(i,1) = (sum( u_n(:) .* conj(u_n(:)) )*(L1*L2)/(N*N));
+        v = fftshift(abs(fft2(u_i)).^2);
         energyL2(i,1) = sum( v(:) )*(L1*L2)/(N*N)^2;
         energyH1(i,1) = sum( (1 + K2(:)) .* v(:) )*(L1*L2)/(N*N)^2;
         energyH2(i,1) = sum( (1 + K2(:)).^2 .* v(:) )*(L1*L2)/(N*N)^2;
