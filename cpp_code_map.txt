@@ -1,0 +1,82 @@
+Organization:
+
+src_cpp/
+│
+├── common.hpp
+├── main.cpp
+│
+├── solver_functions/
+│   ├── solve_PDE.hpp
+│   ├── solve_PDE.cpp
+│   │
+│   ├── optimize_solution.hpp
+│   ├── optimize_solution.cpp
+│   │
+│   └── solve_helpers/
+│       ├── initialcondition.hpp
+│       ├── initialcondition.cpp
+│       │
+│       ├── optimize_stepsize.hpp
+│       ├── optimize_stepsize.cpp
+│       │
+│       ├── check_CFL.hpp
+│       └── check_CFL.cpp
+│
+└── processing_functions/
+    ├── load_data.hpp
+    ├── load_data.cpp
+    │
+    ├── save_data.hpp
+    ├── save_data.cpp
+    │
+    ├── delete_data.hpp
+    └── delete_data.cpp
+    
+    
+Dependencies:
+
+main
+│
+├── load_data
+├── solve_PDE
+│   ├── initialcondition
+│   ├── check_CFL
+│   └── save_data
+│
+├── optimize_solution
+│   ├── solve_PDE
+│   ├── optimize_stepsize
+│   │   └── solve_PDE
+│   └── save_data
+│
+├── save_data
+└── delete_data
+
+Contents: 
+
+├── main.cpp: 
+paths, timer, parameter settings, (conditional) load for continuation (from 'load_data'), initialize solution (from 'solve_PDE'), optimize (from 'optimize_solution'), save energy (from 'save_data'), delete solution data (from 'delete_data') 
+
+├── solver_functions/solve_PDE: 
+domain settings, operator settings, initial condition (from 'initialcondition'), (conditional) solve fwd/bwd, check CFL condition (from 'check_CFL'), save solution (from 'save_data') 
+
+├── solver_functions/optimize_solution: 
+initialize measures, in-loop bwd solution (from 'solve_PDE'), looped gradient step (from 'optimize_stepsize'), in-loop fwd solution (from 'solve_PDE'), save diagnostics (from 'save_data') 
+
+├── solver_functions/solve_helpers/initialcondition: 
+set IC and magnitude 
+
+├── solver_functions/solve_helpers/optimize_stepsize: 
+Brent’s method, Fwd solutions (from 'solve_PDE') 
+
+├── solver_functions/solve_helpers/check_CFL: 
+(conditional) warning
+
+└── processing_functions/load_data: 
+solution, optimal state, energy, spectrum, diagnostics 
+
+└── processing_functions/save_data: 
+solution, optimal state, energy, spectrum, diagnostics 
+
+└── processing_functions/delete_data: 
+solution, optimal state, energy, spectrum, diagnostics 
