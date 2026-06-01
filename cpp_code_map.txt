@@ -2,34 +2,34 @@ Organization:
 
 src_cpp/
 │
-├── common.hpp
+├── common.h
 ├── main.cpp
 │
 ├── solver_functions/
-│   ├── solve_PDE.hpp
+│   ├── solve_PDE.h
 │   ├── solve_PDE.cpp
 │   │
-│   ├── optimize_solution.hpp
+│   ├── optimize_solution.h
 │   ├── optimize_solution.cpp
 │   │
 │   └── solve_helpers/
-│       ├── initialcondition.hpp
+│       ├── initialcondition.h
 │       ├── initialcondition.cpp
 │       │
-│       ├── optimize_stepsize.hpp
+│       ├── optimize_stepsize.h
 │       ├── optimize_stepsize.cpp
 │       │
-│       ├── check_CFL.hpp
+│       ├── check_CFL.h
 │       └── check_CFL.cpp
 │
 └── processing_functions/
-    ├── load_data.hpp
+    ├── load_data.h
     ├── load_data.cpp
     │
-    ├── save_data.hpp
+    ├── save_data.h
     ├── save_data.cpp
     │
-    ├── delete_data.hpp
+    ├── delete_data.h
     └── delete_data.cpp
     
     
