@@ -365,6 +365,16 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
                 case {'optimized'}
                     subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
             end
+
+            axis square
+            % Save image
+            filename = [pwd '/media/figures/state/phys_' parameterlist '_initial_surface'];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/figures/state/phys_' optparameters '_initial_surface'];
+            end
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
     
             % contour plot
             view(2);
@@ -406,6 +416,16 @@ function process_figure(figuretype,originalIC, IC, dt, T, N, K, L_s1, L_s2, util
                 case {'optimized'}
                     subtitle(optparfiglist,'Interpreter','latex','FontSize',14)
             end
+
+            axis square
+            % Save image
+            filename = [pwd '/media/figures/state/phys_' parameterlist '_terminal_surface'];
+            switch IC
+                case {'optimized'}
+                    filename = [pwd '/media/figures/state/phys_' optparameters '_terminal_surface'];
+            end
+            saveas(h,[filename '.fig'])
+            exportgraphics(h,[filename '.pdf'])
     
             % contour plot
             view(2);
