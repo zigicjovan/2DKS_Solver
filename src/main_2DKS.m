@@ -23,23 +23,23 @@ tol = tolc;                                     % set optimization tolerance cri
 optT = 10^(optTc);                              % T parameter of optimal IC for asymptotic simulations
 
 %%% choose parameter testing ranges %%%
-initialKmagnitude = logspace(Kstart,Kend,Knum);                        % initial L^2 energy magnitudes
-L1_scale = ell1start:ell1gap:ell1end;                        % domain sizes
+initialKmagnitude = logspace(Kstart,Kend,Knum); % initial L^2 energy magnitudes
+L1_scale = ell1start:ell1gap:ell1end;           % domain sizes
 L2_scale = ell2start:ell2gap:ell2end;
-timewindow = logspace(Tstart,Tend,Tnum);         % time windows
+timewindow = logspace(Tstart,Tend,Tnum);        % time windows
 initialcondition = guessc; % initial conditions
 
 %timewindow = timewindow(2);
 switch run
     case 'kappa'
-        kappapert = {'stg30'};                          % perturbation functions
-        L_target = [2.36,2.78];                         % domain sizes of interest
+        kappapert = {'stg30'};                  % perturbation functions
+        L_target = [2.36,2.78];                 % domain sizes of interest
 end
 
 %%% choose default parameters %%%
 K = initialKmagnitude(1);                       % magnitude of initial condition L^2 energy, use K=0 for default IC norm
-L_s1 = L1_scale(1);                              % length-scale parameter in dim 1
-L_s2 = L2_scale(1);                              % length-scale parameter in dim 2
+L_s1 = L1_scale(1);                             % length-scale parameter in dim 1
+L_s2 = L2_scale(1);                             % length-scale parameter in dim 2
 T = timewindow(1);                              % length of simulation time window
 IC = strjoin(initialcondition(1),'');           % initial condition
 dt = timestep(1);                               % length of time-step
