@@ -14,7 +14,6 @@ tic
 %%% choose test settings %%%
 restart = 1;                                    % binary switch to generate new test counters
 optfigs = 1;                                    % generate optimization diagnostic figures 
-Ntime_save_max = 10;                            % choose maximum number of samples per data file
 run = runc;                               	    % switch to 'optimize', 'plotOptIC', 'energygrowth', 'L', 'N', 'dt', 'IC', 'kappa'
 continuation = continuationc;                   % 'IC' for optimal IC from file, 'off' to generate new data
 optmethod = 'RCG';                              % RCG, RG, or RCGd5 (start after 5th iter)
@@ -46,6 +45,7 @@ IC = strjoin(initialcondition(1),'');           % initial condition
 dt = timestep(1);                               % length of time-step
 N = gridsize(1);                                % number of grid points
 save_each = 1;                                  % number of iterations between saved timepoints - 1/dt to save each 1 T
+Ntime_save_max = round(4e7/N^2);                % choose maximum number of samples per data file
 
 switch optmethod
     case 'RCG'
