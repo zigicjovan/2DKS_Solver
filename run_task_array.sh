@@ -2,7 +2,6 @@
 # run_task_array.sh  -- invoked by run_array.sh sbatch
 # Uses PARAM_FILE environment variable passed by sbatch --export
 # Creates a unique per-job temp dir in /scratch and cleans up at exit.
-#
 
 set -euo pipefail
 
@@ -52,7 +51,7 @@ T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
 IC_str="s1"
 Kscale=1
-optT=-2
+optT=-1
 LOG_FILE="${LOG_DIR}/maxT_${optT}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
 #LOG_FILE="${LOG_DIR}/longT_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
 
@@ -67,7 +66,7 @@ module load matlab/2024b.1
 # MATLAB command for max energy optimization:
 MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},log10(10^${K}/${Kscale}),log10(10^${K}/${Kscale}),1,${ell1},${ell1},0.02,${ell2},${ell2},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,${optT}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 # MATLAB command for asymptotic simulations:
-#MATLAB_CMD="try; main_2DKS(${dt},${N},${K},${K},1,${ell1},${ell2},0.02,-1.0,-1.0,1,'plotOptIC','IC',1e-6,${T}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
+#MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},log10(10^${K}/${Kscale}),log10(10^${K}/${Kscale}),1,${ell1},${ell1},0.02,${ell2},${ell2},0.02,${T},${T},1,'plotOptIC','IC',IC_list,1e-6,${optT}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
 
 # --- Retry loop with success-string check ---
 attempt=0
