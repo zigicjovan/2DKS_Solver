@@ -1,0 +1,26 @@
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall
+INCLUDES = -I./mainFunctions -I./mainObjects -I./solverFunctions -I./solverObjects -I./processingFunctions
+
+TARGET = solver
+
+SOURCES = run_2DKS.cpp
+SOURCES += $(wildcard mainFunctions/*.cpp)
+SOURCES += $(wildcard mainObjects/*.cpp)
+SOURCES += $(wildcard solverFunctions/*.cpp)
+SOURCES += $(wildcard solverObjects/*.cpp)
+SOURCES += $(wildcard processingFunctions/*.cpp)
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(OBJECTS) -o $(TARGET)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+run:
+	./runscript.sh
+
+clean:
+	rm -f $(OBJECTS) $(TARGET)
