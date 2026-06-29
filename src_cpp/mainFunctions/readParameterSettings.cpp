@@ -20,6 +20,29 @@ Parameters readParameterSettings(int argc, char* argv[]) {
     params.bOptimizeSolution = std::stoi(argv[9]);
     params.dOptimizationTolerance = std::stod(argv[10]);
     params.bNumericalContinuation = std::stoi(argv[11]);
+
+    params.vLinearOperator.resize(params.iGridSize1 * params.iGridSize2);
+    params.vLaplaceOperator.resize(params.iGridSize1 * params.iGridSize2);
+    params.vDifferentialOperator1.resize(params.iGridSize1 * params.iGridSize2);
+    params.vDifferentialOperator2.resize(params.iGridSize1 * params.iGridSize2);
+    params.getMathematicalOperators();
+
+    params.coeffAlphaI = { 343038331393.0 / 1130875731271.0,
+                       288176579239.0 / 1140253497719.0,
+                       253330171251.0 / 677500478386.0,
+                       189462239225.0 / 1091147436423.0 };
+    params.coeffBetaI = { 35965327958.0 / 140127563663.0,
+                      19632212512.0 / 2700543775099.0,
+                     -173747147147.0 / 351772688865.0,
+                      91958533623.0 / 727726057489.0 };
+    params.coeffAlphaE = { 14.0 / 25.0,
+                       777974228744.0 / 1346157007247.0,
+                       251277807242.0 / 1103637129625.0,
+                       113091689455.0 / 220187950967.0 };
+    params.coeffBetaE = { 0.0,
+                     -251352885992.0 / 790610919619.0,
+                     -383714262797.0 / 1103637129625.0,
+                     -403360439203.0 / 1888264787188.0 };
     
     if (params.bOptimizeSolution == true)
         params.dOptimalTimeWindow = params.dTimeWindow;

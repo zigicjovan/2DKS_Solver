@@ -29,6 +29,8 @@ SolutionData::SolutionData(const Parameters& params, SolutionDataType storedData
     }
 }
 
+// Public functions
+
 std::size_t SolutionData::getSize() const {
     return vData.size();
 }
