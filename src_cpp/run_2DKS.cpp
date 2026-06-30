@@ -23,12 +23,9 @@ int main(int argc, char* argv[]) {
     SolutionData vObjectiveGradient(params, BackwardInitialState); 
     SolutionData vHistoryIntermediate(params, IntermediateHistory);
     SolutionData vHistoryRemainder(params, RemainderHistory);
-    // saveData(paths, vHistoryIntermediate, SolutionDataType::RemainderHistory, params.dTimeWindow);
-    // loadData(paths, vHistoryRemainder, SolutionDataType::RemainderHistory);
 
     // Step 4: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
     setSolutionState(params, paths, SolveInitialState, vStateInitial);
-        // look for dir optIC or init using InitialGuessName, bNumericalContinuation==0, dOptimalTimeWindow
     setSolutionInTime(params, paths, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
         // then if params.bOptimizeSolution == 1 updateDirectoryData
     if (params.bOptimizeSolution == 1) {
@@ -38,6 +35,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Step 5: Clean up  
+    saveData(paths, vStateInitial, InitialState);
+    // saveData(paths, vHistoryIntermediate, RemainderHistory, params.dTimeWindow);
+    // loadData(paths, vHistoryRemainder, RemainderHistory);
     // deleteData(paths);
     timer.stop();
 

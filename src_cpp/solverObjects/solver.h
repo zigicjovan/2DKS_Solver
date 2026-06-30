@@ -17,7 +17,7 @@ enum SolutionType {
     OptimizeLineSearchStepSize,           
 };
 
-void setSolutionState(const Parameters& params, const Pathnames& paths, SolutionType targetType, SolutionData& vTargetState);
+void setSolutionState(const Parameters& params, Pathnames& paths, SolutionType targetType, SolutionData& vTargetState);
 void setSolutionInTime(const Parameters& params, const Pathnames& paths, SolutionType targetType, SolutionData& vTargetStart, 
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 double getOptimalSolution(const Parameters& params, const Pathnames& paths, SolutionType targetType, SolutionData& vObjectiveGradient, 

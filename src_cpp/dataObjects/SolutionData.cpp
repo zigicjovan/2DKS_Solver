@@ -16,7 +16,6 @@ SolutionData::SolutionData(const Parameters& params, SolutionDataType storedData
         case TerminalState:
         case BackwardInitialState:
             vData.resize(iTotalGridPoints * 1);
-            std::cout << "Gridpoints: " << vData.size() << "\n";
             break;
         case IntermediateHistory:   
             vData.resize(iTotalGridPoints * params.iGetNumericalStepsPerFile() );

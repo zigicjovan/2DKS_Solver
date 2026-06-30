@@ -19,6 +19,8 @@ struct Pathnames {
     std::filesystem::path dirOptimizationLineSearch;
 
     // filenames
+    std::ostringstream strTestcase;
+    std::ostringstream strTestcaseGeneric;
     std::filesystem::path fForwardSolution; // note: multiple files 
     std::filesystem::path fBackwardSolution;
     std::filesystem::path fFourierSpectrumEvolution;
