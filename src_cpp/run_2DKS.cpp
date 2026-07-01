@@ -1,5 +1,6 @@
 #include "readParameterSettings.h"
 #include "writePathNames.h"
+#include "FFTWPlanner.h"
 #include "Timer.h"
 #include "solver.h"
 #include "SolutionData.h"
@@ -11,6 +12,7 @@ int main(int argc, char* argv[]) {
     // Step 1: prepare test case
     Parameters params = readParameterSettings(argc, argv);
     Pathnames paths = writePathNames(params);
+    FFTWPlanner fftwPlan(params);
 
     // Step 2: track computation time
     Timer timer;
@@ -25,11 +27,11 @@ int main(int argc, char* argv[]) {
     SolutionData vHistoryRemainder(params, RemainderHistory);
 
     // Step 4: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
-    setSolutionState(params, paths, SolveInitialState, vStateInitial);
-    setSolutionInTime(params, paths, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
+    setSolutionState(params, paths, fftwPlan, SolveInitialState, vStateInitial);
+    setSolutionInTime(params, paths, fftwPlan, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
         // then if params.bOptimizeSolution == 1 updateDirectoryData
     if (params.bOptimizeSolution == 1) {
-        double dOptimalSolution = getOptimalSolution(params, paths, OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
+        double dOptimalSolution = getOptimalSolution(params, paths, fftwPlan, OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
             // then updateDirectoryData: save diags and delete forward solution in dir
         std::cout << dOptimalSolution;
     }

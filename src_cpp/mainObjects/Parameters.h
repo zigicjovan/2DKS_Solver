@@ -11,17 +11,13 @@
 using Complex = std::complex<double>;
 constexpr double dPI = 3.141592653589793238462643383279502884; // reliable proxy
 const std::complex<double> Imaginary(0.0, 1.0);
-int getIndex(int i, int j, int N);
+std::size_t getIndex(std::size_t i, std::size_t j, std::size_t N);
 
 class Parameters {
 private:
     std::vector<double> _vGridpoints1;
     std::vector<double> _vGridpoints2;
-    std::vector<double> _vGrid1;
-    std::vector<double> _vGrid2;
 
-    std::vector<double> _vWavenumbersNonlinear1;
-    std::vector<double> _vWavenumbersNonlinear2;
     std::vector<double> _vWavenumbersLinear1;
     std::vector<double> _vWavenumbersLinear2;
 
@@ -39,9 +35,10 @@ private:
 
 public:
     // numerical parameters
-    std::string strInitalGuessName;  
-    int iGridSize1;
-    int iGridSize2;
+    std::string strInitialGuessName;  
+    std::size_t iGridSize1;
+    std::size_t iGridSize2;
+    std::size_t iTotalGridSize;
     double dTimeStep;
     double dSpaceStep;
     double dInitialEnergy;
@@ -50,6 +47,11 @@ public:
     double dDomainSize1;
     double dDomainSize2;
     double dTimeWindow;
+
+    std::vector<double> vGrid1;
+    std::vector<double> vGrid2;
+    std::vector<double> vWavenumbersNonlinear1;
+    std::vector<double> vWavenumbersNonlinear2;
 
     std::vector<Complex> vLinearOperator;
     std::vector<Complex> vLaplaceOperator;

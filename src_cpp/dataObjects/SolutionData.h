@@ -33,7 +33,10 @@ public:
     std::size_t getSize() const;
     std::vector<Complex>& getData();                 
     std::vector<Complex>& setData(const std::vector<Complex>& stateData, int stateNumber);  
+    Complex& operator()(const Parameters& params, std::size_t i, std::size_t j, int stateNumber);
+    Complex* getStatePointer(const Parameters& params, int stateNumber);
     Complex* getDataPointer(); // binary data
+    double getEnergyL2(const Parameters& params, const Complex* vState);
 };
 
 #endif

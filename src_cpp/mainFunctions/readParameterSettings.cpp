@@ -7,9 +7,10 @@
 Parameters readParameterSettings(int argc, char* argv[]) {
     Parameters params;
 
-    params.strInitalGuessName = argv[1];
+    params.strInitialGuessName = argv[1];
     params.iGridSize1 = std::stoi(argv[2]);
     params.iGridSize2 = std::stoi(argv[3]);
+    params.iTotalGridSize = params.iGridSize1 * params.iGridSize2;
     params.dTimeStep = std::stod(argv[4]);
     params.dInitialEnergy = std::pow(10.0, std::stod(argv[5]));
     params.dDomainFactor1 = std::stod(argv[6]);
@@ -21,10 +22,10 @@ Parameters readParameterSettings(int argc, char* argv[]) {
     params.dOptimizationTolerance = std::stod(argv[10]);
     params.bNumericalContinuation = std::stoi(argv[11]);
 
-    params.vLinearOperator.resize(params.iGridSize1 * params.iGridSize2);
-    params.vLaplaceOperator.resize(params.iGridSize1 * params.iGridSize2);
-    params.vDifferentialOperator1.resize(params.iGridSize1 * params.iGridSize2);
-    params.vDifferentialOperator2.resize(params.iGridSize1 * params.iGridSize2);
+    params.vLinearOperator.resize(params.iTotalGridSize);
+    params.vLaplaceOperator.resize(params.iTotalGridSize);
+    params.vDifferentialOperator1.resize(params.iTotalGridSize);
+    params.vDifferentialOperator2.resize(params.iTotalGridSize);
     params.getMathematicalOperators();
 
     params.coeffAlphaI = { 343038331393.0 / 1130875731271.0,
@@ -49,7 +50,7 @@ Parameters readParameterSettings(int argc, char* argv[]) {
     else
         params.dOptimalTimeWindow = std::pow(10.0, std::stod(argv[12]));
 
-    std::cout << "Parameter settings:\nIC " << params.strInitalGuessName 
+    std::cout << "Parameter settings:\nIC " << params.strInitialGuessName 
               << ", N_x1 " << params.iGridSize1 
               << ", N_x2 " << params.iGridSize2       
               << ", dt " << params.dTimeStep         

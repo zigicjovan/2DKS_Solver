@@ -12,7 +12,7 @@ Pathnames writePathNames(const Parameters &params) {
     Pathnames paths;
 
     // prepare filenames
-    paths.strTestcase << "_IC_" << params.strInitalGuessName 
+    paths.strTestcase << "_IC_" << params.strInitialGuessName 
         << "_N1_" << params.iGridSize1 
         << "_N2_" << params.iGridSize2     
         << "_dt_" << std::scientific << std::setprecision(1) << params.dTimeStep         
@@ -26,7 +26,7 @@ Pathnames writePathNames(const Parameters &params) {
         << "_optT_" << std::scientific << std::setprecision(2) << params.dOptimalTimeWindow      
         << ".dat";
     
-    paths.strTestcaseGeneric << "_IC_" << params.strInitalGuessName 
+    paths.strTestcaseGeneric << "_IC_" << params.strInitialGuessName 
         << "_N1_" << params.iGridSize1 
         << "_N2_" << params.iGridSize2     
         << "_dt_" << std::scientific << std::setprecision(1) << params.dTimeStep         

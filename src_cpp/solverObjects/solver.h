@@ -4,6 +4,9 @@
 #include "Parameters.h"
 #include "Pathnames.h"
 #include "SolutionData.h"
+#include "FFTWPlanner.h"
+
+#include <complex>
 
 enum SolutionType {
     // setSolutionState: initialize/load/save optIC, save {bwd,optTC (every time)}
@@ -17,10 +20,13 @@ enum SolutionType {
     OptimizeLineSearchStepSize,           
 };
 
-void setSolutionState(const Parameters& params, Pathnames& paths, SolutionType targetType, SolutionData& vTargetState);
-void setSolutionInTime(const Parameters& params, const Pathnames& paths, SolutionType targetType, SolutionData& vTargetStart, 
+using Complex = std::complex<double>;
+
+void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionData& vTargetState);
+void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetState);
+void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetStart, 
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
-double getOptimalSolution(const Parameters& params, const Pathnames& paths, SolutionType targetType, SolutionData& vObjectiveGradient, 
+double getOptimalSolution(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vObjectiveGradient, 
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 
 #endif

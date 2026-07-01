@@ -8,22 +8,22 @@
 
 using Complex = std::complex<double>;
 
-SolutionData::SolutionData(const Parameters& params, SolutionDataType storedDataType) {
-    int iTotalGridPoints = params.iGridSize1 * params.iGridSize2;
+// Fourier space solution data
 
+SolutionData::SolutionData(const Parameters& params, SolutionDataType storedDataType) {
     switch (storedDataType) {
         case InitialState:
         case TerminalState:
         case BackwardInitialState:
-            vData.resize(iTotalGridPoints * 1);
+            vData.resize(params.iTotalGridSize * 1);
             break;
         case IntermediateHistory:   
-            vData.resize(iTotalGridPoints * params.iGetNumericalStepsPerFile() );
-            std::cout << "Intermediate States: " << vData.size() / iTotalGridPoints << "\n";
+            vData.resize(params.iTotalGridSize * params.iGetNumericalStepsPerFile() );
+            std::cout << "Intermediate States: " << vData.size() / params.iTotalGridSize << "\n";
             break;
         case RemainderHistory:
-            vData.resize(iTotalGridPoints * ( params.iGetNumericalSteps() % params.iGetNumericalStepsPerFile()) );
-            std::cout << "Remainder States: " << vData.size() / iTotalGridPoints << "\n";
+            vData.resize(params.iTotalGridSize * ( params.iGetNumericalSteps() % params.iGetNumericalStepsPerFile()) );
+            std::cout << "Remainder States: " << vData.size() / params.iTotalGridSize << "\n";
             break;
     }
 }
@@ -44,6 +44,26 @@ std::vector<Complex>& SolutionData::setData(const std::vector<Complex>& stateDat
     return vData;
 }
 
+Complex& SolutionData::operator()(const Parameters& params, std::size_t i, std::size_t j, int stateNumber)
+{
+    return vData[stateNumber * params.iTotalGridSize + j * params.iGridSize1 + i];
+}
+
+Complex* SolutionData::getStatePointer(const Parameters& params, int stateNumber)
+{
+    return vData.data() + stateNumber * params.iTotalGridSize;
+}
+
 Complex* SolutionData::getDataPointer() {
     return vData.data();
+}
+
+double SolutionData::getEnergyL2(const Parameters& params, const Complex* vFourierState) {
+    double energy = 0.0;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        energy += std::norm(vFourierState[p]);
+
+    energy *= params.dDomainFactor1 * params.dDomainFactor2
+            * std::pow(2.0 * dPI, 2) / std::pow(static_cast<double>(params.iTotalGridSize), 2);
+    return energy;
 }
