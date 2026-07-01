@@ -121,13 +121,14 @@ void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& f
             break;
         }
         case SolveTerminalState: {
+            // TO DO: take final state from vHistoryRemainder
             break;
         }
         case SolveForwardInTime:
         case SolveBackwardInTime:
         case OptimizeEnergyAmplification:
         case OptimizeLineSearchStepSize:
-            break;
+            break; // Do nothing
     }  
 }
 
@@ -135,16 +136,24 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     switch (targetType) {
         case SolveForwardInTime: {
+            // TO DO: solve forward problem using IMEX RK4 [create function]
+            // updateDirectoryData: save fwd
+            // saveData(paths, vHistoryIntermediate, RemainderHistory, params.dTimeWindow);
+            // saveData(paths, vHistoryIntermediate, RemainderHistory, params.dTimeWindow);
+            // if params.bOptimizeSolution == 1 updateDirectoryData
             break;
         }
         case SolveBackwardInTime: {
+            // TO DO: solve backward problem using IMEX RK4 [create function]
+            // loadData(paths, vHistoryRemainder, RemainderHistory);
+            // updateDirectoryData: load fwd, save bwd
             break;
         }
         case SolveInitialState:
         case SolveTerminalState:
         case OptimizeEnergyAmplification:
         case OptimizeLineSearchStepSize:
-            break;
+            break; // Do nothing
     }  
 }
 
@@ -152,16 +161,20 @@ double getOptimalSolution(const Parameters& params, const Pathnames& paths, FFTW
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     switch (targetType) {
         case OptimizeEnergyAmplification: {
+            // TO DO: solve RCG  [create function]
+            // updateDirectoryData: save diags
             break;
         }
         case OptimizeLineSearchStepSize: {
+            // TO DO: solve Brent [create function]
+            // updateDirectoryData: save diags
             break;
         }
         case SolveForwardInTime:
         case SolveBackwardInTime:
         case SolveInitialState:
         case SolveTerminalState:
-            break;
+            break; // Do nothing
     } 
     return 0.0;
 }
