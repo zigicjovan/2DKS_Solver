@@ -15,13 +15,6 @@ enum SolutionDataType {
     BackwardInitialState,       
     IntermediateHistory,        
     RemainderHistory,           
-    
-    // // Local scope:
-    // EnergyEvolution,            // write energy to directory
-    // FourierSpectrumEvolution,   // write four to directory
-    // SolutionBranch,             // load, manipulate, write branch to directory
-    // OptDiagnostics,             // write diag iterations to directory
-    // OptLineSearch               // write brent iterations to directory
 };
 
 class SolutionData {

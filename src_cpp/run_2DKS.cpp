@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
     // Step 2: track computation time
     Timer timer;
     timer.start(); 
-    // timer.printInterval("");
 
     // Step 3: allocate storage for states and time-dependent solutions
     SolutionData vStateInitial(params, InitialState); 
@@ -28,14 +27,11 @@ int main(int argc, char* argv[]) {
 
     // Step 4: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
     setSolutionState(params, paths, fftwPlan, SolveInitialState, vStateInitial);
-    setSolutionInTime(params, paths, fftwPlan, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
-    if (params.bOptimizeSolution == 1) {
-        double dOptimalSolution = getOptimalSolution(params, paths, fftwPlan, OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
-        std::cout << dOptimalSolution;
-    }
+    setSolutionInTime(params, paths, fftwPlan, timer, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
+    double dOptimalSolution = getOptimalSolution(params, paths, fftwPlan, timer, OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
+    std::cout << "Maximum Energy Amplification: " << dOptimalSolution;
 
     // Step 5: Clean up  
-    saveData(paths, vStateInitial, InitialState);
     // deleteData(paths);
     timer.stop();
 
