@@ -67,6 +67,7 @@ void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner
         throw std::runtime_error(
             "Unknown initial condition: " + params.strInitialGuessName);
     }
+    vTargetState.setInitialEnergyL2(params);
 }
 
 void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetState) {

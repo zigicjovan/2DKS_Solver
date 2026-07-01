@@ -38,19 +38,16 @@ std::vector<Complex>& SolutionData::getData() {
     return vData;
 }
 
-std::vector<Complex>& SolutionData::setData(const std::vector<Complex>& stateData, int stateIndex) {
+void SolutionData::setData(const std::vector<Complex>& stateData, int stateIndex) {
     // stateData replaces part of vData at stateIndex
     std::copy(stateData.begin(), stateData.end(), vData.begin() + stateIndex);
-    return vData;
 }
 
-Complex& SolutionData::operator()(const Parameters& params, std::size_t i, std::size_t j, int stateNumber)
-{
+Complex& SolutionData::operator()(const Parameters& params, std::size_t i, std::size_t j, int stateNumber) {
     return vData[stateNumber * params.iTotalGridSize + j * params.iGridSize1 + i];
 }
 
-Complex* SolutionData::getStatePointer(const Parameters& params, int stateNumber)
-{
+Complex* SolutionData::getStatePointer(const Parameters& params, int stateNumber) {
     return vData.data() + stateNumber * params.iTotalGridSize;
 }
 
@@ -58,11 +55,23 @@ Complex* SolutionData::getDataPointer() {
     return vData.data();
 }
 
+void SolutionData::setInitialEnergyL2(const Parameters& params) {
+    double energyL2 = 0.0;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        energyL2 += std::norm(vData[p]);
+    energyL2 *= params.dDomainFactor1 * params.dDomainFactor2
+            * std::pow(2.0 * dPI, 2) / std::pow(static_cast<double>(params.iTotalGridSize), 2);
+    
+    double normL2 = std::sqrt(energyL2);
+    double scale = std::sqrt(params.dInitialEnergy) / normL2;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        vData[p] *= scale;
+}
+
 double SolutionData::getEnergyL2(const Parameters& params, const Complex* vFourierState) {
     double energy = 0.0;
     for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
         energy += std::norm(vFourierState[p]);
-
     energy *= params.dDomainFactor1 * params.dDomainFactor2
             * std::pow(2.0 * dPI, 2) / std::pow(static_cast<double>(params.iTotalGridSize), 2);
     return energy;
