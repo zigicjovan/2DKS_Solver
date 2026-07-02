@@ -67,6 +67,6 @@ Pathnames writePathNames(const Parameters &params) {
     paths.fOptimizationDiagnostics = paths.dirOptimizationDiagnostics / ( "diag" + paths.strTestcase.str() );
     paths.fOptimizationLineSearch = paths.dirOptimizationLineSearch / ( "brent" + paths.strTestcase.str() );
 
-    std::cout << "Directory name:\n" << paths.strTestcase.str() << std::endl;
+    std::cout << "Directory name: " << paths.strTestcase.str() << std::endl;
     return paths;
 }

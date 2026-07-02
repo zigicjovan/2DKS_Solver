@@ -70,12 +70,12 @@ std::vector<double> Parameters::setFourierModesLinear2() {
 
 // Public functions
 
-int Parameters::iGetNumericalSteps() const {   
-    return static_cast<int>(std::round(dTimeWindow / dTimeStep));
+std::size_t Parameters::iGetNumericalSteps() const {   
+    return static_cast<std::size_t>(std::round(dTimeWindow / dTimeStep));
 }
 
-int Parameters::iGetNumericalStepsPerFile() const {   
-    return static_cast<int>(std::round( 4e7 / (iTotalGridSize) ));
+std::size_t Parameters::iGetNumericalStepsPerFile() const {   
+    return static_cast<std::size_t>(std::round( 4e7 / (iTotalGridSize) ));
 }
 
 void Parameters::getMathematicalOperators() {
@@ -100,6 +100,14 @@ void Parameters::getMathematicalOperators() {
     _vSpectrumLinear1.resize(iTotalGridSize);
     _vSpectrumLinear2.resize(iTotalGridSize);
 
+    vLinearOperator.resize(iTotalGridSize);
+    vLaplaceOperator.resize(iTotalGridSize);
+    vDifferentialOperator1.resize(iTotalGridSize);
+    vDifferentialOperator2.resize(iTotalGridSize);
+    vDealiasingOperator.resize(iTotalGridSize);
+    const double kCut1 = (2.0 / 3.0) * (static_cast<double>(iGridSize1) / 2.0);
+    const double kCut2 = (2.0 / 3.0) * (static_cast<double>(iGridSize2) / 2.0);
+
     for (std::size_t i = 0; i < iGridSize2; ++i) {
         for (std::size_t j = 0; j < iGridSize1; ++j) {
             const std::size_t p = getIndex(i, j, iGridSize1);
@@ -111,10 +119,14 @@ void Parameters::getMathematicalOperators() {
             _vSpectrumLinear2[p] = _vWavenumbersLinear2[i];
             const double _dLaplacianValue = _vSpectrumLinear1[p] * _vSpectrumLinear1[p] + _vSpectrumLinear2[p] * _vSpectrumLinear2[p];
             const double _dBilaplacianValue = _dLaplacianValue * _dLaplacianValue;
+            
             vLinearOperator[p] = -_dLaplacianValue + _dBilaplacianValue;
             vLaplaceOperator[p] = -_dLaplacianValue;
             vDifferentialOperator1[p] = Imaginary * _vSpectrumNonlinear1[p];
             vDifferentialOperator2[p] = Imaginary * _vSpectrumNonlinear2[p];
+
+            const bool keepMode = std::abs(vWavenumbersNonlinear1[j]) <= kCut1 && std::abs(vWavenumbersNonlinear2[i]) <= kCut2;
+            vDealiasingOperator[p] = keepMode ? Complex{1.0, 0.0} : Complex{0.0, 0.0};
         }   
     }
 }

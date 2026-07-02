@@ -57,6 +57,7 @@ public:
     std::vector<Complex> vLaplaceOperator;
     std::vector<Complex> vDifferentialOperator1;
     std::vector<Complex> vDifferentialOperator2;
+    std::vector<Complex> vDealiasingOperator;
 
     std::array<double, 4> coeffAlphaI;
     std::array<double, 4> coeffBetaI;
@@ -73,8 +74,8 @@ public:
     // for extended-time simulations
     double dOptimalTimeWindow; 
 
-    int iGetNumericalSteps() const;
-    int iGetNumericalStepsPerFile() const;
+    std::size_t iGetNumericalSteps() const;
+    std::size_t iGetNumericalStepsPerFile() const;
     void getMathematicalOperators();
 
 };

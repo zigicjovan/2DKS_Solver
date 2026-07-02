@@ -27,7 +27,7 @@ void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner
 void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetState);
 void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vTargetStart, 
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
-double getOptimalSolution(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vObjectiveGradient, 
+double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vObjectiveGradient, 
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 
 #endif

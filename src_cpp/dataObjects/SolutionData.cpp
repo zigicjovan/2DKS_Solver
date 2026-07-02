@@ -47,6 +47,14 @@ Complex& SolutionData::operator()(const Parameters& params, std::size_t i, std::
     return vData[stateNumber * params.iTotalGridSize + j * params.iGridSize1 + i];
 }
 
+Complex& SolutionData::operator[](std::size_t idx) {
+    return vData[idx];
+}
+
+Complex& SolutionData::atState(const Parameters& params, std::size_t p, int stateNumber) {
+    return vData[stateNumber * params.iTotalGridSize + p];
+}
+
 Complex* SolutionData::getStatePointer(const Parameters& params, int stateNumber) {
     return vData.data() + stateNumber * params.iTotalGridSize;
 }

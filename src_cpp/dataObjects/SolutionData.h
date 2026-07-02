@@ -26,7 +26,10 @@ public:
     std::size_t getSize() const;
     std::vector<Complex>& getData();                 
     void setData(const std::vector<Complex>& stateData, int stateNumber);  
+
     Complex& operator()(const Parameters& params, std::size_t i, std::size_t j, int stateNumber);
+    Complex& operator[](std::size_t idx);
+    Complex& atState(const Parameters& params, std::size_t p, int stateNumber);
     Complex* getStatePointer(const Parameters& params, int stateNumber);
     Complex* getDataPointer(); // binary data
     void setInitialEnergyL2(const Parameters& params);

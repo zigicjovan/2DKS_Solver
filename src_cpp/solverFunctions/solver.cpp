@@ -139,14 +139,63 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     switch (targetType) {
         case SolveForwardInTime: {
-            // TO DO: solve forward problem using IMEX RK4 [create function]
-            // saveData: IntermediateHistory, RemainderHistory, TerminalState
-            // saveData(paths, vHistoryIntermediate, IntermediateHistory, params.dTimeWindow);
-            // saveData(paths, vHistoryRemainder, RemainderHistory, dCurrentT);
-            if (params.bOptimizeSolution == 0) {
-                // save EnergyEvolution, FourierSpectrumEvolution
+            SolutionData vStateCurrent = vTargetStart; // phi_{i} = phi_{0}
+            SolutionData vStateNext(params, InitialState); // phi_{i+1}
+            SolutionData vNonlinearTermCurrent(params, InitialState); // N(phi_{i})
+            for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+                vNonlinearTermCurrent[p] = Complex{0.0, 0.0};
+            SolutionData vNonlinearTermNext(params, InitialState); // N(phi_{i+1})
+            SolutionData vFunctionSpatialDerivative1(params, InitialState); // (phi_{i})_{x_1}
+            SolutionData vFunctionSpatialDerivative2(params, InitialState); // (phi_{i})_{x_2}
+            SolutionData vSquareFunctionSpatialDerivative1(params, InitialState); // (phi_{i})_{x_1}^2
+            SolutionData vSquareFunctionSpatialDerivative2(params, InitialState); // (phi_{i})_{x_2}^2
+            for (std::size_t timestep = 1; timestep < params.iGetNumericalSteps(); ++timestep) {
+                for (std::size_t k = 0; k < 4; ++k) {
+                    // f_x and f_y in Fourier space
+                    for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
+                        vFunctionSpatialDerivative1[p] = params.vDifferentialOperator1[p] * vStateCurrent[p];
+                        vFunctionSpatialDerivative2[p] = params.vDifferentialOperator2[p] * vStateCurrent[p];
+                    }
+                    // pseudospectral products f_x^2 and f_y^2 in physical space
+                    fftwPlan.ifft2InPlace(params, vFunctionSpatialDerivative1.getDataPointer());
+                    fftwPlan.ifft2InPlace(params, vFunctionSpatialDerivative2.getDataPointer());
+                    for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
+                        const double ux = vFunctionSpatialDerivative1[p].real();
+                        const double uy = vFunctionSpatialDerivative2[p].real();
+                        vSquareFunctionSpatialDerivative1[p] = Complex{ux * ux, 0.0};
+                        vSquareFunctionSpatialDerivative2[p] = Complex{uy * uy, 0.0};
+                    }
+                    // build nonlinear term in physical space
+                    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+                        vNonlinearTermNext[p] = 0.5 * (vSquareFunctionSpatialDerivative1[p] + vSquareFunctionSpatialDerivative2[p]);
+                    // dealias transformed nonlinear term
+                    fftwPlan.fft2InPlace(vNonlinearTermNext.getDataPointer());
+                    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+                        vNonlinearTermNext[p] *= params.vDealiasingOperator[p];
+                    // IMEX RK4 update
+                    for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
+                        const Complex Lin = params.vLinearOperator[p];
+                        vStateNext[p] = (
+                            (1.0 - params.dTimeStep * params.coeffBetaI[k] * Lin) * vStateCurrent[p]
+                            - params.dTimeStep * params.coeffAlphaE[k] * vNonlinearTermNext[p]
+                            - params.dTimeStep * params.coeffBetaE[k]  * vNonlinearTermCurrent[p]
+                            ) / (1.0 + params.dTimeStep * params.coeffAlphaI[k] * Lin);
+                    }
+                    std::swap(vStateCurrent, vStateNext);
+                    std::swap(vNonlinearTermCurrent, vNonlinearTermNext);
+                }
+                // correction of non-zero mean solution
+                vStateNext[0] = Complex{0.0, 0.0};
+                // TO DO: validate against matlab
+                // saveData: IntermediateHistory, RemainderHistory, TerminalState
+                // saveData(paths, vHistoryIntermediate, IntermediateHistory, params.dTimeWindow);
+                // saveData(paths, vHistoryRemainder, RemainderHistory, dCurrentT);
+                if (params.bOptimizeSolution == 0) {
+                    // save EnergyEvolution, FourierSpectrumEvolution
+                }
             }
-            timer.printInterval("");
+            timer.printInterval("Forward problem solved at ");
+            std::cout << "\n";
             break;
         }
         case SolveBackwardInTime: {
@@ -154,7 +203,8 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
             // loadData(paths, vHistoryIntermediate, IntermediateHistory, params.dTimeWindow);
             // loadData(paths, vHistoryRemainder, RemainderHistory, dCurrentT);
             // saveData: BackwardInitialState
-            timer.printInterval("");
+            timer.printInterval("Backward problem solved at ");
+            std::cout << "\n";
             break;
         }
         case SolveInitialState:
@@ -167,6 +217,7 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
 
 double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vObjectiveGradient, 
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+    double targetValue = 0.0; // energy or step size
     switch (targetType) {
         case OptimizeEnergyAmplification: {
             if (params.bOptimizeSolution == 1) {
@@ -178,13 +229,15 @@ double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanne
                 params.bOptimizeSolution = 0; 
                 setSolutionInTime(params, paths, fftwPlan, timer, SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
             }
-            timer.printInterval("");
+            timer.printInterval("Energy maximization problem solved at ");
+            std::cout << "\n";
             break;
         }
         case OptimizeLineSearchStepSize: {
             // TO DO: solve Brent [create function]
             // save OptLineSearch
-            timer.printInterval("");
+            timer.printInterval("Step size optimization problem solved at ");
+            std::cout << "\n";
             break;
         }
         case SolveForwardInTime:
@@ -193,5 +246,5 @@ double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanne
         case SolveTerminalState:
             break; // Do nothing
     } 
-    return 0.0;
+    return targetValue;
 }
