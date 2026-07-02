@@ -9,13 +9,19 @@
 
 #include <complex>
 
-enum SolutionType {
+enum StateSolutionType {
     // TO DO: setSolutionState: initialize/load/save optIC, save {bwd,optTC (every time)}
     SolveInitialState,               
-    SolveTerminalState,  
+    SolveTerminalState,      
+};
+
+enum TimeSolutionType {
     // TO DO: setSolutionInTime: load data, check CFL, Nonlinear dealiasing, IMEX RK4, save {fwdALL (optimizer)}, save {energy,spectrum (last time)}, load {fwd (bwd)}  
     SolveForwardInTime,       
-    SolveBackwardInTime, 
+    SolveBackwardInTime,        
+};
+
+enum OptimizeSolutionType {
     // TO DO: optimizeSolution: RCG, brent, save {optIC, branch, diags, brent} 
     OptimizeEnergyAmplification,      
     OptimizeLineSearchStepSize,           
@@ -24,10 +30,10 @@ enum SolutionType {
 using Complex = std::complex<double>;
 
 void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionData& vTargetState);
-void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetState);
-void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vTargetStart, 
+void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, StateSolutionType targetType, SolutionData& vTargetState);
+void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, TimeSolutionType targetType, SolutionData& vTargetStart, 
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
-double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vObjectiveGradient, 
+double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, OptimizeSolutionType targetType, SolutionData& vObjectiveGradient, 
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 
 #endif

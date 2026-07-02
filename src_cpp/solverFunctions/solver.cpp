@@ -71,7 +71,7 @@ void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner
     vTargetState.setInitialEnergyL2(params);
 }
 
-void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionType targetType, SolutionData& vTargetState) {
+void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, StateSolutionType targetType, SolutionData& vTargetState) {
     switch (targetType) {
         case SolveInitialState: {               
             if (params.bNumericalContinuation == 0) {
@@ -127,15 +127,10 @@ void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& f
             saveData(paths, vTargetState, TerminalState);
             break;
         }
-        case SolveForwardInTime:
-        case SolveBackwardInTime:
-        case OptimizeEnergyAmplification:
-        case OptimizeLineSearchStepSize:
-            break; // Do nothing
     }  
 }
 
-void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vTargetStart, 
+void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, TimeSolutionType targetType, SolutionData& vTargetStart, 
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     switch (targetType) {
         case SolveForwardInTime: {
@@ -207,15 +202,10 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
             std::cout << "\n";
             break;
         }
-        case SolveInitialState:
-        case SolveTerminalState:
-        case OptimizeEnergyAmplification:
-        case OptimizeLineSearchStepSize:
-            break; // Do nothing
     }  
 }
 
-double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, SolutionType targetType, SolutionData& vObjectiveGradient, 
+double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, OptimizeSolutionType targetType, SolutionData& vObjectiveGradient, 
     SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     double targetValue = 0.0; // energy or step size
     switch (targetType) {
@@ -240,11 +230,6 @@ double getOptimalSolution(Parameters& params, const Pathnames& paths, FFTWPlanne
             std::cout << "\n";
             break;
         }
-        case SolveForwardInTime:
-        case SolveBackwardInTime:
-        case SolveInitialState:
-        case SolveTerminalState:
-            break; // Do nothing
     } 
     return targetValue;
 }
