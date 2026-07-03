@@ -42,6 +42,7 @@ public:
     double dTimeStep;
     double dSpaceStep;
     double dInitialEnergy;
+    double dEnergyFactor;
     double dDomainFactor1;
     double dDomainFactor2;
     double dDomainSize1;
@@ -58,6 +59,12 @@ public:
     std::vector<Complex> vDifferentialOperator1;
     std::vector<Complex> vDifferentialOperator2;
     std::vector<Complex> vDealiasingOperator;
+
+    std::vector<double> vH1Weight;
+    std::vector<double> vH2Weight;
+
+    std::vector<std::size_t> vRadialBin;
+    std::size_t iMaxRadialBin;
 
     std::array<double, 4> coeffAlphaI;
     std::array<double, 4> coeffBetaI;

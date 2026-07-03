@@ -2,6 +2,8 @@
 #define SOLUTIONDATA_H
 
 #include "Parameters.h"
+#include "Pathnames.h"
+#include "FFTWPlanner.h"
 
 #include <complex>
 #include <vector>
@@ -33,7 +35,10 @@ public:
     Complex* getStatePointer(const Parameters& params, int stateNumber);
     Complex* getDataPointer(); // binary data
     void setInitialEnergyL2(const Parameters& params);
-    double getEnergyL2(const Parameters& params, const Complex* vState);
+    double getEnergyL2(const Parameters& params) const;
+    double getEnergyH1(const Parameters& params) const;
+    double getEnergyH2(const Parameters& params) const;
+    std::vector<double> getRadialSpectrum(const Parameters& params) const;
 };
 
 #endif

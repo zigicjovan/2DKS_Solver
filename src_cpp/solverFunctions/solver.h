@@ -29,6 +29,9 @@ enum OptimizeSolutionType {
 
 using Complex = std::complex<double>;
 
+void saveSolutionDiagnostics(const Parameters& params, const Pathnames& paths, const std::vector<std::array<double, 4>>& vDiagnostics);
+void saveSolutionSpectrum(const Parameters& params, const Pathnames& paths, const std::vector<std::vector<double>>& vSpectrumHistory);
+void checkCFL(const Parameters& params, SolutionData& vData1, SolutionData& vData2);
 void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionData& vTargetState);
 void setSolutionState(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, StateSolutionType targetType, SolutionData& vTargetState);
 void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, TimeSolutionType targetType, SolutionData& vTargetStart, 

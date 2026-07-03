@@ -6,6 +6,12 @@
 #include "FFTWPlanner.h"
 #include "Timer.h"
 
+#include <fstream>
+#include <iomanip>
+#include <stdexcept>
+#include <array>
+#include <vector>
+
 #include <filesystem>
 #include <string>
 #include <iostream>
@@ -18,6 +24,38 @@
 #include <stdexcept>
 
 using Complex = std::complex<double>;
+
+void saveSolutionDiagnostics(const Parameters& params, const Pathnames& paths, const std::vector<std::array<double, 4>>& vDiagnostics) {
+    std::ofstream file(paths.fEnergyEvolution);
+    file << std::setprecision(16) << std::scientific;
+    for (const auto& row : vDiagnostics)
+        file << row[0] << ' ' << row[1] << ' ' << row[2] << ' ' << row[3] << '\n';
+}
+
+void saveSolutionSpectrum(const Parameters& params, const Pathnames& paths, const std::vector<std::vector<double>>& vSpectrumHistory) {
+    std::ofstream file(paths.fFourierSpectrumEvolution);
+    file << std::setprecision(16) << std::scientific;
+    for (std::size_t r = 0; r <= params.iMaxRadialBin; ++r) {
+        file << r;
+        for (const auto& spectrum : vSpectrumHistory)
+            file << ' ' << spectrum[r];
+        file << '\n';
+    }
+}
+
+void checkCFL(const Parameters& params, SolutionData& vData1, SolutionData& vData2) {
+    constexpr double CFL_LIMIT = 0.9;
+    double dMaxGradientMagnitude = 0.0;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
+        const double vel = std::hypot(vData1[p].real(), vData2[p].real()); // std::sqrt(ux * ux + uy * uy)
+        dMaxGradientMagnitude = std::max(dMaxGradientMagnitude, vel);
+    }
+    const double cflValue = params.dTimeStep * dMaxGradientMagnitude / params.dSpaceStep;
+    if (cflValue > CFL_LIMIT) {
+        std::cerr << "ERROR: CFL condition violated." << " Maximum gradient magnitude = " << dMaxGradientMagnitude << ", CFL value = " << cflValue << ", CFL Limit = " << CFL_LIMIT << '\n';
+        std::exit(EXIT_FAILURE);
+    }
+}
 
 void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, SolutionData& vTargetState) {  
     if (params.strInitialGuessName == "s1") {
@@ -32,8 +70,7 @@ void setInitialCondition(const Parameters& params, Pathnames& paths, FFTWPlanner
                     + std::sin(x / params.dDomainFactor1) + std::sin(y / params.dDomainFactor2), 0.0);
             }
         }
-        Complex* vTempState = vTargetState.getStatePointer(params, stateNumber);
-        fftwPlan.fft2InPlace(vTempState);
+        fftwPlan.fft2InPlace(vTargetState.getDataPointer());
     }
     else if (params.strInitialGuessName == "randfour") {
         const int stateNumber = 0;
@@ -134,6 +171,12 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     switch (targetType) {
         case SolveForwardInTime: {
+            double dTimePoint = 0.0;
+            std::vector<std::array<double, 4>> vDiagnostics;
+            vDiagnostics.reserve(params.iGetNumericalSteps() + 1);
+            std::vector<std::vector<double>> vSpectrumHistory;
+            vSpectrumHistory.reserve(params.iGetNumericalSteps() + 1);
+
             SolutionData vStateCurrent = vTargetStart; // phi_{i} = phi_{0}
             SolutionData vStateNext(params, InitialState); // phi_{i+1}
             SolutionData vNonlinearTermCurrent(params, InitialState); // N(phi_{i})
@@ -144,7 +187,11 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
             SolutionData vFunctionSpatialDerivative2(params, InitialState); // (phi_{i})_{x_2}
             SolutionData vSquareFunctionSpatialDerivative1(params, InitialState); // (phi_{i})_{x_1}^2
             SolutionData vSquareFunctionSpatialDerivative2(params, InitialState); // (phi_{i})_{x_2}^2
+
+            vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(params), vStateCurrent.getEnergyH1(params), vStateCurrent.getEnergyH2(params) });
+            vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum(params));
             for (std::size_t timestep = 1; timestep < params.iGetNumericalSteps(); ++timestep) {
+                dTimePoint = timestep * params.dTimeStep;
                 for (std::size_t k = 0; k < 4; ++k) {
                     // f_x and f_y in Fourier space
                     for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
@@ -154,6 +201,7 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
                     // pseudospectral products f_x^2 and f_y^2 in physical space
                     fftwPlan.ifft2InPlace(params, vFunctionSpatialDerivative1.getDataPointer());
                     fftwPlan.ifft2InPlace(params, vFunctionSpatialDerivative2.getDataPointer());
+                    checkCFL(params, vFunctionSpatialDerivative1, vFunctionSpatialDerivative2);
                     for (std::size_t p = 0; p < params.iTotalGridSize; ++p) {
                         const double ux = vFunctionSpatialDerivative1[p].real();
                         const double uy = vFunctionSpatialDerivative2[p].real();
@@ -179,17 +227,18 @@ void setSolutionInTime(const Parameters& params, const Pathnames& paths, FFTWPla
                     std::swap(vStateCurrent, vStateNext);
                     std::swap(vNonlinearTermCurrent, vNonlinearTermNext);
                 }
-                // correction of non-zero mean solution
-                vStateNext[0] = Complex{0.0, 0.0};
-                // TO DO: validate against matlab
+                vStateCurrent[0] = Complex{0.0, 0.0}; // mean-zero correction
                 // saveData: IntermediateHistory, RemainderHistory, TerminalState
                 // saveData(paths, vHistoryIntermediate, IntermediateHistory, params.dTimeWindow);
                 // saveData(paths, vHistoryRemainder, RemainderHistory, dCurrentT);
-                if (params.bOptimizeSolution == 0) {
-                    // save EnergyEvolution, FourierSpectrumEvolution
-                }
+                vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(params), vStateCurrent.getEnergyH1(params), vStateCurrent.getEnergyH2(params) });
+                vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum(params));
             }
             timer.printInterval("Forward problem solved at ");
+            if (params.bOptimizeSolution == 0) {
+                saveSolutionDiagnostics(params, paths, vDiagnostics); 
+                saveSolutionSpectrum(params, paths, vSpectrumHistory);
+            }
             std::cout << "\n";
             break;
         }

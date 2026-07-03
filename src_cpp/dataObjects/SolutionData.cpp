@@ -64,23 +64,39 @@ Complex* SolutionData::getDataPointer() {
 }
 
 void SolutionData::setInitialEnergyL2(const Parameters& params) {
-    double energyL2 = 0.0;
-    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
-        energyL2 += std::norm(vData[p]);
-    energyL2 *= params.dDomainFactor1 * params.dDomainFactor2
-            * std::pow(2.0 * dPI, 2) / std::pow(static_cast<double>(params.iTotalGridSize), 2);
-    
+    double energyL2 = getEnergyL2(params);
     double normL2 = std::sqrt(energyL2);
     double scale = std::sqrt(params.dInitialEnergy) / normL2;
     for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
         vData[p] *= scale;
 }
 
-double SolutionData::getEnergyL2(const Parameters& params, const Complex* vFourierState) {
-    double energy = 0.0;
+double SolutionData::getEnergyL2(const Parameters& params) const {
+    double energyL2 = 0.0;
     for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
-        energy += std::norm(vFourierState[p]);
-    energy *= params.dDomainFactor1 * params.dDomainFactor2
-            * std::pow(2.0 * dPI, 2) / std::pow(static_cast<double>(params.iTotalGridSize), 2);
-    return energy;
+        energyL2 += std::norm(vData[p]);
+    return energyL2 * params.dEnergyFactor;
+}
+
+double SolutionData::getEnergyH1(const Parameters& params) const {
+    double energyH1 = 0.0;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        energyH1 += params.vH1Weight[p] * std::norm(vData[p]);
+    return energyH1 * params.dEnergyFactor;
+}
+
+double SolutionData::getEnergyH2(const Parameters& params) const {
+    double energyH2 = 0.0;
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        energyH2 += params.vH2Weight[p] * std::norm(vData[p]);
+    return energyH2 * params.dEnergyFactor;
+}
+
+std::vector<double> SolutionData::getRadialSpectrum(const Parameters& params) const {
+    std::vector<double> spectrum(params.iMaxRadialBin + 1, 0.0);
+    for (std::size_t p = 0; p < params.iTotalGridSize; ++p)
+        spectrum[params.vRadialBin[p]] += std::norm(vData[p]);
+    for (double& value : spectrum)
+        value *= 0.5;
+    return spectrum;
 }
