@@ -2,17 +2,14 @@ CXX = g++
 CXXFLAGS = -std=c++17 -O3 -march=native -Wall
 LDFLAGS =
 LDLIBS = -lfftw3 -lm
-INCLUDES = -I./mainFunctions -I./mainObjects -I./solverFunctions -I./solverObjects -I./dataFunctions -I./dataObjects
+INCLUDES = -I./dataProcessing -I./problemSolver -I./utilities
 
 TARGET = solver
 
 SOURCES = run_2DKS.cpp
-SOURCES += $(wildcard mainFunctions/*.cpp)
-SOURCES += $(wildcard mainObjects/*.cpp)
-SOURCES += $(wildcard solverFunctions/*.cpp)
-SOURCES += $(wildcard solverObjects/*.cpp)
-SOURCES += $(wildcard dataFunctions/*.cpp)
-SOURCES += $(wildcard dataObjects/*.cpp)
+SOURCES += $(wildcard dataProcessing/*.cpp)
+SOURCES += $(wildcard problemSolver/*.cpp)
+SOURCES += $(wildcard utilities/*.cpp)
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

@@ -1,17 +1,16 @@
-#include "readParameterSettings.h"
-#include "writePathNames.h"
+#include "Parameters.h"
+#include "Pathnames.h"
 #include "FFTWPlanner.h"
 #include "Timer.h"
-#include "solver.h"
+#include "Solver.h"
 #include "SolutionData.h"
-#include "updateDirectory.h"
 
-#include "iostream"
+#include <iostream>
 
 int main(int argc, char* argv[]) {
     // Step 1: prepare test case
-    Parameters params = readParameterSettings(argc, argv);
-    Pathnames paths = writePathNames(params);
+    Parameters params(argc, argv);
+    Pathnames paths(params);
     FFTWPlanner fftwPlan(params);
 
     // Step 2: track computation time
@@ -26,13 +25,15 @@ int main(int argc, char* argv[]) {
     SolutionData vHistoryRemainder(params, RemainderHistory);
 
     // Step 4: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
-    setSolutionState(params, paths, fftwPlan, SolveInitialState, vStateInitial);
-    setSolutionInTime(params, paths, fftwPlan, timer, SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
-    double dOptimalSolution = getOptimalSolution(params, paths, fftwPlan, timer, OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
+    Solver solver(params, paths, fftwPlan, timer);
+    solver.setSolutionState(SolveInitialState, vStateInitial);
+    solver.setSolutionInTime(SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
+    double dOptimalSolution = solver.getOptimalSolution(OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, 
+                                                        vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
     std::cout << "Maximum Energy Amplification: " << dOptimalSolution;
 
     // Step 5: Clean up  
-    // deleteData(paths);
+    // vStateInitial.deleteData(paths);
     timer.stop();
 
     return 0;
