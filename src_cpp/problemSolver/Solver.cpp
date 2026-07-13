@@ -184,9 +184,9 @@ void Solver::setSolutionInTime(TimeSolutionType targetType, SolutionData& vTarge
         case SolveForwardInTime: {
             double dTimePoint = 0.0;
             vector<array<double, 4>> vDiagnostics;
-            vDiagnostics.reserve(params.iGetNumericalSteps());
+            vDiagnostics.reserve(params.iGetNumericalSteps() + 1);
             vector<vector<double>> vSpectrumHistory;
-            vSpectrumHistory.reserve(params.iGetNumericalSteps());
+            vSpectrumHistory.reserve(params.iGetNumericalSteps() + 1);
 
             SolutionData vStateCurrent = vTargetStart; // phi_{i} = phi_{0}
             SolutionData vStateNext(params, InitialState); // phi_{i+1}
@@ -199,7 +199,7 @@ void Solver::setSolutionInTime(TimeSolutionType targetType, SolutionData& vTarge
 
             vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(params), vStateCurrent.getEnergyH1(params), vStateCurrent.getEnergyH2(params) });
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum(params));
-            for (size_t i = 1; i < params.iGetNumericalSteps(); ++i) {
+            for (size_t i = 1; i < params.iGetNumericalSteps() + 1; ++i) {
                 dTimePoint = i * params.dTimeStep;
                 for (size_t j = 0; j < 4; ++j) {
                     
