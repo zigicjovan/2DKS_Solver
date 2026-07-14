@@ -31,10 +31,10 @@ enum OptimizeSolutionType {
 
 class Solver{
 private:
-    Parameters& params;
-    Pathnames& paths;
-    FFTWPlanner& fftwPlan;
-    Timer& timer;
+    Parameters& _params;
+    Pathnames& _paths;
+    FFTWPlanner& _fftwPlan;
+    Timer& _timer;
 
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);

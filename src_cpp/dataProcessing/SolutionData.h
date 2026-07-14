@@ -22,29 +22,34 @@ enum SolutionDataType {
 
 class SolutionData {
 private:
-    vector<complex<double>> vData;
+    vector<complex<double>> _vData;
+    const Parameters& _params;
+    const Pathnames& _paths;
 
 public:
-    SolutionData(const Parameters& params, SolutionDataType storedDataType);
+    SolutionData(const Parameters& params, const Pathnames& paths, SolutionDataType storedDataType);
     size_t getSize() const;
     vector<complex<double>>& getData();                 
-    void setData(const vector<complex<double>>& stateData, int stateNumber);  
+    void setData(const SolutionData&  stateData, size_t stateNumber);  
 
-    complex<double>& operator()(const Parameters& params, size_t i, size_t j, int stateNumber);
+    complex<double>& operator()(size_t i, size_t j, size_t stateNumber);
     complex<double>& operator[](size_t idx);
-    complex<double>& atState(const Parameters& params, size_t p, int stateNumber);
-    complex<double>* getStatePointer(const Parameters& params, int stateNumber);
-    complex<double>* getDataPointer(); // binary data
-    void setInitialEnergyL2(const Parameters& params);
-    double getEnergyL2(const Parameters& params) const;
-    double getEnergyH1(const Parameters& params) const;
-    double getEnergyH2(const Parameters& params) const;
-    vector<double> getRadialSpectrum(const Parameters& params) const;
+    complex<double>& atState(size_t p, size_t stateNumber);
+    complex<double>* getStatePointer(size_t stateNumber);
+    complex<double>* getDataPointer(); // for binary data
+    void swapDataFrom(SolutionData& otherData) noexcept;
+    void moveDataFrom(SolutionData& otherData) noexcept;
+
+    void setInitialEnergyL2();
+    double getEnergyL2() const;
+    double getEnergyH1() const;
+    double getEnergyH2() const;
+    vector<double> getRadialSpectrum() const;
 
     filesystem::path appendTimeStep(const filesystem::path& path, double dCurrentT);
-    void loadData(const Pathnames& paths, SolutionDataType storedDataType, double dCurrentT = 0.0);
-    void saveData(const Pathnames& paths, SolutionDataType storedDataType, double dCurrentT = 0.0);
-    void deleteData(const Pathnames& paths);
+    void loadData(SolutionDataType storedDataType, double dCurrentT = 0.0);
+    void saveData(SolutionDataType storedDataType, double dCurrentT = 0.0);
+    void deleteData();
 };
 
 #endif

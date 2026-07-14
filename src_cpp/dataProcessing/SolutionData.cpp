@@ -14,98 +14,107 @@ filesystem::path SolutionData::appendTimeStep(const filesystem::path& path, doub
 }
 
 // Fourier space solution data
-SolutionData::SolutionData(const Parameters& params, SolutionDataType storedDataType) {
+SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, SolutionDataType storedDataType) : _params(params), _paths(paths) {
     switch (storedDataType) {
         case InitialState:
         case TerminalState:
         case BackwardInitialState:
-            vData.resize(params.iTotalGridSize * 1);
+            _vData.resize(_params.iTotalGridSize * 1);
             break;
         case IntermediateHistory:   
-            vData.resize(params.iTotalGridSize * params.iGetNumericalStepsPerFile() );
-            cout << "Intermediate States: " << vData.size() / params.iTotalGridSize << "\n";
+            _vData.resize(_params.iTotalGridSize * _params.iGetNumericalStepsPerFile() );
+            cout << "Intermediate States: " << _vData.size() / _params.iTotalGridSize << "\n";
             break;
         case RemainderHistory:
-            vData.resize(params.iTotalGridSize * ( params.iGetNumericalSteps() % params.iGetNumericalStepsPerFile()) );
-            cout << "Remainder States: " << vData.size() / params.iTotalGridSize << "\n";
+            _vData.resize(_params.iTotalGridSize * ( _params.iGetNumericalSteps() % _params.iGetNumericalStepsPerFile()) );
+            cout << "Remainder States: " << _vData.size() / _params.iTotalGridSize << "\n";
             break;
     }
 }
 
 // Public functions
 size_t SolutionData::getSize() const {
-    return vData.size();
+    return _vData.size();
 }
 
 vector<complex<double>>& SolutionData::getData() {
-    return vData;
+    return _vData;
 }
 
-void SolutionData::setData(const vector<complex<double>>& stateData, int stateIndex) {
-    
-    // stateData replaces part of vData at stateIndex
-    copy(stateData.begin(), stateData.end(), vData.begin() + stateIndex);
+void SolutionData::setData(const SolutionData& stateData, size_t stateIndex) {
+    const size_t iOffset = stateIndex * _params.iTotalGridSize;
+    copy(stateData._vData.begin(), stateData._vData.end(), _vData.begin() + iOffset);
 }
 
-complex<double>& SolutionData::operator()(const Parameters& params, size_t i, size_t j, int stateNumber) {
-    return vData[stateNumber * params.iTotalGridSize + j * params.iGridSize1 + i];
+complex<double>& SolutionData::operator()(size_t i, size_t j, size_t stateNumber) {
+    return _vData[stateNumber * _params.iTotalGridSize + j * _params.iGridSize1 + i];
 }
 
 complex<double>& SolutionData::operator[](size_t idx) {
-    return vData[idx];
+    return _vData[idx];
 }
 
-complex<double>& SolutionData::atState(const Parameters& params, size_t p, int stateNumber) {
-    return vData[stateNumber * params.iTotalGridSize + p];
+complex<double>& SolutionData::atState(size_t p, size_t stateNumber) {
+    return _vData[stateNumber * _params.iTotalGridSize + p];
 }
 
-complex<double>* SolutionData::getStatePointer(const Parameters& params, int stateNumber) {
-    return vData.data() + stateNumber * params.iTotalGridSize;
+complex<double>* SolutionData::getStatePointer(size_t stateNumber) {
+    return _vData.data() + stateNumber * _params.iTotalGridSize;
 }
 
 complex<double>* SolutionData::getDataPointer() {
-    return vData.data();
+    return _vData.data();
 }
 
-void SolutionData::setInitialEnergyL2(const Parameters& params) {
-    double energyL2 = getEnergyL2(params);
+void SolutionData::swapDataFrom(SolutionData& otherData) noexcept
+{
+    _vData.swap(otherData._vData);
+}
+
+void SolutionData::moveDataFrom(SolutionData& otherData) noexcept
+{
+    _vData = move(otherData._vData);
+}
+
+void SolutionData::setInitialEnergyL2() {
+    double energyL2 = getEnergyL2();
     double normL2 = sqrt(energyL2);
-    double scale = sqrt(params.dInitialEnergy) / normL2;
-    for (size_t i = 0; i < params.iTotalGridSize; ++i)
-        vData[i] *= scale;
+    double scale = sqrt(_params.dInitialEnergy) / normL2;
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        _vData[i] *= scale;
 }
 
-double SolutionData::getEnergyL2(const Parameters& params) const {
+double SolutionData::getEnergyL2() const {
     double energyL2 = 0.0;
-    for (size_t i = 0; i < params.iTotalGridSize; ++i)
-        energyL2 += norm(vData[i]);
-    return energyL2 * params.dEnergyFactor;
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        energyL2 += norm(_vData[i]);
+    return energyL2 * _params.dEnergyFactor;
 }
 
-double SolutionData::getEnergyH1(const Parameters& params) const {
+double SolutionData::getEnergyH1() const {
     double energyH1 = 0.0;
-    for (size_t i = 0; i < params.iTotalGridSize; ++i)
-        energyH1 += params.vH1Weight[i] * norm(vData[i]);
-    return energyH1 * params.dEnergyFactor;
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        energyH1 += _params.vH1Weight[i] * norm(_vData[i]);
+    return energyH1 * _params.dEnergyFactor;
 }
 
-double SolutionData::getEnergyH2(const Parameters& params) const {
+double SolutionData::getEnergyH2() const {
     double energyH2 = 0.0;
-    for (size_t i = 0; i < params.iTotalGridSize; ++i)
-        energyH2 += params.vH2Weight[i] * norm(vData[i]);
-    return energyH2 * params.dEnergyFactor;
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        energyH2 += _params.vH2Weight[i] * norm(_vData[i]);
+    return energyH2 * _params.dEnergyFactor;
 }
 
-vector<double> SolutionData::getRadialSpectrum(const Parameters& params) const {
-    vector<double> spectrum(params.iMaxRadialBin + 1, 0.0);
-    for (size_t i = 0; i < params.iTotalGridSize; ++i)
-        spectrum[params.vRadialBin[i]] += norm(vData[i]);
+vector<double> SolutionData::getRadialSpectrum() const {
+    vector<double> spectrum(_params.iMaxRadialBin + 1, 0.0);
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        spectrum[_params.vRadialBin[i]] += norm(_vData[i]);
     for (double& value : spectrum)
         value *= 0.5;
     return spectrum;
 }
 
-void SolutionData::loadData(const Pathnames& paths, SolutionDataType storedDataType, double dCurrentT) {   
+void SolutionData::loadData(SolutionDataType storedDataType, double dCurrentT) {   
     /*
     SolutionDataTypes:
     // Global scope, store as binary:
@@ -122,34 +131,34 @@ void SolutionData::loadData(const Pathnames& paths, SolutionDataType storedDataT
     switch (storedDataType) {
 
         case InitialState: {
-            ifstream file(paths.fOptimalInitialData, ios::binary);
-            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>));// why: save as binary
+            ifstream file(_paths.fOptimalInitialData, ios::binary);
+            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>));
             break;
         }
 
         case TerminalState: {
-            ifstream file(paths.fOptimalTerminalData, ios::binary);
-            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ifstream file(_paths.fOptimalTerminalData, ios::binary);
+            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>));
             break;
         }
 
         case BackwardInitialState: {
-            ifstream file(paths.fBackwardSolution, ios::binary);
-            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ifstream file(_paths.fBackwardSolution, ios::binary);
+            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); 
             break;
         }
 
         case IntermediateHistory: // fall through  
         
         case RemainderHistory: {
-            ifstream file(appendTimeStep(paths.fForwardSolution, dCurrentT), ios::binary);
-            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ifstream file(appendTimeStep(_paths.fForwardSolution, dCurrentT), ios::binary);
+            file.read(reinterpret_cast<char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>));
             break;
         }
     }
 }
 
-void SolutionData::saveData(const Pathnames& paths, SolutionDataType storedDataType, double dCurrentT) {   
+void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {   
     /*
     SolutionDataTypes:
     // Global scope, store as binary:
@@ -170,36 +179,36 @@ void SolutionData::saveData(const Pathnames& paths, SolutionDataType storedDataT
     switch (storedDataType) {
 
         case InitialState: {
-            ofstream file(paths.fOptimalInitialData, ios::binary);
-            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ofstream file(_paths.fOptimalInitialData, ios::binary);
+            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); 
             break;
         }
 
         case TerminalState: {
-            ofstream file(paths.fOptimalTerminalData, ios::binary);
-            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ofstream file(_paths.fOptimalTerminalData, ios::binary);
+            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); 
             break;
         }
 
         case BackwardInitialState: {
-            ofstream file(paths.fBackwardSolution, ios::binary);
-            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ofstream file(_paths.fBackwardSolution, ios::binary);
+            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); 
             break;
         }
 
         case IntermediateHistory: // fall through 
 
         case RemainderHistory: {
-            ofstream file(appendTimeStep(paths.fForwardSolution, dCurrentT), ios::binary);
-            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); // why: save as binary
+            ofstream file(appendTimeStep(_paths.fForwardSolution, dCurrentT), ios::binary);
+            file.write(reinterpret_cast<const char*>(this->getDataPointer()), this->getSize() * sizeof(complex<double>)); 
             break;
         }
     }
 }
 
-void SolutionData::deleteData(const Pathnames &paths) { 
+void SolutionData::deleteData() { 
 
     //  delete after optimization due to temporary non-diagnostic use
     cout << "Deleting all temporary solution data...\n";
-    filesystem::remove_all(paths.dirForwardSolution);
+    filesystem::remove_all(_paths.dirForwardSolution);
 }
