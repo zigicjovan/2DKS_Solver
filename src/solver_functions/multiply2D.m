@@ -18,7 +18,7 @@ function result = multiply2D(u,v,space)
             mask = (abs(KX) <= kx_cut) & (abs(KY) <= ky_cut);
         
             result = u .* mask;
-            result(abs(result) < 1e-16) = 0;           
+            %result(abs(result) < 1e-16) = 0;           
         case 'fourier2real'
             u_hat = u;
             v_hat = v;
@@ -26,7 +26,7 @@ function result = multiply2D(u,v,space)
             u = real(ifft2(u_hat));
             v = real(ifft2(v_hat));
             result = (u.*v);
-            result(abs(result) < 1e-16) = 0;
+            %result(abs(result) < 1e-16) = 0;
     end
 
 return
