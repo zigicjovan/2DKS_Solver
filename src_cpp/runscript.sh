@@ -7,7 +7,7 @@ dt=1.0e-4
 K=3.5
 ell1=3.02
 ell2=3.02
-T=1.50
+T=-1.00
 
 optimize=1
 tol=1e-6

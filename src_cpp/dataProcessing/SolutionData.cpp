@@ -37,13 +37,14 @@ size_t SolutionData::getSize() const {
     return _vData.size();
 }
 
-vector<complex<double>>& SolutionData::getData() {
-    return _vData;
+void SolutionData::getData(SolutionData& stateData, size_t stateIndex) const {
+    const size_t iOffset = stateIndex * _params.iTotalGridSize;
+    copy(_vData.begin() + iOffset, _vData.begin() + iOffset + _params.iTotalGridSize, stateData._vData.begin());
 }
 
 void SolutionData::setData(const SolutionData& stateData, size_t stateIndex) {
     const size_t iOffset = stateIndex * _params.iTotalGridSize;
-    copy(stateData._vData.begin(), stateData._vData.end(), _vData.begin() + iOffset);
+    copy(stateData._vData.begin(), stateData._vData.begin() + _params.iTotalGridSize, _vData.begin() + iOffset);
 }
 
 complex<double>& SolutionData::operator()(size_t i, size_t j, size_t stateNumber) {
@@ -115,19 +116,6 @@ vector<double> SolutionData::getRadialSpectrum() const {
 }
 
 void SolutionData::loadData(SolutionDataType storedDataType, double dCurrentT) {   
-    /*
-    SolutionDataTypes:
-    // Global scope, store as binary:
-    InitialState,               // why: load for fwd and IC
-    TerminalState,              // why: load for bwd
-    BackwardInitialState,       // why: load for optimization (i.e. objective functional gradient)
-    IntermediateHistory,        // why: load for bwd
-    RemainderHistory,           // why: load for bwd
-    
-    // Local scope, do this inline:
-    SolutionBranch,             // why: load for optimization
-    */  
-
     switch (storedDataType) {
 
         case InitialState: {
@@ -159,23 +147,6 @@ void SolutionData::loadData(SolutionDataType storedDataType, double dCurrentT) {
 }
 
 void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {   
-    /*
-    SolutionDataTypes:
-    // Global scope, store as binary:
-    InitialState,               // why: save optIC
-    TerminalState,              // why: save optTC
-    BackwardInitialState,       // why: save bwdTC (i.e. objective functional gradient)
-    IntermediateHistory,        // why: save for bwd
-    RemainderHistory,           // why: save for bwd
-    
-    // Local scope, do this inline:
-    EnergyEvolution,            // why: write energy to directory
-    FourierSpectrumEvolution,   // why: write four to directory
-    SolutionBranch,             // why: write branch to directory
-    OptDiagnostics,             // why: write diag iterations to directory
-    OptLineSearch               // why: write brent iterations to directory
-    */  
-
     switch (storedDataType) {
 
         case InitialState: {
@@ -208,7 +179,7 @@ void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {
 
 void SolutionData::deleteData() { 
 
-    //  delete after optimization due to temporary non-diagnostic use
+    //  delete forward solution data (if necessary) due to potentially large directory storage cost
     cout << "Deleting all temporary solution data...\n";
     filesystem::remove_all(_paths.dirForwardSolution);
 }

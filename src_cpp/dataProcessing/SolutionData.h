@@ -28,9 +28,10 @@ private:
 
 public:
     SolutionData(const Parameters& params, const Pathnames& paths, SolutionDataType storedDataType);
+    
     size_t getSize() const;
-    vector<complex<double>>& getData();                 
-    void setData(const SolutionData&  stateData, size_t stateNumber);  
+    void getData(SolutionData&  stateData, size_t stateNumber = 0) const ;                
+    void setData(const SolutionData&  stateData, size_t stateNumber = 0);  
 
     complex<double>& operator()(size_t i, size_t j, size_t stateNumber);
     complex<double>& operator[](size_t idx);

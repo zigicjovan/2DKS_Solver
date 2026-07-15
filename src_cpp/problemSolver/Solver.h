@@ -12,19 +12,17 @@
 using namespace std;
 
 enum StateSolutionType {
-    // TO DO: setSolutionState: initialize/load/save optIC, save {bwd,optTC (every time)}
     SolveInitialState,               
-    SolveTerminalState,      
+    SolveTerminalState,    
+    SolveBackwardInitialState,  
 };
 
 enum TimeSolutionType {
-    // TO DO: setSolutionInTime: load data, check CFL, Nonlinear dealiasing, IMEX RK4, save {fwdALL (optimizer)}, save {energy,spectrum (last time)}, load {fwd (bwd)}  
     SolveForwardInTime,       
     SolveBackwardInTime,        
 };
 
-enum OptimizeSolutionType {
-    // TO DO: optimizeSolution: RCG, brent, save {optIC, branch, diags, brent} 
+enum OptimizeSolutionType { 
     OptimizeEnergyAmplification,      
     OptimizeLineSearchStepSize,           
 };
@@ -39,15 +37,27 @@ private:
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
     void checkCFL(SolutionData& vData1, SolutionData& vData2);
+
     void setInitialCondition(SolutionData& vTargetState);
+    void findContinuationForInitialData(SolutionData& vTargetState);
+    void solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+    void saveForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile,  size_t totalSteps,
+                          SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vStateCurrent);
+    void loadForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile, 
+                          SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vForwardStateCurrent);
+    void solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+    void solveRiemmanianOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
+                                     SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+    void solveLineSearchOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
+                                     SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 public:
     Solver(Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer);
 
     void setSolutionState(StateSolutionType targetType, SolutionData& vTargetState);
     void setSolutionInTime(TimeSolutionType targetType, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
-        SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+                           SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
     double getOptimalSolution(OptimizeSolutionType targetType, SolutionData& vObjectiveGradient, 
-        SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+                              SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 };
 
 #endif
