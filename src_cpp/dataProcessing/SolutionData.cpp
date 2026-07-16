@@ -23,11 +23,9 @@ SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, Sol
             break;
         case IntermediateHistory:   
             _vData.resize(_params.iTotalGridSize * _params.iGetNumericalStepsPerFile() );
-            cout << "Intermediate States: " << _vData.size() / _params.iTotalGridSize << "\n";
             break;
         case RemainderHistory:
             _vData.resize(_params.iTotalGridSize * ( _params.iGetNumericalSteps() % _params.iGetNumericalStepsPerFile()) );
-            cout << "Remainder States: " << _vData.size() / _params.iTotalGridSize << "\n";
             break;
     }
 }
@@ -45,6 +43,50 @@ void SolutionData::getData(SolutionData& stateData, size_t stateIndex) const {
 void SolutionData::setData(const SolutionData& stateData, size_t stateIndex) {
     const size_t iOffset = stateIndex * _params.iTotalGridSize;
     copy(stateData._vData.begin(), stateData._vData.begin() + _params.iTotalGridSize, _vData.begin() + iOffset);
+}
+
+SolutionData& SolutionData::operator=(const SolutionData& otherData) {
+    if (this != &otherData)
+        _vData = otherData._vData;
+    return *this;
+}
+
+SolutionData& SolutionData::operator+=(const SolutionData& otherData) {
+    for (size_t i = 0; i < _vData.size(); ++i)
+        _vData[i] += otherData._vData[i];
+    return *this;
+}
+
+SolutionData& SolutionData::operator-=(const SolutionData& otherData) {
+    for (size_t i = 0; i < _vData.size(); ++i)
+        _vData[i] -= otherData._vData[i];
+    return *this;
+}
+
+SolutionData& SolutionData::operator*=(double scalar) {
+    for (complex<double>& value : _vData)
+        value *= scalar;
+    return *this;
+}
+
+SolutionData operator+(SolutionData lhs, const SolutionData& rhs) {
+    lhs += rhs;
+    return lhs;
+}
+
+SolutionData operator-(SolutionData lhs, const SolutionData& rhs) {
+    lhs -= rhs;
+    return lhs;
+}
+
+SolutionData operator*(SolutionData data, double scalar) {
+    data *= scalar;
+    return data;
+}
+
+SolutionData operator*(double scalar, SolutionData data) {
+    data *= scalar;
+    return data;
 }
 
 complex<double>& SolutionData::operator()(size_t i, size_t j, size_t stateNumber) {
@@ -83,6 +125,17 @@ void SolutionData::setInitialEnergyL2() {
     double scale = sqrt(_params.dInitialEnergy) / normL2;
     for (size_t i = 0; i < _params.iTotalGridSize; ++i)
         _vData[i] *= scale;
+}
+
+double SolutionData::getInnerProductL2With(SolutionData& otherData) const {
+    double innerProductL2 = 0.0;
+    for (size_t i = 0; i < _params.iTotalGridSize; ++i)
+        innerProductL2 += real(conj(_vData[i]) * otherData._vData[i]);
+    return innerProductL2 * _params.dEnergyFactor;
+}
+
+double SolutionData::getNormL2() const {
+    return sqrt(getEnergyL2());
 }
 
 double SolutionData::getEnergyL2() const {

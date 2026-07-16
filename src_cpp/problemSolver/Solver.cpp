@@ -10,11 +10,9 @@
 #include <stdexcept>
 #include <array>
 #include <vector>
-
 #include <filesystem>
 #include <string>
 #include <iostream>
-
 #include <complex>
 #include <cstddef>
 #include <random>
@@ -52,13 +50,12 @@ void Solver::saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics) {
          << ' ' << vDiagnostics[4] << ' ' << vDiagnostics[5] << ' ' << vDiagnostics[6] << '\n';
 }
 
-void Solver::saveSolutionBranch(const array<double, 6>& vOptimalEnergySolution) {
-    std::vector<array<double, 6>> vSolutionsInBranch;
+void Solver::saveSolutionBranch(const array<double, 7>& vOptimalEnergySolution) {
+    vector<array<double, 7>> vSolutionsInBranch;
     
     {
-        std::ifstream inputFile(_paths.fOptimalSolutionBranches);
-        std::array<double, 6> solution;
-
+        ifstream inputFile(_paths.fOptimalSolutionBranches);
+        array<double, 7> solution;
         while (inputFile >> solution[0] >> solution[1] >> solution[2] >> solution[3] >> solution[4] >> solution[5]) {
             vSolutionsInBranch.push_back(solution);
         }
@@ -81,7 +78,7 @@ void Solver::saveSolutionBranch(const array<double, 6>& vOptimalEnergySolution) 
 
 void Solver::saveLineSearch(vector<double>& vLineSearchHistory) {
     ofstream file(_paths.fOptimizationLineSearch, ios::app);
-    const double dNaN = std::numeric_limits<double>::quiet_NaN();
+    const double dNaN = numeric_limits<double>::quiet_NaN();
     file << setprecision(16) << scientific;
     for (size_t i = 0; i < 1000; ++i) {
         if (i < vLineSearchHistory.size())
@@ -93,6 +90,20 @@ void Solver::saveLineSearch(vector<double>& vLineSearchHistory) {
             file << ' ';
     }
     file << '\n';
+}
+
+MaxEnergy Solver::getMaxEnergyInTimeWindow() {
+    ifstream inputFile(_paths.fEnergyEvolution);
+    double dTimepoint;
+    double dEnergy;
+    MaxEnergy result{ -numeric_limits<double>::infinity(), 0.0 };
+    while (inputFile >> dTimepoint >> dEnergy) {
+        if (dEnergy > result.dEnergy) {
+            result.dEnergy = dEnergy;
+            result.dTimepoint = dTimepoint;
+        }
+    }
+    return result;
 }
 
 void Solver::checkCFL(SolutionData& vData1, SolutionData& vData2) {
@@ -267,7 +278,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     }
     vTargetEnd.moveDataFrom(vStateCurrent);
     setSolutionState(SolveTerminalState, vTargetEnd);
-    _timer.printInterval("Forward problem solved at ");
     if (_params.bOptimizeSolution == 0) {
         saveSolutionDiagnostics(vDiagnostics); 
         saveSolutionSpectrum(vSpectrumHistory);
@@ -307,7 +317,7 @@ void Solver::loadForwardState(double dTimePoint, size_t forwardIndex, size_t ful
     }
 }
 
-void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, const SolutionData& vTargetEnd) {
     double dTimePoint = 0.0;
     const size_t totalSteps = _params.iGetNumericalSteps();
     const size_t stepsPerFile = _params.iGetNumericalStepsPerFile();
@@ -389,47 +399,142 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
     }
     vObjectiveGradient.moveDataFrom(vStateCurrent);
     setSolutionState(SolveBackwardInitialState, vObjectiveGradient);
-    _timer.printInterval("Backward problem solved at ");
 }
 
 void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+    
+    // This function finds the maximum L2 energy via Riemmanian Conjugate Gradient with Polak-Ribiere Momentum
     if (_params.bOptimizeSolution == 1) {
+        
+        // Clear old data
+        filesystem::remove(_paths.fOptimizationDiagnostics);
+        filesystem::remove(_paths.fOptimizationLineSearch);
+        
         size_t iter = 1;
         size_t iMaxIter = 1000;
 
-        dObjectiveValue = vTargetStart.getEnergyL2();
-        double dObjectiveDelta = 0.0; // J_change
-        double dStepSize = 0.0; // stepsize_history
-        double dManifoldSize = _params.dInitialEnergy; // manifold_history
-        double dElapsedTime = _timer.elapsedSeconds(); // time_history
-        double dObjectiveGradientSize = vObjectiveGradient.getEnergyL2(); // gradJsize_history
-        double dMomentumSize = 0.0; // momentumsize_history
+        dObjectiveValue = vTargetEnd.getEnergyL2(); 
+        double dObjectiveDelta = 0.0; 
+        double dStepSize = 0.0; 
+        double dManifoldSize = vTargetStart.getEnergyL2(); 
+        double dObjectiveGradientSize = vObjectiveGradient.getEnergyL2(); 
+        double dMomentumSize = 0.0; 
+        array<double, 7> vDiagnostics;
+        array<double, 7> vOptimalEnergySolution; 
 
-        vector<array<double, 7>> vDiagnostics; // diagnostics_history
-        vDiagnostics.reserve(iMaxIter);
-        array<double, 6> vOptimalEnergySolution; // branch
-        
-        vDiagnostics.push_back({dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, dElapsedTime, dObjectiveGradientSize, dMomentumSize});
+        vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
+        saveOptimizationDiagnostics(vDiagnostics);
 
-        setSolutionInTime(SolveBackwardInTime, vObjectiveGradient, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+        cout << left << setw(8)  << "Iter" << setw(18) << "J"<< setw(18) << "Adjoint solved" << setw(18) 
+             << "Stepsize solved" << setw(18) << "Forward solved" << setw(18) << "Delta J" << '\n' << string(98, '-') << '\n';
 
+        size_t iMomentumCounter = 0;
+        SolutionData RawUpdate(_params, _paths, InitialState); 
+        SolutionData DirectionCurr(_params, _paths, InitialState); 
+        SolutionData DirectionPrev(_params, _paths, InitialState); 
+        SolutionData VectorTransport(_params, _paths, InitialState);
+        SolutionData ProjectedObjGradPrev(_params, _paths, InitialState); 
+        SolutionData ProjectedObjGradCurr(_params, _paths, InitialState); 
+        SolutionData TransportedProjectedObjGradPrev(_params, _paths, InitialState); 
+        SolutionData DeltaProjectedObjGrad(_params, _paths, InitialState); 
+        double dAngleFwdICAndGradJ = vTargetStart.getInnerProductL2With(vObjectiveGradient);
+        double dRawUpdateSize = 0.0;
+        double dAngleRawUpdateAndDirectionPrev = 0.0; 
+        double dAngleRawUpdateAndProjectedObjGradPrev = 0.0; 
+        double dProjectedObjGradPrevSize = 0.0; 
+        double dProjectedObjGradCurrSize = 0.0;
+        double dAngleProjGradJAndDeltaProjGradJ = 0.0;
+        double dDirectionSize = 0.0; 
+        double dAscentSize = 0.0;
+        double dRetractionSize = 0.0;
+        double dObjectiveValuePrev = 0.0;
 
-        // TO DO: solve RCG
-        vTargetStart.saveData(InitialState);
+        dObjectiveDelta = 1.0;
+        while ( abs(dObjectiveDelta) > _params.dOptimizationTolerance && iter <= iMaxIter ) {
+            cout << left << setw(8)  << iter << setw(18) << dObjectiveValue;
+            
+            // Solve adjoint equation
+            setSolutionInTime(SolveBackwardInTime, vObjectiveGradient, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+            _timer.printIterationInterval(); 
+            
+            // Update initial data via RCG
+            dObjectiveGradientSize = vObjectiveGradient.getEnergyL2(); 
+            dAngleFwdICAndGradJ = vTargetStart.getInnerProductL2With(vObjectiveGradient);
+            ProjectedObjGradCurr = vObjectiveGradient - (dAngleFwdICAndGradJ / _params.dInitialEnergy) * vTargetStart;
+            if (iter > 1) {
+                dRawUpdateSize = RawUpdate.getEnergyL2();
+                dAngleRawUpdateAndDirectionPrev = RawUpdate.getInnerProductL2With(DirectionPrev);                       
+                dAngleRawUpdateAndProjectedObjGradPrev = RawUpdate.getInnerProductL2With(ProjectedObjGradPrev);          
+                VectorTransport = (DirectionPrev - (dAngleRawUpdateAndDirectionPrev / dRawUpdateSize) * (RawUpdate)) 
+                                  * sqrt(_params.dInitialEnergy / dRawUpdateSize);          
+                TransportedProjectedObjGradPrev = (ProjectedObjGradPrev - (dAngleRawUpdateAndProjectedObjGradPrev / dRawUpdateSize) * (RawUpdate))
+                                  * sqrt(dManifoldSize / dRawUpdateSize); 
+                DeltaProjectedObjGrad = ProjectedObjGradCurr - TransportedProjectedObjGradPrev;                       
+                dAngleProjGradJAndDeltaProjGradJ = ProjectedObjGradCurr.getInnerProductL2With(DeltaProjectedObjGrad);
+                dProjectedObjGradPrevSize = ProjectedObjGradPrev.getEnergyL2();     
+                dMomentumSize = dAngleProjGradJAndDeltaProjGradJ / dProjectedObjGradPrevSize;                    
+                iMomentumCounter = iMomentumCounter + 1;
+                if (iter % 20 == 0)
+                    dMomentumSize = 0.0;
+                DirectionCurr = ProjectedObjGradCurr + (dMomentumSize * VectorTransport); 
+            }
+            else {
+                dStepSize = 1e5;
+                DirectionCurr = ProjectedObjGradCurr;
+            }
+                         
+            dDirectionSize = DirectionCurr.getNormL2();                       
+            dProjectedObjGradCurrSize = ProjectedObjGradCurr.getNormL2();
+            dAscentSize = DirectionCurr.getInnerProductL2With(ProjectedObjGradCurr) / ( dDirectionSize * dProjectedObjGradCurrSize);
+            if (dAscentSize < 0)
+                DirectionCurr = ProjectedObjGradCurr;             
 
-        _params.bOptimizeSolution = 0; 
+            // solveLineSearchOptimization(dStepSize, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+            dStepSize = 1e5;
+            // [dStepSize,iter_search,J_search] = optimize_stepsize(DirectionCurr,u_IC,dStepSize,IC,N,K,L_s1,L_s2,dt,T,Ntime_save_max,originalIC); % current step-size via Brent's method
+            if (dStepSize == 0)
+                dStepSize = dAngleFwdICAndGradJ / dObjectiveGradientSize; 
+                                     
+            RawUpdate = vTargetStart + ( dStepSize * DirectionCurr );                                   
+            dRetractionSize =  sqrt(_params.dInitialEnergy) / RawUpdate.getNormL2();                                                
+            vTargetStart = dRetractionSize * RawUpdate;                                                            
+            dManifoldSize = vTargetStart.getEnergyL2();                                   
 
-        vDiagnostics.push_back({dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, dElapsedTime, dObjectiveGradientSize, dMomentumSize});
-        // append and saveBranch
-        saveSolutionBranch(vOptimalEnergySolution);
+            
+            // Solve updated forward problem
+            setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+            vTargetStart.saveData(InitialState);
+            _timer.printIterationInterval(); 
+
+            dObjectiveValuePrev = dObjectiveValue;                                                                                
+            dObjectiveValue = vTargetEnd.getEnergyL2();                                                  
+            iter = iter + 1;                                                                               
+            ProjectedObjGradPrev = ProjectedObjGradCurr;                                                                  
+            DirectionPrev = DirectionCurr;                                                                            
+                                              
+            dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);                                                                                                                                                     
+
+            cout << setw(18) << dObjectiveDelta << flush << '\n';
+            vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
+            saveOptimizationDiagnostics(vDiagnostics);
+        }
+
+        _params.bOptimizeSolution = 0;
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+
+        MaxEnergy maxEnergyResult = getMaxEnergyInTimeWindow();
+        vOptimalEnergySolution = { _params.dInitialEnergy, _params.dDomainFactor1, _params.dDomainFactor2, _params.dTimeWindow, dObjectiveValue, 
+                                   maxEnergyResult.dTimepoint, maxEnergyResult.dEnergy };
+        saveSolutionBranch(vOptimalEnergySolution);
         _timer.printInterval("Energy maximization problem solved at ");
     }
 }
 
 void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+    
+    // This function finds the optimal step-size using Brent's Method
     size_t iter = 1;
     size_t iMaxIter = 1000;
     vector<double> vLineSearchHistory; 
@@ -437,7 +542,9 @@ void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& vObjec
     // TO DO: solve Brent
 
     saveLineSearch(vLineSearchHistory);
-    _timer.printInterval("Step size optimization problem solved at ");
+    cout << setw(18) << iter ;
+    _timer.printInterval(", ");
+    cout << flush;
 }
 
 // Public functions
@@ -479,12 +586,10 @@ void Solver::setSolutionInTime(TimeSolutionType targetType, SolutionData& vTarge
         
         case SolveForwardInTime: 
             solveForwardInTime(vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-            cout << "\n";
             break;
 
         case SolveBackwardInTime:
             solveBackwardInTime(vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-            cout << "\n";
             break;
     }  
 }
@@ -498,12 +603,10 @@ double Solver::getOptimalSolution(OptimizeSolutionType targetType, SolutionData&
         
         case OptimizeEnergyAmplification:  
             solveRiemmanianOptimization(dTargetValue, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-            cout << "\n";
             break;
 
         case OptimizeLineSearchStepSize:
             solveLineSearchOptimization(dTargetValue, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-            cout << "\n";
             break;
 
     } 

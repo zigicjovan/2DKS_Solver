@@ -32,6 +32,10 @@ void Timer::printInterval(const string& label) const {
     cout << label << formatElapsed(elapsedSeconds());
 }
 
+void Timer::printIterationInterval() const {
+    cout << setw(18) << formatElapsed(elapsedSeconds()); 
+}
+
 void Timer::stop() const {
     auto endSteady = chrono::steady_clock::now();
     auto endWall   = chrono::system_clock::now();

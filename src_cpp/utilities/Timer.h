@@ -16,6 +16,7 @@ public:
     void start();
     double elapsedSeconds() const;
     void printInterval(const string& label = "") const;
+    void printIterationInterval() const;
     void stop() const;
 };
 

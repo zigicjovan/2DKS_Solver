@@ -115,6 +115,8 @@ Parameters::Parameters(int argc, char* argv[]) {
     else
         dOptimalTimeWindow = pow(10.0, stod(argv[12]));
 
+    const int dRequiredMemory = 0.0640 * (iGetNumericalSteps() + iGetNumericalStepsPerFile() - 1) / iGetNumericalStepsPerFile();
+
     cout << "Parameter settings:\nIC " << strInitialGuessName 
               << ", N_x1 " << iGridSize1 
               << ", N_x2 " << iGridSize2       
@@ -125,13 +127,16 @@ Parameters::Parameters(int argc, char* argv[]) {
               << ", L_1 " << dDomainSize1     
               << ", L_2 " << dDomainSize2     
               << ", T " << dTimeWindow       
-              << ", nsteps " << iGetNumericalSteps() 
-              << ", nstepsFile " << iGetNumericalStepsPerFile() 
               << ", opt " << bOptimizeSolution       
               << ", tol " << dOptimizationTolerance  
               << ", cont " << bNumericalContinuation  
               << ", optT " << dOptimalTimeWindow      
-              << endl;
+              << endl
+              << "Required Memory = " << dRequiredMemory
+              << " GB, Total Timesteps = " << iGetNumericalSteps() 
+              << " (Max File Timesteps (640MB) " << iGetNumericalStepsPerFile() 
+              << ", Remainder File Timesteps " << ( iGetNumericalSteps() % iGetNumericalStepsPerFile() )
+              << ")" << endl;
 }
 
 size_t Parameters::iGetNumericalSteps() const {   

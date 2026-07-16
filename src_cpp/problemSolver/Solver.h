@@ -27,6 +27,11 @@ enum OptimizeSolutionType {
     OptimizeLineSearchStepSize,           
 };
 
+struct MaxEnergy {
+    double dEnergy;
+    double dTimepoint;
+};
+
 class Solver{
 private:
     Parameters& _params;
@@ -37,10 +42,11 @@ private:
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
     void saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics);
-    void saveSolutionBranch(const array<double, 6>& vOptimalEnergySolution);
+    void saveSolutionBranch(const array<double, 7>& vOptimalEnergySolution);
     void saveLineSearch(vector<double>& vLineSearchHistory);
-    void checkCFL(SolutionData& vData1, SolutionData& vData2);
+    MaxEnergy getMaxEnergyInTimeWindow();
 
+    void checkCFL(SolutionData& vData1, SolutionData& vData2);
     void setInitialCondition(SolutionData& vTargetState);
     void findContinuationForInitialData(SolutionData& vTargetState);
     void solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
@@ -48,7 +54,7 @@ private:
                           SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vStateCurrent);
     void loadForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile, 
                           SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vForwardStateCurrent);
-    void solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+    void solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, const SolutionData& vTargetEnd);
     void solveRiemmanianOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
     void solveLineSearchOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
