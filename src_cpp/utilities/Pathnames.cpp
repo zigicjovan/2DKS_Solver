@@ -58,14 +58,14 @@ Pathnames::Pathnames(const Parameters &params) {
     filesystem::create_directories(dirOptimizationLineSearch);
 
     fForwardSolution = dirForwardSolution / ( "fwd" + strTestcase.str() ); 
-    fBackwardSolution = dirBackwardSolution / ( "bwd" + strTestcase.str() );
-    fFourierSpectrumEvolution = dirFourierSpectrumEvolution / ( "four" + strTestcase.str() );
+    fBackwardSolution = dirBackwardSolution / ( "gradJ" + strTestcase.str() );
+    fFourierSpectrumEvolution = dirFourierSpectrumEvolution / ( "spectrum" + strTestcase.str() );
     fEnergyEvolution = dirEnergyEvolution / ( "energy" + strTestcase.str() );
-    fOptimalInitialData = dirOptimalInitialData / ( "optIC" + strTestcase.str() );
-    fOptimalTerminalData = dirOptimalTerminalData / ( "optTC" + strTestcase.str() );
+    fOptimalInitialData = dirOptimalInitialData / ( "fwdIC" + strTestcase.str() );
+    fOptimalTerminalData = dirOptimalTerminalData / ( "fwdTC" + strTestcase.str() );
     fOptimalSolutionBranches = dirOptimalSolutionBranches / ( "branch" + strTestcase.str() );
-    fOptimizationDiagnostics = dirOptimizationDiagnostics / ( "diag" + strTestcase.str() );
-    fOptimizationLineSearch = dirOptimizationLineSearch / ( "brent" + strTestcase.str() );
+    fOptimizationDiagnostics = dirOptimizationDiagnostics / ( "diagnostics" + strTestcase.str() );
+    fOptimizationLineSearch = dirOptimizationLineSearch / ( "linesearch" + strTestcase.str() );
 
     cout << "Directory name: " << strTestcase.str() << endl;
 }
