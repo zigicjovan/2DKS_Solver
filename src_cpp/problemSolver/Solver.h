@@ -36,6 +36,9 @@ private:
 
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
+    void saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics);
+    void saveSolutionBranch(const array<double, 6>& vOptimalEnergySolution);
+    void saveLineSearch(vector<double>& vLineSearchHistory);
     void checkCFL(SolutionData& vData1, SolutionData& vData2);
 
     void setInitialCondition(SolutionData& vTargetState);

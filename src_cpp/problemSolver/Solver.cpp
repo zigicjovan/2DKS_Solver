@@ -45,6 +45,56 @@ void Solver::saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory
     }
 }
 
+void Solver::saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics) {
+    ofstream file(_paths.fOptimizationDiagnostics, ios::app);
+    file << setprecision(16) << scientific;
+    file << vDiagnostics[0] << ' ' << vDiagnostics[1] << ' ' << vDiagnostics[2] << ' ' << vDiagnostics[3] 
+         << ' ' << vDiagnostics[4] << ' ' << vDiagnostics[5] << ' ' << vDiagnostics[6] << '\n';
+}
+
+void Solver::saveSolutionBranch(const array<double, 6>& vOptimalEnergySolution) {
+    std::vector<array<double, 6>> vSolutionsInBranch;
+    
+    {
+        std::ifstream inputFile(_paths.fOptimalSolutionBranches);
+        std::array<double, 6> solution;
+
+        while (inputFile >> solution[0] >> solution[1] >> solution[2] >> solution[3] >> solution[4] >> solution[5]) {
+            vSolutionsInBranch.push_back(solution);
+        }
+    }
+
+    vSolutionsInBranch.push_back(vOptimalEnergySolution);
+    sort(vSolutionsInBranch.begin(), vSolutionsInBranch.end(), [](const auto& a, const auto& b) { return a[2] < b[2]; } );
+    
+    ofstream outputFile(_paths.fOptimalSolutionBranches);
+    outputFile << setprecision(16) << scientific;
+    for (const auto& solution : vSolutionsInBranch) {
+        for (size_t column = 0; column < solution.size(); ++column) {
+            if (column > 0)
+                outputFile << ' ';
+            outputFile << solution[column];
+        }
+        outputFile << '\n';
+    }
+}
+
+void Solver::saveLineSearch(vector<double>& vLineSearchHistory) {
+    ofstream file(_paths.fOptimizationLineSearch, ios::app);
+    const double dNaN = std::numeric_limits<double>::quiet_NaN();
+    file << setprecision(16) << scientific;
+    for (size_t i = 0; i < 1000; ++i) {
+        if (i < vLineSearchHistory.size())
+            file << vLineSearchHistory[i];
+        else
+            file << dNaN;
+
+        if (i + 1 < 1000)
+            file << ' ';
+    }
+    file << '\n';
+}
+
 void Solver::checkCFL(SolutionData& vData1, SolutionData& vData2) {
     constexpr double CFL_LIMIT = 0.9;
     double dMaxGradientMagnitude = 0.0;
@@ -342,28 +392,51 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
     _timer.printInterval("Backward problem solved at ");
 }
 
-void Solver::solveRiemmanianOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
+void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     if (_params.bOptimizeSolution == 1) {
-    
+        size_t iter = 1;
+        size_t iMaxIter = 1000;
+
+        dObjectiveValue = vTargetStart.getEnergyL2();
+        double dObjectiveDelta = 0.0; // J_change
+        double dStepSize = 0.0; // stepsize_history
+        double dManifoldSize = _params.dInitialEnergy; // manifold_history
+        double dElapsedTime = _timer.elapsedSeconds(); // time_history
+        double dObjectiveGradientSize = vObjectiveGradient.getEnergyL2(); // gradJsize_history
+        double dMomentumSize = 0.0; // momentumsize_history
+
+        vector<array<double, 7>> vDiagnostics; // diagnostics_history
+        vDiagnostics.reserve(iMaxIter);
+        array<double, 6> vOptimalEnergySolution; // branch
+        
+        vDiagnostics.push_back({dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, dElapsedTime, dObjectiveGradientSize, dMomentumSize});
+
         setSolutionInTime(SolveBackwardInTime, vObjectiveGradient, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-        dTargetValue = vObjectiveGradient.getEnergyL2();
+
 
         // TO DO: solve RCG
         vTargetStart.saveData(InitialState);
 
         _params.bOptimizeSolution = 0; 
-        // TO DO: load SolutionBranch for optimization
-        // TO DO: save SolutionBranch, OptDiagnostics after completion (branch, diag)
+
+        vDiagnostics.push_back({dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, dElapsedTime, dObjectiveGradientSize, dMomentumSize});
+        // append and saveBranch
+        saveSolutionBranch(vOptimalEnergySolution);
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
         _timer.printInterval("Energy maximization problem solved at ");
     }
 }
 
-void Solver::solveLineSearchOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
+void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+    size_t iter = 1;
+    size_t iMaxIter = 1000;
+    vector<double> vLineSearchHistory; 
+    vLineSearchHistory.reserve(iMaxIter);
     // TO DO: solve Brent
-    // TO DO: save OptLineSearch after completion
+
+    saveLineSearch(vLineSearchHistory);
     _timer.printInterval("Step size optimization problem solved at ");
 }
 
