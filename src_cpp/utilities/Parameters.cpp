@@ -10,10 +10,6 @@
 
 using namespace std;
 
-size_t getIndex(size_t i, size_t j, size_t N) {
-    return i * N + j;
-}
-
 // Private functions
 vector<double> Parameters::setPhysicalSpace1() {
     vector<double> gridpoints(iGridSize1);
@@ -137,6 +133,10 @@ Parameters::Parameters(int argc, char* argv[]) {
               << " (Max File Timesteps (640MB) " << iGetNumericalStepsPerFile() 
               << ", Remainder File Timesteps " << ( iGetNumericalSteps() % iGetNumericalStepsPerFile() )
               << ")" << endl;
+}
+
+size_t Parameters::getIndex(size_t i, size_t j, size_t N) {
+    return i * N + j;
 }
 
 size_t Parameters::iGetNumericalSteps() const {   

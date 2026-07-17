@@ -198,7 +198,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
         size_t stateNumber = 0;
         for (size_t i = 0; i < _params.iGridSize2; ++i) {
             for (size_t j = 0; j < _params.iGridSize1; ++j) {
-                const size_t k = getIndex(i, j, _params.iGridSize1);
+                const size_t k = _params.getIndex(i, j, _params.iGridSize1);
                 const double x = _params.vGrid1[k];
                 const double y = _params.vGrid2[k];
                 vTargetState(j, i, stateNumber) = complex<double>(
@@ -222,7 +222,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
         // Build randomized Fourier coefficients
         for (size_t i = 0; i < _params.iGridSize2; ++i) {
             for (size_t j = 0; j < _params.iGridSize1; ++j) {
-                const size_t k = getIndex(i, j, _params.iGridSize1);
+                const size_t k = _params.getIndex(i, j, _params.iGridSize1);
                 const double k1 = _params.vWavenumbersNonlinear1[j];
                 const double k2 = _params.vWavenumbersNonlinear2[i];
                 const double kabs = sqrt(k1 * k1 + k2 * k2);
@@ -238,8 +238,8 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
         _fftwPlan.fft2InPlace(vTempState);
     }
     else {
-        throw runtime_error(
-            "Unknown initial condition: " + _params.strInitialGuessName);
+        cerr << "ERROR: Unknown initial condition: " << _params.strInitialGuessName << endl;
+        exit(EXIT_FAILURE);
     }
     vTargetState.setInitialEnergyL2();
 }
@@ -251,18 +251,23 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
 
     // Search for nearest previous time window in directory
     for (const auto& entry : filesystem::directory_iterator(_paths.dirOptimalInitialData)) {
+        
         if (!entry.is_regular_file())
             continue;
+        
         string filename = entry.path().filename().string();
         if (filename.find(_paths.strTestcaseGenericTime.str()) == string::npos)
             continue;
+        
         size_t pos1 = filename.find("_T_"); 
         if (pos1 == string::npos)
             continue;
+        
         pos1 += 3; // skip "_T_"
         size_t pos2 = filename.find("_opt_", pos1); 
         if (pos2 == string::npos)
             continue;
+        
         double T = stod(filename.substr(pos1, pos2 - pos1)); // Extract T
         if (T <= _params.dTimeWindow && ( T > dBestT || dBestT > _params.dTimeWindow)) {
             dBestT = T;
@@ -608,17 +613,17 @@ void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& Direct
                                          SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     
     // Finds the optimal step size using bracketing followed by Brent's method.
-    constexpr double TOL    = 1e-5;
-    constexpr double GOLD   = 1.618034;
-    constexpr double GLIMIT = 100.0;
-    constexpr double CGOLD  = 0.381966;
-    constexpr double ZEPS   = 1e-10;
+    constexpr double relativeTolerance    = 1e-5;
+    constexpr double goldenExpansionFactor = 1.618034;
+    constexpr double maximumExpansionFactor = 100.0;
+    constexpr double goldenSectionFactor  = 0.381966;
+    constexpr double numericalEpsilon   = 1e-10;
 
-    size_t iter = 0;
-    constexpr size_t iMaxIter = 1000;
+    size_t iteration = 0;
+    constexpr size_t maximumIterations = 1000;
 
     vector<double> vLineSearchHistory;
-    vLineSearchHistory.reserve(iMaxIter);
+    vLineSearchHistory.reserve(maximumIterations);
 
     SolutionData RawUpdate(_params, _paths, InitialState);
     SolutionData RetractedState(_params, _paths, InitialState);
@@ -633,170 +638,181 @@ void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& Direct
         RetractedState = retraction * RawUpdate;
         setSolutionInTime( SolveForwardInTime, RetractedState, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
         const double objectiveValue = vTargetEnd.getEnergyL2();
-        if (iter < iMaxIter) {
+        if (iteration < maximumIterations) {
             vLineSearchHistory.push_back(objectiveValue);
-            ++iter;
+            ++iteration;
         }
         return -objectiveValue;
     };
 
     // Bracketing stage
-    double tA = 0.0;
-    double tB = dStepSize;
+    double previousStepSize = 0.0;
+    double middleStepSize = dStepSize;
+    double previousObjective = evaluateStep(previousStepSize);
+    double middleObjective = evaluateStep(middleStepSize);
 
-    double FA = evaluateStep(tA);
-    double FB = evaluateStep(tB);
-
-    if (FB > FA) {
-        swap(tA, tB);
-        swap(FA, FB);
+    if (middleObjective > previousObjective) {
+        swap(previousStepSize, middleStepSize);
+        swap(previousObjective, middleObjective);
     }
 
-    double tC = tB + GOLD * (tB - tA);
-    double FC = evaluateStep(tC);
+    double nextStepSize = middleStepSize + goldenExpansionFactor * (middleStepSize - previousStepSize);
+    double nextObjective = evaluateStep(nextStepSize);
 
-    while (FB >= FC && iter < iMaxIter) {
-        const double R = (tB - tA) * (FB - FC);
-        const double Q = (tB - tC) * (FB - FA);
-        const double denominator = 2.0 * copysign(max(abs(Q - R), ZEPS), Q - R);
-        double tP = tB - ((tB - tC) * Q - (tB - tA) * R) / denominator;
-        const double tPMax = tB + GLIMIT * (tC - tB);
-        double FP = 0.0;
-        if ((tB - tP) * (tP - tC) > 0.0) {
-            FP = evaluateStep(tP);
-            if (FP < FC) {
-                tA = tB;
-                FA = FB;
-                tB = tP;
-                FB = FP;
+    while (middleObjective >= nextObjective && iteration < maximumIterations) {
+        const double interpolationTermPrevious = (middleStepSize - previousStepSize) * (middleObjective - nextObjective);
+        const double interpolationTermNext = (middleStepSize - nextStepSize) * (middleObjective - previousObjective);
+        const double interpolationDifference = interpolationTermNext - interpolationTermPrevious;
+        const double interpolationDenominator = 2.0 * copysign(max(abs(interpolationDifference), numericalEpsilon), interpolationDifference);
+        double trialStepSize = middleStepSize - ((middleStepSize - nextStepSize) * interpolationTermNext - (middleStepSize - previousStepSize) * interpolationTermPrevious) / interpolationDenominator;
+        const double maximumTrialStepSize = middleStepSize + maximumExpansionFactor * (nextStepSize - middleStepSize);
+        double trialObjective = 0.0;
+
+        if ((middleStepSize - trialStepSize) * (trialStepSize - nextStepSize) > 0.0) {
+            trialObjective = evaluateStep(trialStepSize);
+
+            if (trialObjective < nextObjective) {
+                previousStepSize = middleStepSize;
+                previousObjective = middleObjective;
+                middleStepSize = trialStepSize;
+                middleObjective = trialObjective;
                 break;
             }
-            if (FP > FB) {
-                tC = tP;
-                FC = FP;
+
+            if (trialObjective > middleObjective) {
+                nextStepSize = trialStepSize;
+                nextObjective = trialObjective;
                 break;
             }
-            tP = tC + GOLD * (tC - tB);
-            FP = evaluateStep(tP);
+
+            trialStepSize = nextStepSize + goldenExpansionFactor * (nextStepSize - middleStepSize);
+            trialObjective = evaluateStep(trialStepSize);
         }
-        else if ((tC - tP) * (tP - tPMax) > 0.0) {
-            FP = evaluateStep(tP);
-            if (FP < FC) {
-                tB = tC;
-                FB = FC;
-                tC = tP;
-                FC = FP;
-                tP = tC + GOLD * (tC - tB);
-                FP = evaluateStep(tP);
+        else if ((nextStepSize - trialStepSize) * (trialStepSize - maximumTrialStepSize) > 0.0) {
+            trialObjective = evaluateStep(trialStepSize);
+
+            if (trialObjective < nextObjective) {
+                middleStepSize = nextStepSize;
+                middleObjective = nextObjective;
+                nextStepSize = trialStepSize;
+                nextObjective = trialObjective;
+                trialStepSize = nextStepSize + goldenExpansionFactor * (nextStepSize - middleStepSize);
+                trialObjective = evaluateStep(trialStepSize);
             }
         }
-        else if ((tP - tPMax) * (tPMax - tC) >= 0.0) {
-            tP = tPMax;
-            FP = evaluateStep(tP);
+        else if ((trialStepSize - maximumTrialStepSize) * (maximumTrialStepSize - nextStepSize) >= 0.0) {
+            trialStepSize = maximumTrialStepSize;
+            trialObjective = evaluateStep(trialStepSize);
         }
         else {
-            tP = tC + GOLD * (tC - tB);
-            FP = evaluateStep(tP);
+            trialStepSize = nextStepSize + goldenExpansionFactor * (nextStepSize - middleStepSize);
+            trialObjective = evaluateStep(trialStepSize);
         }
 
-        tA = tB;
-        tB = tC;
-        tC = tP;
-        FA = FB;
-        FB = FC;
-        FC = FP;
+        previousStepSize = middleStepSize;
+        middleStepSize = nextStepSize;
+        nextStepSize = trialStepSize;
+        previousObjective = middleObjective;
+        middleObjective = nextObjective;
+        nextObjective = trialObjective;
     }
 
-    if (iter >= iMaxIter) {
+    if (iteration >= maximumIterations) {
         saveLineSearch(vLineSearchHistory);
         _timer.printIterationInterval();
-        cout << setw(6) << iter << flush;
+        cout << setw(6) << iteration << flush;
         return;
     }
 
     // Brent minimization stage
-    double A = min(tA, tC);
-    double B = max(tA, tC);
-    double V = tB;
-    double W = tB;
-    double X = tB;
-    double FX = FB;
-    double FW = FB;
-    double FV = FB;
-    double D = 0.0;
-    double E = 0.0;
+    double bracketLowerBound = min(previousStepSize, nextStepSize);
+    double bracketUpperBound = max(previousStepSize, nextStepSize);
+    double secondPreviousBestStep = middleStepSize;
+    double previousBestStep = middleStepSize;
+    double bestStep = middleStepSize;
+    double bestObjective = middleObjective;
+    double previousBestObjective = middleObjective;
+    double secondPreviousBestObjective = middleObjective;
+    double proposedStepOffset = 0.0;
+    double previousStepOffset = 0.0;
 
-    while (iter < iMaxIter) {
-        const double XM   = 0.5 * (A + B);
-        const double TOL1 = TOL * abs(X) + ZEPS;
-        const double TOL2 = 2.0 * TOL1;
-        if (abs(X - XM) <= TOL2 - 0.5 * (B - A))
+    while (iteration < maximumIterations) {
+        const double bracketMidpoint = 0.5 * (bracketLowerBound + bracketUpperBound);
+        const double absoluteTolerance = relativeTolerance * abs(bestStep) + numericalEpsilon;
+        const double doubledTolerance = 2.0 * absoluteTolerance;
+
+        if (abs(bestStep - bracketMidpoint) <= doubledTolerance - 0.5 * (bracketUpperBound - bracketLowerBound))
             break;
 
         bool useParabolicStep = false;
-        if (abs(E) > TOL1) {
-            const double R = (X - W) * (FX - FV);
-            double Q       = (X - V) * (FX - FW);
-            double P       = (X - V) * Q - (X - W) * R;
-            Q = 2.0 * (Q - R);
-            if (Q > 0.0)
-                P = -P;
-            Q = abs(Q);
-            const double previousE = E;
-            E = D;
-            if (Q > 0.0 &&
-                abs(P) < abs(0.5 * Q * previousE) &&
-                P > Q * (A - X) &&
-                P < Q * (B - X)) {
-                D = P / Q;
+        if (abs(previousStepOffset) > absoluteTolerance) {
+            const double interpolationTermPrevious = (bestStep - previousBestStep) * (bestObjective - secondPreviousBestObjective);
+            double interpolationTermSecondPrevious = (bestStep - secondPreviousBestStep) * (bestObjective - previousBestObjective);
+            double parabolicNumerator = (bestStep - secondPreviousBestStep) * interpolationTermSecondPrevious - (bestStep - previousBestStep) * interpolationTermPrevious;
+            double parabolicDenominator = 2.0 * (interpolationTermSecondPrevious - interpolationTermPrevious);
+
+            if (parabolicDenominator > 0.0)
+                parabolicNumerator = -parabolicNumerator;
+
+            parabolicDenominator = abs(parabolicDenominator);
+            const double savedPreviousStepOffset = previousStepOffset;
+            previousStepOffset = proposedStepOffset;
+
+            if (parabolicDenominator > 0.0 && abs(parabolicNumerator) < abs(0.5 * parabolicDenominator * savedPreviousStepOffset) && parabolicNumerator > parabolicDenominator * (bracketLowerBound - bestStep) && parabolicNumerator < parabolicDenominator * (bracketUpperBound - bestStep)) {
+                proposedStepOffset = parabolicNumerator / parabolicDenominator;
                 useParabolicStep = true;
-                const double trialPoint = X + D;
-                if (trialPoint - A < TOL2 || B - trialPoint < TOL2)
-                    D = copysign(TOL1, XM - X);
+
+                const double proposedTrialStep = bestStep + proposedStepOffset;
+
+                if (proposedTrialStep - bracketLowerBound < doubledTolerance || bracketUpperBound - proposedTrialStep < doubledTolerance)
+                    proposedStepOffset = copysign(absoluteTolerance, bracketMidpoint - bestStep);
             }
         }
 
         if (!useParabolicStep) {
-            E = (X >= XM) ? A - X : B - X;
-            D = CGOLD * E;
+            previousStepOffset = (bestStep >= bracketMidpoint) ? bracketLowerBound - bestStep : bracketUpperBound - bestStep;
+            proposedStepOffset = goldenSectionFactor * previousStepOffset;
         }
 
-        const double U = abs(D) >= TOL1 ? X + D : X + copysign(TOL1, D);
-        const double FU = evaluateStep(U);
-        if (FU <= FX) {
-            if (U >= X)
-                A = X;
+        const double trialStep = abs(proposedStepOffset) >= absoluteTolerance ? bestStep + proposedStepOffset : bestStep + copysign(absoluteTolerance, proposedStepOffset);
+        const double trialObjective = evaluateStep(trialStep);
+
+        if (trialObjective <= bestObjective) {
+            if (trialStep >= bestStep)
+                bracketLowerBound = bestStep;
             else
-                B = X;
-            V  = W;
-            FV = FW;
-            W  = X;
-            FW = FX;
-            X  = U;
-            FX = FU;
+                bracketUpperBound = bestStep;
+
+            secondPreviousBestStep = previousBestStep;
+            secondPreviousBestObjective = previousBestObjective;
+            previousBestStep = bestStep;
+            previousBestObjective = bestObjective;
+            bestStep = trialStep;
+            bestObjective = trialObjective;
         }
         else {
-            if (U < X)
-                A = U;
+            if (trialStep < bestStep)
+                bracketLowerBound = trialStep;
             else
-                B = U;
-            if (FU <= FW || W == X) {
-                V  = W;
-                FV = FW;
-                W  = U;
-                FW = FU;
+                bracketUpperBound = trialStep;
+
+            if (trialObjective <= previousBestObjective || previousBestStep == bestStep) {
+                secondPreviousBestStep = previousBestStep;
+                secondPreviousBestObjective = previousBestObjective;
+                previousBestStep = trialStep;
+                previousBestObjective = trialObjective;
             }
-            else if (FU <= FV || V == X || V == W) {
-                V  = U;
-                FV = FU;
+            else if (trialObjective <= secondPreviousBestObjective || secondPreviousBestStep == bestStep || secondPreviousBestStep == previousBestStep) {
+                secondPreviousBestStep = trialStep;
+                secondPreviousBestObjective = trialObjective;
             }
         }
     }
- 
-    dStepSize = isfinite(X) ? X : 0.0;
+
+    dStepSize = isfinite(bestStep) ? bestStep : 0.0;
     saveLineSearch(vLineSearchHistory);
     _timer.printIterationInterval();
-    cout << setw(6) << iter << flush;
+    cout << setw(6) << iteration << flush;
 }
 
 // Public functions

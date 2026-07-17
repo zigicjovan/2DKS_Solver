@@ -12,7 +12,6 @@ using namespace std;
 
 constexpr double dPI = 3.141592653589793238462643383279502884; // reliable proxy
 const complex<double> Imaginary(0.0, 1.0);
-size_t getIndex(size_t i, size_t j, size_t N);
 
 class Parameters {
 private:
@@ -84,6 +83,7 @@ public:
     // for extended-time simulations
     double dOptimalTimeWindow; 
 
+    size_t getIndex(size_t i, size_t j, size_t N);
     size_t iGetNumericalSteps() const;
     size_t iGetNumericalStepsPerFile() const;
     void getMathematicalOperators();

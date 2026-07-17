@@ -5,12 +5,33 @@
 
 using namespace std;
 
+FFTWPlanner::FFTWPlanner(const Parameters& params) {
+    _dummy.resize(params.iTotalGridSize);
+
+    _forwardPlan = fftw_plan_dft_2d(
+        params.iGridSize2, params.iGridSize1,
+        reinterpret_cast<fftw_complex*>(_dummy.data()),
+        reinterpret_cast<fftw_complex*>(_dummy.data()),
+        FFTW_FORWARD, FFTW_MEASURE);
+
+    _backwardPlan = fftw_plan_dft_2d(
+        params.iGridSize2, params.iGridSize1,
+        reinterpret_cast<fftw_complex*>(_dummy.data()),
+        reinterpret_cast<fftw_complex*>(_dummy.data()),
+        FFTW_BACKWARD, FFTW_MEASURE);
+}
+
+FFTWPlanner::~FFTWPlanner() {
+    fftw_destroy_plan(_forwardPlan);
+    fftw_destroy_plan(_backwardPlan);
+}
+
 void FFTWPlanner::fft2InPlace(complex<double>* vState) {
-    fftw_execute_dft(forwardPlan,reinterpret_cast<fftw_complex*>(vState),reinterpret_cast<fftw_complex*>(vState));
+    fftw_execute_dft(_forwardPlan,reinterpret_cast<fftw_complex*>(vState),reinterpret_cast<fftw_complex*>(vState));
 }
 
 void FFTWPlanner::ifft2InPlace(const Parameters& params, complex<double>* vState) {
-    fftw_execute_dft(backwardPlan,reinterpret_cast<fftw_complex*>(vState),reinterpret_cast<fftw_complex*>(vState));
+    fftw_execute_dft(_backwardPlan,reinterpret_cast<fftw_complex*>(vState),reinterpret_cast<fftw_complex*>(vState));
 
     const double scale = 1.0 / static_cast<double>(params.iTotalGridSize);
     for (size_t i = 0; i < params.iTotalGridSize; ++i)
