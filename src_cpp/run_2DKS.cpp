@@ -30,10 +30,9 @@ int main(int argc, char* argv[]) {
     solver.setSolutionState(SolveInitialState, vStateInitial);
     solver.setSolutionInTime(SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
     timer.printInterval("Forward problem initialized at ");
-    cout << "\n";
     double dOptimalSolution = solver.getOptimalSolution(OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, 
                                                         vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
-    std::cout << "Maximum Energy Amplification: " << dOptimalSolution;
+    cout << setprecision(12) << "Maximum Energy Amplification: " << dOptimalSolution << defaultfloat << setprecision(6);
 
     // Step 5: clean up  
     timer.stop();

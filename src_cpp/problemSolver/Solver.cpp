@@ -19,6 +19,8 @@
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
+#include <limits>
+#include <utility>
 
 using namespace std;
 
@@ -404,7 +406,7 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
 void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     
-    // This function finds the maximum L2 energy via Riemmanian Conjugate Gradient with Polak-Ribiere Momentum
+    // Finds the maximum L2 energy via Riemmanian Conjugate Gradient with Polak-Ribiere Momentum
     if (_params.bOptimizeSolution == 1) {
         
         // Clear old data
@@ -426,8 +428,8 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
         saveOptimizationDiagnostics(vDiagnostics);
 
-        cout << left << setw(8)  << "Iter" << setw(18) << "J"<< setw(18) << "Adjoint solved" << setw(18) 
-             << "Stepsize solved" << setw(18) << "Forward solved" << setw(18) << "Delta J" << '\n' << string(98, '-') << '\n';
+        cout << left << setw(5)  << "Iter" << setw(18) << "Objective (J)" << setw(10) << "Adjoint" << setw(10) 
+             << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(10) << "Objective Delta" << '\n' << string(75, '-') << '\n';
 
         size_t iMomentumCounter = 0;
         SolutionData RawUpdate(_params, _paths, InitialState); 
@@ -452,7 +454,8 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
 
         dObjectiveDelta = 1.0;
         while ( abs(dObjectiveDelta) > _params.dOptimizationTolerance && iter <= iMaxIter ) {
-            cout << left << setw(8)  << iter << setw(18) << dObjectiveValue;
+            cout << left << setw(5)  << iter << setw(18) << setprecision(12) << dObjectiveValue << flush;
+            cout << defaultfloat << setprecision(6);
             
             // Solve adjoint equation
             setSolutionInTime(SolveBackwardInTime, vObjectiveGradient, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
@@ -490,9 +493,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             if (dAscentSize < 0)
                 DirectionCurr = ProjectedObjGradCurr;             
 
-            // solveLineSearchOptimization(dStepSize, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-            dStepSize = 1e5;
-            // [dStepSize,iter_search,J_search] = optimize_stepsize(DirectionCurr,u_IC,dStepSize,IC,N,K,L_s1,L_s2,dt,T,Ntime_save_max,originalIC); % current step-size via Brent's method
+            solveLineSearchOptimization(dStepSize, DirectionCurr, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
             if (dStepSize == 0)
                 dStepSize = dAngleFwdICAndGradJ / dObjectiveGradientSize; 
                                      
@@ -515,7 +516,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
                                               
             dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);                                                                                                                                                     
 
-            cout << setw(18) << dObjectiveDelta << flush << '\n';
+            cout << setw(10) << dObjectiveDelta << flush << '\n';
             vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
             saveOptimizationDiagnostics(vDiagnostics);
         }
@@ -527,24 +528,204 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         vOptimalEnergySolution = { _params.dInitialEnergy, _params.dDomainFactor1, _params.dDomainFactor2, _params.dTimeWindow, dObjectiveValue, 
                                    maxEnergyResult.dTimepoint, maxEnergyResult.dEnergy };
         saveSolutionBranch(vOptimalEnergySolution);
+        cout << string(75, '-') << '\n';
         _timer.printInterval("Energy maximization problem solved at ");
     }
 }
 
-void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
-                                     SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& DirectionCurr, SolutionData& vTargetStart, 
+                                         SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     
-    // This function finds the optimal step-size using Brent's Method
-    size_t iter = 1;
-    size_t iMaxIter = 1000;
-    vector<double> vLineSearchHistory; 
-    vLineSearchHistory.reserve(iMaxIter);
-    // TO DO: solve Brent
+    // Finds the optimal step size using bracketing followed by Brent's method.
+    constexpr double TOL    = 1e-5;
+    constexpr double GOLD   = 1.618034;
+    constexpr double GLIMIT = 100.0;
+    constexpr double CGOLD  = 0.381966;
+    constexpr double ZEPS   = 1e-10;
 
+    size_t iter = 0;
+    constexpr size_t iMaxIter = 1000;
+
+    vector<double> vLineSearchHistory;
+    vLineSearchHistory.reserve(iMaxIter);
+
+    SolutionData RawUpdate(_params, _paths, InitialState);
+    SolutionData RetractedState(_params, _paths, InitialState);
+    
+    // Evaluate f(step) = -J(step), where J is the terminal L2 energy. Therefore, minimizing f maximizes J.
+    auto evaluateStep = [&](double step) {
+        RawUpdate = vTargetStart + step * DirectionCurr;
+        const double rawNorm = RawUpdate.getNormL2();
+        if (rawNorm == 0.0 || !isfinite(rawNorm))
+            return numeric_limits<double>::infinity();
+        const double retraction = sqrt(_params.dInitialEnergy) / rawNorm;
+        RetractedState = retraction * RawUpdate;
+        setSolutionInTime( SolveForwardInTime, RetractedState, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+        const double objectiveValue = vTargetEnd.getEnergyL2();
+        if (iter < iMaxIter) {
+            vLineSearchHistory.push_back(objectiveValue);
+            ++iter;
+        }
+        return -objectiveValue;
+    };
+
+    // Bracketing stage
+    double tA = 0.0;
+    double tB = dStepSize;
+
+    double FA = evaluateStep(tA);
+    double FB = evaluateStep(tB);
+
+    if (FB > FA) {
+        swap(tA, tB);
+        swap(FA, FB);
+    }
+
+    double tC = tB + GOLD * (tB - tA);
+    double FC = evaluateStep(tC);
+
+    while (FB >= FC && iter < iMaxIter) {
+        const double R = (tB - tA) * (FB - FC);
+        const double Q = (tB - tC) * (FB - FA);
+        const double denominator = 2.0 * copysign(max(abs(Q - R), ZEPS), Q - R);
+        double tP = tB - ((tB - tC) * Q - (tB - tA) * R) / denominator;
+        const double tPMax = tB + GLIMIT * (tC - tB);
+        double FP = 0.0;
+        if ((tB - tP) * (tP - tC) > 0.0) {
+            FP = evaluateStep(tP);
+            if (FP < FC) {
+                tA = tB;
+                FA = FB;
+                tB = tP;
+                FB = FP;
+                break;
+            }
+            if (FP > FB) {
+                tC = tP;
+                FC = FP;
+                break;
+            }
+            tP = tC + GOLD * (tC - tB);
+            FP = evaluateStep(tP);
+        }
+        else if ((tC - tP) * (tP - tPMax) > 0.0) {
+            FP = evaluateStep(tP);
+            if (FP < FC) {
+                tB = tC;
+                FB = FC;
+                tC = tP;
+                FC = FP;
+                tP = tC + GOLD * (tC - tB);
+                FP = evaluateStep(tP);
+            }
+        }
+        else if ((tP - tPMax) * (tPMax - tC) >= 0.0) {
+            tP = tPMax;
+            FP = evaluateStep(tP);
+        }
+        else {
+            tP = tC + GOLD * (tC - tB);
+            FP = evaluateStep(tP);
+        }
+
+        tA = tB;
+        tB = tC;
+        tC = tP;
+        FA = FB;
+        FB = FC;
+        FC = FP;
+    }
+
+    if (iter >= iMaxIter) {
+        saveLineSearch(vLineSearchHistory);
+        _timer.printIterationInterval();
+        cout << setw(6) << iter << flush;
+        return;
+    }
+
+    // Brent minimization stage
+    double A = min(tA, tC);
+    double B = max(tA, tC);
+    double V = tB;
+    double W = tB;
+    double X = tB;
+    double FX = FB;
+    double FW = FB;
+    double FV = FB;
+    double D = 0.0;
+    double E = 0.0;
+
+    while (iter < iMaxIter) {
+        const double XM   = 0.5 * (A + B);
+        const double TOL1 = TOL * abs(X) + ZEPS;
+        const double TOL2 = 2.0 * TOL1;
+        if (abs(X - XM) <= TOL2 - 0.5 * (B - A))
+            break;
+
+        bool useParabolicStep = false;
+        if (abs(E) > TOL1) {
+            const double R = (X - W) * (FX - FV);
+            double Q       = (X - V) * (FX - FW);
+            double P       = (X - V) * Q - (X - W) * R;
+            Q = 2.0 * (Q - R);
+            if (Q > 0.0)
+                P = -P;
+            Q = abs(Q);
+            const double previousE = E;
+            E = D;
+            if (Q > 0.0 &&
+                abs(P) < abs(0.5 * Q * previousE) &&
+                P > Q * (A - X) &&
+                P < Q * (B - X)) {
+                D = P / Q;
+                useParabolicStep = true;
+                const double trialPoint = X + D;
+                if (trialPoint - A < TOL2 || B - trialPoint < TOL2)
+                    D = copysign(TOL1, XM - X);
+            }
+        }
+
+        if (!useParabolicStep) {
+            E = (X >= XM) ? A - X : B - X;
+            D = CGOLD * E;
+        }
+
+        const double U = abs(D) >= TOL1 ? X + D : X + copysign(TOL1, D);
+        const double FU = evaluateStep(U);
+        if (FU <= FX) {
+            if (U >= X)
+                A = X;
+            else
+                B = X;
+            V  = W;
+            FV = FW;
+            W  = X;
+            FW = FX;
+            X  = U;
+            FX = FU;
+        }
+        else {
+            if (U < X)
+                A = U;
+            else
+                B = U;
+            if (FU <= FW || W == X) {
+                V  = W;
+                FV = FW;
+                W  = U;
+                FW = FU;
+            }
+            else if (FU <= FV || V == X || V == W) {
+                V  = U;
+                FV = FU;
+            }
+        }
+    }
+ 
+    dStepSize = isfinite(X) ? X : 0.0;
     saveLineSearch(vLineSearchHistory);
-    cout << setw(18) << iter ;
-    _timer.printInterval(", ");
-    cout << flush;
+    _timer.printIterationInterval();
+    cout << setw(6) << iter << flush;
 }
 
 // Public functions
@@ -602,7 +783,9 @@ double Solver::getOptimalSolution(OptimizeSolutionType targetType, SolutionData&
     switch (targetType) {
         
         case OptimizeEnergyAmplification:  
+            cout << "\n";    
             solveRiemmanianOptimization(dTargetValue, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+            cout << "\n";
             break;
 
         case OptimizeLineSearchStepSize:

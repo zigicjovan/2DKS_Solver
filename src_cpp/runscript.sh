@@ -11,7 +11,7 @@ T=-1.00
 
 optimize=1
 tol=1e-6
-continuation=0
+continuation=1
 optT=-3
 
 ./solver $IC $N1 $N2 $dt $K $ell1 $ell2 $T $optimize $tol $continuation $optT

@@ -57,8 +57,8 @@ private:
     void solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, const SolutionData& vTargetEnd);
     void solveRiemmanianOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
-    void solveLineSearchOptimization(double& dTargetValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
-                                     SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
+    void solveLineSearchOptimization(double& dTargetValue, SolutionData& DirectionCurr, SolutionData& vTargetStart, 
+                                     SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 public:
     Solver(Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer);
 

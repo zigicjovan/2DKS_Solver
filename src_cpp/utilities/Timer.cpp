@@ -29,11 +29,11 @@ double Timer::elapsedSeconds() const {
 }
 
 void Timer::printInterval(const string& label) const {
-    cout << label << formatElapsed(elapsedSeconds());
+    cout << label << formatElapsed(elapsedSeconds()) << flush;
 }
 
 void Timer::printIterationInterval() const {
-    cout << setw(18) << formatElapsed(elapsedSeconds()); 
+    cout << setw(10) << formatElapsed(elapsedSeconds()) << flush; 
 }
 
 void Timer::stop() const {
