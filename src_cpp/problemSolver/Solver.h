@@ -27,7 +27,7 @@ enum OptimizeSolutionType {
     OptimizeLineSearchStepSize,           
 };
 
-struct MaxEnergy {
+struct EnergyData {
     double dEnergy;
     double dTimepoint;
 };
@@ -42,9 +42,9 @@ private:
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
     void saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics);
-    void saveSolutionBranch(const array<double, 7>& vOptimalEnergySolution);
+    void saveSolutionBranchAndPowerLaws(const array<double, 7>& vOptimalEnergySolution);
     void saveLineSearch(vector<double>& vLineSearchHistory);
-    MaxEnergy getMaxEnergyInTimeWindow();
+    EnergyData getMaxEnergyL2InTimeWindow();
 
     void checkCFL(SolutionData& vData1, SolutionData& vData2);
     void setInitialCondition(SolutionData& vTargetState);

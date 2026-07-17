@@ -22,20 +22,29 @@ public:
     filesystem::path dirEnergyEvolution;
     filesystem::path dirOptimalInitialData;
     filesystem::path dirOptimalTerminalData;
-    filesystem::path dirOptimalSolutionBranches;
+    filesystem::path dirOptimalSolutionBranch;
     filesystem::path dirOptimizationDiagnostics;
     filesystem::path dirOptimizationLineSearch;
 
     // filenames
     ostringstream strTestcase;
-    ostringstream strTestcaseGeneric;
+    ostringstream strTestcaseGenericTime;
+    ostringstream strTestcaseBranch;
+    ostringstream strTestcaseInitialEnergyPowerLaw;
+    ostringstream strTestcaseDomainSizePowerLaw;
+    ostringstream strTestcaseEnergyTimeWindowPowerLaw;
+    ostringstream strTestcaseDomainTimeWindowPowerLaw;
     filesystem::path fForwardSolution; // note: multiple files 
     filesystem::path fBackwardSolution;
     filesystem::path fFourierSpectrumEvolution;
     filesystem::path fEnergyEvolution;
     filesystem::path fOptimalInitialData;
     filesystem::path fOptimalTerminalData;
-    filesystem::path fOptimalSolutionBranches;
+    filesystem::path fOptimalSolutionBranch; 
+    filesystem::path fOptimalSolutionInitialEnergyPowerLaw; 
+    filesystem::path fOptimalSolutionDomainSizePowerLaw; 
+    filesystem::path fOptimalSolutionEnergyTimeWindowPowerLaw;
+    filesystem::path fOptimalSolutionDomainTimeWindowPowerLaw; 
     filesystem::path fOptimizationDiagnostics;
     filesystem::path fOptimizationLineSearch;
 };

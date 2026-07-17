@@ -52,30 +52,99 @@ void Solver::saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics) {
          << ' ' << vDiagnostics[4] << ' ' << vDiagnostics[5] << ' ' << vDiagnostics[6] << '\n';
 }
 
-void Solver::saveSolutionBranch(const array<double, 7>& vOptimalEnergySolution) {
-    vector<array<double, 7>> vSolutionsInBranch;
-    
+void Solver::saveSolutionBranchAndPowerLaws(const array<double, 7>& vOptimalEnergySolution) {
+    vector<array<double, 7>> vBranch;
+    vector<array<double, 7>> vK;
+    vector<array<double, 7>> vL;
+    vector<array<double, 7>> vTK;
+    vector<array<double, 7>> vTL;
+
     {
-        ifstream inputFile(_paths.fOptimalSolutionBranches);
-        array<double, 7> solution;
-        while (inputFile >> solution[0] >> solution[1] >> solution[2] >> solution[3] >> solution[4] >> solution[5]) {
-            vSolutionsInBranch.push_back(solution);
-        }
+        ifstream inputBranch(_paths.fOptimalSolutionBranch);
+        ifstream inputK(_paths.fOptimalSolutionInitialEnergyPowerLaw);
+        ifstream inputL(_paths.fOptimalSolutionDomainSizePowerLaw);
+        ifstream inputTK(_paths.fOptimalSolutionEnergyTimeWindowPowerLaw);
+        ifstream inputTL(_paths.fOptimalSolutionDomainTimeWindowPowerLaw);
+        array<double, 7> solutionBranch;
+        array<double, 7> solutionK;
+        array<double, 7> solutionL;
+        array<double, 7> solutionTK;
+        array<double, 7> solutionTL;
+        while (inputBranch >> solutionBranch[0] >> solutionBranch[1] >> solutionBranch[2] >> solutionBranch[3] >> solutionBranch[4] >> solutionBranch[5] >> solutionBranch[6])
+            vBranch.push_back(solutionBranch);
+        while (inputK >> solutionK[0] >> solutionK[1] >> solutionK[2] >> solutionK[3] >> solutionK[4] >> solutionK[5] >> solutionK[6])
+            vK.push_back(solutionK);
+        while (inputL >> solutionL[0] >> solutionL[1] >> solutionL[2] >> solutionL[3] >> solutionL[4] >> solutionL[5] >> solutionL[6])
+            vL.push_back(solutionL);
+        while (inputTK >> solutionTK[0] >> solutionTK[1] >> solutionTK[2] >> solutionTK[3] >> solutionTK[4] >> solutionTK[5] >> solutionTK[6])
+            vTK.push_back(solutionTK);
+        while (inputTL >> solutionTL[0] >> solutionTL[1] >> solutionTL[2] >> solutionTL[3] >> solutionTL[4] >> solutionTL[5] >> solutionTL[6])
+            vTL.push_back(solutionTL);
     }
 
-    vSolutionsInBranch.push_back(vOptimalEnergySolution);
-    sort(vSolutionsInBranch.begin(), vSolutionsInBranch.end(), [](const auto& a, const auto& b) { return a[2] < b[2]; } );
-    
-    ofstream outputFile(_paths.fOptimalSolutionBranches);
-    outputFile << setprecision(16) << scientific;
-    for (const auto& solution : vSolutionsInBranch) {
-        for (size_t column = 0; column < solution.size(); ++column) {
-            if (column > 0)
-                outputFile << ' ';
-            outputFile << solution[column];
+    auto updateAndSave = [&](vector<array<double, 7>>& solutions, const string& filename, auto matches, auto sortingRule) {
+        auto existing = find_if(solutions.begin(), solutions.end(), [&](const auto& solution) { return matches(solution, vOptimalEnergySolution);});
+        if (existing == solutions.end())
+            solutions.push_back(vOptimalEnergySolution);
+        else if (vOptimalEnergySolution[6] > (*existing)[6])
+            *existing = vOptimalEnergySolution;
+
+        sort(solutions.begin(), solutions.end(), sortingRule);
+        ofstream output(filename);
+        output << scientific << setprecision(16);
+        for (const auto& solution : solutions) {
+            for (size_t column = 0; column < solution.size(); ++column) {
+                if (column > 0)
+                    output << ' ';
+                output << solution[column];
+            }
+            output << '\n';
         }
-        outputFile << '\n';
-    }
+    };
+
+    updateAndSave(vBranch, _paths.fOptimalSolutionBranch,
+        [](const auto& a, const auto& b) {
+            return a[3] == b[3];
+        },
+        [](const auto& a, const auto& b) {
+            return a[3] < b[3];
+        });
+
+    updateAndSave(vK, _paths.fOptimalSolutionInitialEnergyPowerLaw,
+        [](const auto& a, const auto& b) {
+            return a[0] == b[0];
+        },
+        [](const auto& a, const auto& b) {
+            return a[0] < b[0];
+        });
+
+    updateAndSave(vL, _paths.fOptimalSolutionDomainSizePowerLaw,
+        [](const auto& a, const auto& b) {
+            return a[1] == b[1] && a[2] == b[2];
+        },
+        [](const auto& a, const auto& b) {
+            if (a[1] != b[1])
+                return a[1] < b[1];
+            return a[2] < b[2];
+        });
+
+    updateAndSave(vTK, _paths.fOptimalSolutionEnergyTimeWindowPowerLaw,
+        [](const auto& a, const auto& b) {
+            return a[0] == b[0];
+        },
+        [](const auto& a, const auto& b) {
+            return a[0] < b[0];
+        });
+
+    updateAndSave(vTL, _paths.fOptimalSolutionDomainTimeWindowPowerLaw,
+        [](const auto& a, const auto& b) {
+            return a[1] == b[1] && a[2] == b[2];
+        },
+        [](const auto& a, const auto& b) {
+            if (a[1] != b[1])
+                return a[1] < b[1];
+            return a[2] < b[2];
+        });
 }
 
 void Solver::saveLineSearch(vector<double>& vLineSearchHistory) {
@@ -94,14 +163,16 @@ void Solver::saveLineSearch(vector<double>& vLineSearchHistory) {
     file << '\n';
 }
 
-MaxEnergy Solver::getMaxEnergyInTimeWindow() {
+EnergyData Solver::getMaxEnergyL2InTimeWindow() {
     ifstream inputFile(_paths.fEnergyEvolution);
     double dTimepoint;
-    double dEnergy;
-    MaxEnergy result{ -numeric_limits<double>::infinity(), 0.0 };
-    while (inputFile >> dTimepoint >> dEnergy) {
-        if (dEnergy > result.dEnergy) {
-            result.dEnergy = dEnergy;
+    double dEnergyL2;
+    double dEnergyH1;
+    double dEnergyH2;
+    EnergyData result{ -numeric_limits<double>::infinity(), 0.0 };
+    while (inputFile >> dTimepoint >> dEnergyL2 >> dEnergyH1 >> dEnergyH2) {
+        if (dEnergyL2 > result.dEnergy) {
+            result.dEnergy = dEnergyL2;
             result.dTimepoint = dTimepoint;
         }
     }
@@ -183,7 +254,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         if (!entry.is_regular_file())
             continue;
         string filename = entry.path().filename().string();
-        if (filename.find(_paths.strTestcaseGeneric.str()) == string::npos)
+        if (filename.find(_paths.strTestcaseGenericTime.str()) == string::npos)
             continue;
         size_t pos1 = filename.find("_T_"); 
         if (pos1 == string::npos)
@@ -524,10 +595,10 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         _params.bOptimizeSolution = 0;
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
 
-        MaxEnergy maxEnergyResult = getMaxEnergyInTimeWindow();
+        EnergyData maxEnergyResult = getMaxEnergyL2InTimeWindow();
         vOptimalEnergySolution = { _params.dInitialEnergy, _params.dDomainFactor1, _params.dDomainFactor2, _params.dTimeWindow, dObjectiveValue, 
                                    maxEnergyResult.dTimepoint, maxEnergyResult.dEnergy };
-        saveSolutionBranch(vOptimalEnergySolution);
+        saveSolutionBranchAndPowerLaws(vOptimalEnergySolution);
         cout << string(75, '-') << '\n';
         _timer.printInterval("Energy maximization problem solved at ");
     }
