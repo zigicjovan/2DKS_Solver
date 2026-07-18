@@ -233,6 +233,6 @@ void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {
 void SolutionData::deleteData() { 
 
     //  delete forward solution data (if necessary) due to potentially large directory storage cost
-    cout << "Deleting all temporary solution data...\n";
     filesystem::remove_all(_paths.dirForwardSolution);
+    filesystem::create_directories(_paths.dirForwardSolution);
 }

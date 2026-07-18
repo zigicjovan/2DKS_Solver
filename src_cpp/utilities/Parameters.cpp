@@ -82,7 +82,7 @@ Parameters::Parameters(int argc, char* argv[]) {
     bOptimizeSolution = stoi(argv[9]);
     dOptimizationTolerance = stod(argv[10]);
     bNumericalContinuation = stoi(argv[11]);
-    if (bOptimizeSolution == true)
+    if (bOptimizeSolution)
         dOptimalTimeWindow = dTimeWindow;
     else
         dOptimalTimeWindow = pow(10.0, stod(argv[12]));
@@ -129,7 +129,7 @@ Parameters::Parameters(int argc, char* argv[]) {
               << ", cont " << bNumericalContinuation  
               << ", optT " << dOptimalTimeWindow      
               << endl
-              << "Intermediate Storage Required = " << dRequiredMemory
+              << "Intermediate Storage (for adjoint solve) = " << dRequiredMemory
               << " GB, Total Timesteps = " << iGetNumericalSteps() 
               << " (Max File Timesteps (640MB) " << iGetNumericalStepsPerFile() 
               << ", Remainder File Timesteps " << ( iGetNumericalSteps() % iGetNumericalStepsPerFile() )

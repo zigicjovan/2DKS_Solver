@@ -247,7 +247,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
 void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
     filesystem::path fContinuedFile;
     filesystem::path fTempFile;
-    double dBestT = _params.dTimeWindow + 1.0;            
+    double dBestT = _params.dOptimalTimeWindow + 1.0;            
 
     // Search for nearest previous time window in directory
     for (const auto& entry : filesystem::directory_iterator(_paths.dirOptimalInitialData)) {
@@ -269,21 +269,21 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
             continue;
         
         double T = stod(filename.substr(pos1, pos2 - pos1)); // Extract T
-        if (T <= _params.dTimeWindow && ( T > dBestT || dBestT > _params.dTimeWindow)) {
+        if (T <= _params.dOptimalTimeWindow && ( T > dBestT || dBestT > _params.dOptimalTimeWindow)) {
             dBestT = T;
             fContinuedFile = entry.path();
         }
     }
-    if (dBestT <= _params.dTimeWindow) {
+    if (dBestT <= _params.dOptimalTimeWindow) {
         fTempFile = _paths.fOptimalInitialData;
         _paths.fOptimalInitialData = fContinuedFile;
         vTargetState.loadData(InitialState);
-        cout << "Loaded continued initial data from T = " << dBestT << "\n" ;
+        cout << "Loaded continued initial data from T = " << dBestT << "\n" << flush;
         _paths.fOptimalInitialData = fTempFile; 
     }
     else {
         setInitialCondition(vTargetState);
-        cout << "No saved data, generated initial guess.\n";
+        cout << "No saved data, generated initial guess.\n" << flush;
     }
 }
 
@@ -294,6 +294,9 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     const size_t remainderSteps = totalSteps % stepsPerFile;
     const size_t fullSteps = totalSteps - remainderSteps;
     const size_t savedStateCount = min(_params.iSavedStates, totalSteps + 1);
+    const size_t savedStepsPerFile = min(stepsPerFile, savedStateCount);
+    const size_t savedRemainderSteps = savedStateCount % savedStepsPerFile;
+    const size_t savedFullSteps = savedStateCount - savedRemainderSteps;
     size_t savedStateIndex = 0;
     size_t nextSavedStep = 0;    
 
@@ -313,11 +316,12 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     SolutionData vForwardSpatialDerivative1(_params, _paths, InitialState); // (phi_{i})_{x_1}
     SolutionData vForwardSpatialDerivative2(_params, _paths, InitialState); // (phi_{i})_{x_2}
 
-    if (!_params.bOptimizeSolution) {
-        saveForwardState(dTimePoint, 0, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+    if (!_params.bOptimizeSolution && savedStateCount > 0) {
         ++savedStateIndex;
-        if (savedStateIndex < savedStateCount)
-            nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
+        saveForwardState( dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        if (savedStateIndex < savedStateCount) {
+            nextSavedStep = static_cast<size_t>(std::llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
+        }
     }
     vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
     vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
@@ -363,8 +367,8 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             saveForwardState(dTimePoint, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
         }
         else if (savedStateIndex < savedStateCount && i == nextSavedStep) {
-            saveForwardState(dTimePoint, savedStateIndex, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
             ++savedStateIndex;
+            saveForwardState(dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
             if (savedStateIndex < savedStateCount)
                 nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
         }
@@ -614,13 +618,13 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             saveOptimizationDiagnostics(vDiagnostics);
         }
 
-        _params.bOptimizeSolution = 0;
+        _params.bOptimizeSolution = false;
+        vHistoryIntermediate.deleteData();
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
         EnergyData maxEnergyResult = getMaxEnergyL2InTimeWindow();
         vOptimalEnergySolution = { _params.dInitialEnergy, _params.dDomainFactor1, _params.dDomainFactor2, _params.dTimeWindow, dObjectiveValue, 
                                    maxEnergyResult.dTimepoint, maxEnergyResult.dEnergy };
         saveSolutionBranchAndPowerLaws(vOptimalEnergySolution);
-        vHistoryIntermediate.deleteData();
         cout << string(75, '-') << '\n';
         _timer.printInterval("Energy maximization problem solved at ");
     }
@@ -842,11 +846,11 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
         case SolveInitialState: {               
             if (!_params.bNumericalContinuation) {
                 setInitialCondition(vTargetState);
-                cout << "Generated initial guess.\n";
+                cout << "Generated initial guess.\n" << flush;
             }
-            else if (filesystem::exists(_paths.fOptimalInitialData)) {
+            else if (filesystem::exists(_paths.fOptimalInitialData) && _params.bOptimizeSolution) {
                 vTargetState.loadData(InitialState);
-                cout << "Loaded optimal initial data.\n";
+                cout << "Loaded optimal initial data.\n" << flush;
             }
             else {
                 findContinuationForInitialData(vTargetState);
