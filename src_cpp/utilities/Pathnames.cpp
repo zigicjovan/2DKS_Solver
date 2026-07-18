@@ -37,21 +37,21 @@ Pathnames::Pathnames(const Parameters &params) {
     strTestcaseBranch << "_IC_" << params.strInitialGuessName       
         << "_K_" << scientific << setprecision(1) << params.dInitialEnergy    
         << "_ell1_" << fixed << setprecision(2) << params.dDomainFactor1     
-        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2;
+        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2 << ".dat";
 
     strTestcaseInitialEnergyPowerLaw << "_IC_" << params.strInitialGuessName         
         << "_ell1_" << fixed << setprecision(2) << params.dDomainFactor1     
-        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2;
+        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2 << ".dat";
 
     strTestcaseDomainSizePowerLaw << "_IC_" << params.strInitialGuessName       
-        << "_K_" << scientific << setprecision(1) << params.dInitialEnergy;
+        << "_K_" << scientific << setprecision(1) << params.dInitialEnergy << ".dat";
 
     strTestcaseEnergyTimeWindowPowerLaw << "_IC_" << params.strInitialGuessName       
         << "_ell1_" << fixed << setprecision(2) << params.dDomainFactor1     
-        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2;
+        << "_ell2_" << fixed << setprecision(2) << params.dDomainFactor2 << ".dat";
 
     strTestcaseDomainTimeWindowPowerLaw << "_IC_" << params.strInitialGuessName       
-        << "_K_" << scientific << setprecision(1) << params.dInitialEnergy;
+        << "_K_" << scientific << setprecision(1) << params.dInitialEnergy << ".dat";
 
     // create directories if they do not exist
     dirData = "Data";
@@ -59,9 +59,9 @@ Pathnames::Pathnames(const Parameters &params) {
     dirBackwardSolution = dirData / "BackwardSolution";
     dirFourierSpectrumEvolution = dirData / "FourierSpectrumEvolution";
     dirEnergyEvolution = dirData / "EnergyEvolution";
-    dirOptimalInitialData = dirData / "OptimalInitialData";
-    dirOptimalTerminalData = dirData / "OptimalTerminalData";
-    dirOptimalSolutionBranch = dirData / "OptimalSolutionBranch";
+    dirOptimalInitialData = dirData / "InitialData";
+    dirOptimalTerminalData = dirData / "TerminalData";
+    dirOptimalSolutionBranch = dirData / "SolutionBranches" / strTestcase.str() ;
     dirOptimizationDiagnostics = dirData / "OptimizationDiagnostics";
     dirOptimizationLineSearch = dirData / "OptimizationLineSearch";
 

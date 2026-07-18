@@ -4,18 +4,25 @@ LDFLAGS =
 LDLIBS = -lfftw3 -lm
 INCLUDES = -I./dataProcessing -I./problemSolver -I./utilities
 
-TARGET = solver
+TARGET := solver
 BUILD_DIR := build
 
-SOURCES = run_2DKS.cpp
+AGGREGATOR := aggregateResults
+AGGREGATE_SOURCE := utilities/aggregateResults.cpp
+AGGREGATE_INPUT_DIR ?= Data
+AGGREGATE_OUTPUT_DIR ?= Data/SolutionBranches
+
+SOURCES := run_2DKS.cpp
 SOURCES += $(wildcard dataProcessing/*.cpp)
 SOURCES += $(wildcard problemSolver/*.cpp)
-SOURCES += $(wildcard utilities/*.cpp)
+SOURCES += $(filter-out $(AGGREGATE_SOURCE),$(wildcard utilities/*.cpp))
 
 OBJECTS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
 DEPENDS := $(OBJECTS:.o=.d)
 
-.PHONY: all run clean
+RUNSCRIPT ?= runscripts/runscript.sh
+
+.PHONY: all run aggregate clean
 
 all: $(TARGET)
 
@@ -28,10 +35,14 @@ $(BUILD_DIR)/%.o: %.cpp
 
 -include $(DEPENDS)
 
-RUNSCRIPT ?= runscripts/runscript.sh
-
 run: $(TARGET)
 	./$(RUNSCRIPT)
 
+$(AGGREGATOR): $(AGGREGATE_SOURCE)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< -o $@
+
+aggregate: $(AGGREGATOR)
+	./$(AGGREGATOR) $(AGGREGATE_INPUT_DIR) $(AGGREGATE_OUTPUT_DIR)
+
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) $(AGGREGATOR)
