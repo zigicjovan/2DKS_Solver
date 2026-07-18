@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
                                                         vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
     cout << setprecision(12) << "Maximum Energy Amplification: " << dOptimalSolution << defaultfloat << setprecision(6);
 
-    // Step 5: clean up  
+    // Step 5: Stop timer and complete run  
     timer.stop();
     return 0;
 }

@@ -41,6 +41,7 @@ public:
     size_t iGridSize1;
     size_t iGridSize2;
     size_t iTotalGridSize;
+    size_t iSavedStates;
     double dTimeStep;
     double dSpaceStep;
     double dInitialEnergy;

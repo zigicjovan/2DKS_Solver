@@ -293,6 +293,9 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     const size_t stepsPerFile = _params.iGetNumericalStepsPerFile();
     const size_t remainderSteps = totalSteps % stepsPerFile;
     const size_t fullSteps = totalSteps - remainderSteps;
+    const size_t savedStateCount = min(_params.iSavedStates, totalSteps + 1);
+    size_t savedStateIndex = 0;
+    size_t nextSavedStep = 0;    
 
     vector<array<double, 4>> vDiagnostics;
     vDiagnostics.reserve(_params.iGetNumericalSteps() + 1);
@@ -310,6 +313,12 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     SolutionData vForwardSpatialDerivative1(_params, _paths, InitialState); // (phi_{i})_{x_1}
     SolutionData vForwardSpatialDerivative2(_params, _paths, InitialState); // (phi_{i})_{x_2}
 
+    if (!_params.bOptimizeSolution) {
+        saveForwardState(dTimePoint, 0, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        ++savedStateIndex;
+        if (savedStateIndex < savedStateCount)
+            nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
+    }
     vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
     vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
     for (size_t i = 1; i < totalSteps + 1; ++i) {
@@ -350,13 +359,21 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
         vStateCurrent[0] = complex<double>{0.0, 0.0}; // mean-zero correction
 
-        saveForwardState(dTimePoint, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        if (_params.bOptimizeSolution) {
+            saveForwardState(dTimePoint, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        }
+        else if (savedStateIndex < savedStateCount && i == nextSavedStep) {
+            saveForwardState(dTimePoint, savedStateIndex, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+            ++savedStateIndex;
+            if (savedStateIndex < savedStateCount)
+                nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
+        }
         vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
     }
     vTargetEnd.moveDataFrom(vStateCurrent);
     setSolutionState(SolveTerminalState, vTargetEnd);
-    if (_params.bOptimizeSolution == 0) {
+    if (!_params.bOptimizeSolution) {
         saveSolutionDiagnostics(vDiagnostics); 
         saveSolutionSpectrum(vSpectrumHistory);
     }
@@ -483,7 +500,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     
     // Finds the maximum L2 energy via Riemmanian Conjugate Gradient with Polak-Ribiere Momentum
-    if (_params.bOptimizeSolution == 1) {
+    if (_params.bOptimizeSolution) {
         
         // Clear old data
         filesystem::remove(_paths.fOptimizationDiagnostics);
@@ -599,11 +616,11 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
 
         _params.bOptimizeSolution = 0;
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
-
         EnergyData maxEnergyResult = getMaxEnergyL2InTimeWindow();
         vOptimalEnergySolution = { _params.dInitialEnergy, _params.dDomainFactor1, _params.dDomainFactor2, _params.dTimeWindow, dObjectiveValue, 
                                    maxEnergyResult.dTimepoint, maxEnergyResult.dEnergy };
         saveSolutionBranchAndPowerLaws(vOptimalEnergySolution);
+        vHistoryIntermediate.deleteData();
         cout << string(75, '-') << '\n';
         _timer.printInterval("Energy maximization problem solved at ");
     }
@@ -823,7 +840,7 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
     switch (targetType) {
         
         case SolveInitialState: {               
-            if (_params.bNumericalContinuation == 0) {
+            if (!_params.bNumericalContinuation) {
                 setInitialCondition(vTargetState);
                 cout << "Generated initial guess.\n";
             }

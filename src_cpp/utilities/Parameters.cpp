@@ -82,6 +82,11 @@ Parameters::Parameters(int argc, char* argv[]) {
     bOptimizeSolution = stoi(argv[9]);
     dOptimizationTolerance = stod(argv[10]);
     bNumericalContinuation = stoi(argv[11]);
+    if (bOptimizeSolution == true)
+        dOptimalTimeWindow = dTimeWindow;
+    else
+        dOptimalTimeWindow = pow(10.0, stod(argv[12]));
+    iSavedStates = stoi(argv[13]);
 
     vLinearOperator.resize(iTotalGridSize);
     vLaplaceOperator.resize(iTotalGridSize);
@@ -105,13 +110,9 @@ Parameters::Parameters(int argc, char* argv[]) {
                   -251352885992.0 / 790610919619.0,
                   -383714262797.0 / 1103637129625.0,
                   -403360439203.0 / 1888264787188.0 };
-    
-    if (bOptimizeSolution == true)
-        dOptimalTimeWindow = dTimeWindow;
-    else
-        dOptimalTimeWindow = pow(10.0, stod(argv[12]));
 
-    const int dRequiredMemory = 0.0640 * (iGetNumericalSteps() + iGetNumericalStepsPerFile() - 1) / iGetNumericalStepsPerFile();
+    const int dRequiredMemory = 0.640 * (iGetNumericalSteps() + iGetNumericalStepsPerFile() - 1) / iGetNumericalStepsPerFile();
+    const int dFinalMemory = iSavedStates * dRequiredMemory / iGetNumericalSteps();
 
     cout << "Parameter settings:\nIC " << strInitialGuessName 
               << ", N_x1 " << iGridSize1 
@@ -128,11 +129,13 @@ Parameters::Parameters(int argc, char* argv[]) {
               << ", cont " << bNumericalContinuation  
               << ", optT " << dOptimalTimeWindow      
               << endl
-              << "Required Memory = " << dRequiredMemory
+              << "Intermediate Storage Required = " << dRequiredMemory
               << " GB, Total Timesteps = " << iGetNumericalSteps() 
               << " (Max File Timesteps (640MB) " << iGetNumericalStepsPerFile() 
               << ", Remainder File Timesteps " << ( iGetNumericalSteps() % iGetNumericalStepsPerFile() )
-              << ")" << endl;
+              << ")" << endl
+              << "Final Storage = " << dFinalMemory
+              << " GB, Total Timesteps = " << iSavedStates << endl;
 }
 
 size_t Parameters::getIndex(size_t i, size_t j, size_t N) {
