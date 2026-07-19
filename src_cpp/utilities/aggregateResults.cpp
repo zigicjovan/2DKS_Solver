@@ -190,8 +190,7 @@ int main(int argc, char* argv[]) {
     map<string, FileType> fileTypes;
 
     try {
-        for (const fs::directory_entry& entry :
-            fs::recursive_directory_iterator(inputDirectory)) {
+        for (const fs::directory_entry& entry : fs::recursive_directory_iterator(inputDirectory)) {
 
             if (!entry.is_regular_file()) {
                 continue;

@@ -12,6 +12,7 @@ using namespace std;
 Pathnames::Pathnames(const Parameters &params) {
 
     // prepare filenames
+    const string fType = ".dat";
     _strTestcase << "_IC_" << params.getInitialGuessName() 
         << "_N1_" << params.getGridSize1() 
         << "_N2_" << params.getGridSize2()     
@@ -23,8 +24,7 @@ Pathnames::Pathnames(const Parameters &params) {
         << "_opt_" << params.getOptimizeSolution()       
         << "_tol_" << scientific << setprecision(0) << params.getOptimizationTolerance()  
         << "_cont_" << params.getNumericalContinuation()  
-        << "_optT_" << scientific << setprecision(2) << params.getOptimalTimeWindow()      
-        << ".dat";
+        << "_optT_" << scientific << setprecision(2) << params.getOptimalTimeWindow();
     
     _strTestcaseGenericTime << "_IC_" << params.getInitialGuessName() 
         << "_N1_" << params.getGridSize1() 
@@ -32,40 +32,42 @@ Pathnames::Pathnames(const Parameters &params) {
         << "_dt_" << scientific << setprecision(1) << params.getTimeStep()         
         << "_K_" << scientific << setprecision(1) << params.getInitialEnergy()    
         << "_ell1_" << fixed << setprecision(2) << params.getDomainFactor1()      
-        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2() ;
+        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2();
 
     _strTestcaseBranch << "_IC_" << params.getInitialGuessName()        
         << "_K_" << scientific << setprecision(1) << params.getInitialEnergy()    
         << "_ell1_" << fixed << setprecision(2) << params.getDomainFactor1()      
-        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2()  << ".dat";
+        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2();
 
     _strTestcaseInitialEnergyPowerLaw << "_IC_" << params.getInitialGuessName()          
         << "_ell1_" << fixed << setprecision(2) << params.getDomainFactor1()      
-        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2()  << ".dat";
+        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2();
 
     _strTestcaseDomainSizePowerLaw << "_IC_" << params.getInitialGuessName()        
-        << "_K_" << scientific << setprecision(1) << params.getInitialEnergy() << ".dat";
+        << "_K_" << scientific << setprecision(1) << params.getInitialEnergy();
 
     _strTestcaseEnergyTimeWindowPowerLaw << "_IC_" << params.getInitialGuessName()        
         << "_ell1_" << fixed << setprecision(2) << params.getDomainFactor1()      
-        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2()  << ".dat";
+        << "_ell2_" << fixed << setprecision(2) << params.getDomainFactor2();
 
     _strTestcaseDomainTimeWindowPowerLaw << "_IC_" << params.getInitialGuessName()        
-        << "_K_" << scientific << setprecision(1) << params.getInitialEnergy() << ".dat";
+        << "_K_" << scientific << setprecision(1) << params.getInitialEnergy();
+
+    const filesystem::path dataRoot = "Data";
+    const string testcase = _strTestcase.str();
 
     // create directories if they do not exist
-    _dirData = "Data";
-    _dirForwardSolution = _dirData / "ForwardSolution" / _strTestcase.str() ;
+    _dirData = dataRoot / testcase ;
+    _dirForwardSolution = _dirData / "ForwardSolution" ;
     _dirBackwardSolution = _dirData / "BackwardSolution";
     _dirFourierSpectrumEvolution = _dirData / "FourierSpectrumEvolution";
     _dirEnergyEvolution = _dirData / "EnergyEvolution";
     _dirInitialData = _dirData / "InitialData";
     _dirTerminalData = _dirData / "TerminalData";
-    _dirSolutionBranches = _dirData / "SolutionBranches" / _strTestcase.str() ;
+    _dirSolutionBranches = dataRoot / "SolutionBranches" / testcase ;
     _dirOptimizationDiagnostics = _dirData / "OptimizationDiagnostics";
     _dirOptimizationLineSearch = _dirData / "OptimizationLineSearch";
 
-    filesystem::create_directories(_dirData);
     filesystem::create_directories(_dirForwardSolution);
     filesystem::create_directories(_dirBackwardSolution);
     filesystem::create_directories(_dirFourierSpectrumEvolution);
@@ -76,21 +78,21 @@ Pathnames::Pathnames(const Parameters &params) {
     filesystem::create_directories(_dirOptimizationDiagnostics);
     filesystem::create_directories(_dirOptimizationLineSearch);
 
-    _fForwardSolution = _dirForwardSolution / ( "fwd" + _strTestcase.str() ); 
-    _fBackwardSolution = _dirBackwardSolution / ( "gradJ" + _strTestcase.str() );
-    _fFourierSpectrumEvolution = _dirFourierSpectrumEvolution / ( "spectrum" + _strTestcase.str() );
-    _fEnergyEvolution = _dirEnergyEvolution / ( "energy" + _strTestcase.str() );
-    _fInitialData = _dirInitialData / ( "fwdIC" + _strTestcase.str() );
-    _fTerminalData = _dirTerminalData / ( "fwdTC" + _strTestcase.str() );
-    _fSolutionBranches = _dirSolutionBranches / ( "branch" + _strTestcaseBranch.str() );
-    _fInitialEnergyPowerLaw = _dirSolutionBranches / ( "powerlawK" + _strTestcaseInitialEnergyPowerLaw.str() );
-    _fDomainSizePowerLaw = _dirSolutionBranches / ( "powerlawL" + _strTestcaseDomainSizePowerLaw.str() );
-    _fEnergyTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTK" + _strTestcaseEnergyTimeWindowPowerLaw.str() );
-    _fDomainTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTL" + _strTestcaseDomainTimeWindowPowerLaw.str() );
-    _fOptimizationDiagnostics = _dirOptimizationDiagnostics / ( "diagnostics" + _strTestcase.str() );
-    _fOptimizationLineSearch = _dirOptimizationLineSearch / ( "linesearch" + _strTestcase.str() );
+    _fForwardSolution = _dirForwardSolution / ( "fwd" + testcase + fType ); 
+    _fBackwardSolution = _dirBackwardSolution / ( "gradJ" + testcase + fType );
+    _fFourierSpectrumEvolution = _dirFourierSpectrumEvolution / ( "spectrum" + testcase + fType );
+    _fEnergyEvolution = _dirEnergyEvolution / ( "energy" + testcase + fType );
+    _fInitialData = _dirInitialData / ( "fwdIC" + testcase + fType );
+    _fTerminalData = _dirTerminalData / ( "fwdTC" + testcase + fType );
+    _fSolutionBranches = _dirSolutionBranches / ( "branch" + _strTestcaseBranch.str() + fType );
+    _fInitialEnergyPowerLaw = _dirSolutionBranches / ( "powerlawK" + _strTestcaseInitialEnergyPowerLaw.str() + fType );
+    _fDomainSizePowerLaw = _dirSolutionBranches / ( "powerlawL" + _strTestcaseDomainSizePowerLaw.str() + fType );
+    _fEnergyTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTK" + _strTestcaseEnergyTimeWindowPowerLaw.str() + fType );
+    _fDomainTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTL" + _strTestcaseDomainTimeWindowPowerLaw.str() + fType );
+    _fOptimizationDiagnostics = _dirOptimizationDiagnostics / ( "diagnostics" + testcase + fType );
+    _fOptimizationLineSearch = _dirOptimizationLineSearch / ( "linesearch" + testcase + fType );
 
-    cout << "Directory name: " << _strTestcase.str() << endl;
+    cout << "Directory name: " << testcase << endl;
 }
 
 const filesystem::path& Pathnames::getDirData() const {
