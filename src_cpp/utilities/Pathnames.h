@@ -6,47 +6,82 @@
 #include "Parameters.h"
 
 #include <filesystem>
+#include <sstream>
 
 using namespace std;
 
 class Pathnames {
 private:
+    // directories 
+    filesystem::path _dirData;
+    filesystem::path _dirForwardSolution;
+    filesystem::path _dirBackwardSolution;
+    filesystem::path _dirFourierSpectrumEvolution;
+    filesystem::path _dirEnergyEvolution;
+    filesystem::path _dirInitialData;
+    filesystem::path _dirTerminalData;
+    filesystem::path _dirSolutionBranches;
+    filesystem::path _dirOptimizationDiagnostics;
+    filesystem::path _dirOptimizationLineSearch;
+
+    // filenames
+    ostringstream _strTestcase;
+    ostringstream _strTestcaseGenericTime;
+    ostringstream _strTestcaseBranch;
+    ostringstream _strTestcaseInitialEnergyPowerLaw;
+    ostringstream _strTestcaseDomainSizePowerLaw;
+    ostringstream _strTestcaseEnergyTimeWindowPowerLaw;
+    ostringstream _strTestcaseDomainTimeWindowPowerLaw;
+    filesystem::path _fForwardSolution; // note: multiple files 
+    filesystem::path _fBackwardSolution;
+    filesystem::path _fFourierSpectrumEvolution;
+    filesystem::path _fEnergyEvolution;
+    filesystem::path _fInitialData;
+    filesystem::path _fTerminalData;
+    filesystem::path _fSolutionBranches; 
+    filesystem::path _fInitialEnergyPowerLaw; 
+    filesystem::path _fDomainSizePowerLaw; 
+    filesystem::path _fEnergyTimeWindowPowerLaw;
+    filesystem::path _fDomainTimeWindowPowerLaw; 
+    filesystem::path _fOptimizationDiagnostics;
+    filesystem::path _fOptimizationLineSearch;
+
 public:
     Pathnames(const Parameters &params);
 
-    // directories 
-    filesystem::path dirData;
-    filesystem::path dirForwardSolution;
-    filesystem::path dirBackwardSolution;
-    filesystem::path dirFourierSpectrumEvolution;
-    filesystem::path dirEnergyEvolution;
-    filesystem::path dirOptimalInitialData;
-    filesystem::path dirOptimalTerminalData;
-    filesystem::path dirOptimalSolutionBranch;
-    filesystem::path dirOptimizationDiagnostics;
-    filesystem::path dirOptimizationLineSearch;
+    const filesystem::path& getDirData() const;
+    const filesystem::path& getDirForwardSolution() const;
+    const filesystem::path& getDirBackwardSolution() const;
+    const filesystem::path& getDirFourierSpectrumEvolution() const;
+    const filesystem::path& getDirEnergyEvolution() const;
+    const filesystem::path& getDirInitialData() const;
+    const filesystem::path& getDirTerminalData() const;
+    const filesystem::path& getDirSolutionBranches() const;
+    const filesystem::path& getDirOptimizationDiagnostics() const;
+    const filesystem::path& getDirOptimizationLineSearch() const;
 
-    // filenames
-    ostringstream strTestcase;
-    ostringstream strTestcaseGenericTime;
-    ostringstream strTestcaseBranch;
-    ostringstream strTestcaseInitialEnergyPowerLaw;
-    ostringstream strTestcaseDomainSizePowerLaw;
-    ostringstream strTestcaseEnergyTimeWindowPowerLaw;
-    ostringstream strTestcaseDomainTimeWindowPowerLaw;
-    filesystem::path fForwardSolution; // note: multiple files 
-    filesystem::path fBackwardSolution;
-    filesystem::path fFourierSpectrumEvolution;
-    filesystem::path fEnergyEvolution;
-    filesystem::path fOptimalInitialData;
-    filesystem::path fOptimalTerminalData;
-    filesystem::path fOptimalSolutionBranch; 
-    filesystem::path fOptimalSolutionInitialEnergyPowerLaw; 
-    filesystem::path fOptimalSolutionDomainSizePowerLaw; 
-    filesystem::path fOptimalSolutionEnergyTimeWindowPowerLaw;
-    filesystem::path fOptimalSolutionDomainTimeWindowPowerLaw; 
-    filesystem::path fOptimizationDiagnostics;
-    filesystem::path fOptimizationLineSearch;
+    string getTestcase() const;
+    string getTestcaseGenericTime() const;
+    string getTestcaseBranch() const;
+    string getTestcaseInitialEnergyPowerLaw() const;
+    string getTestcaseDomainSizePowerLaw() const;
+    string getTestcaseEnergyTimeWindowPowerLaw() const;
+    string getTestcaseDomainTimeWindowPowerLaw() const;
+
+    const filesystem::path& getForwardSolutionFile() const;
+    const filesystem::path& getBackwardSolutionFile() const;
+    const filesystem::path& getFourierSpectrumEvolutionFile() const;
+    const filesystem::path& getEnergyEvolutionFile() const;
+    const filesystem::path& getInitialDataFile() const;
+    void setInitialDataFile(const filesystem::path& initialDataFile);
+    const filesystem::path& getTerminalDataFile() const;
+    const filesystem::path& getSolutionBranchesFile() const;
+    const filesystem::path& getInitialEnergyPowerLawFile() const;
+    const filesystem::path& getDomainSizePowerLawFile() const;
+    const filesystem::path& getEnergyTimeWindowPowerLawFile() const;
+    const filesystem::path& getDomainTimeWindowPowerLawFile() const;
+    const filesystem::path& getOptimizationDiagnosticsFile() const;
+    const filesystem::path& getOptimizationLineSearchFile() const;
 };
 
 #endif  
