@@ -32,10 +32,12 @@ private:
 
     void writeDistributedFile(const filesystem::path& filename) const;
     void readDistributedFile(const filesystem::path& filename);
+    filesystem::path appendTimeStep(const filesystem::path& path, double dCurrentT);
 
 public:
     SolutionData(const Parameters& params, const Pathnames& paths, const MPIContext& mpi, SolutionDataType storedDataType);
     
+    void validateMPIConfiguration();
     size_t getSize() const;
     void getData(SolutionData&  stateData, size_t stateNumber = 0) const;                
     void setData(const SolutionData&  stateData, size_t stateNumber = 0);  
@@ -66,7 +68,6 @@ public:
     double getEnergyH2() const;
     vector<double> getRadialSpectrum() const;
 
-    filesystem::path appendTimeStep(const filesystem::path& path, double dCurrentT);
     void loadData(SolutionDataType storedDataType, double dCurrentT = 0.0);
     void saveData(SolutionDataType storedDataType, double dCurrentT = 0.0);
     void deleteData();

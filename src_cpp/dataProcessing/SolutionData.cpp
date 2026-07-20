@@ -87,11 +87,11 @@ void SolutionData::readDistributedFile(const filesystem::path& filename) {
     MPI_File_close(&file);
 }
 
-// public functions
 filesystem::path SolutionData::appendTimeStep(const filesystem::path& path, double dCurrentT) {
     return path.parent_path() / (path.stem().string() + "_" + to_string(dCurrentT) + path.extension().string());
 }
 
+// public functions
 SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, const MPIContext& mpi, SolutionDataType storedDataType) 
                            : _params(params), _paths(paths), _mpi(mpi) {
     const size_t stateStorageSize = _mpi.getLocalAllocationSize();
@@ -113,6 +113,29 @@ SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, con
         case RemainderHistory:
             _vData.resize(stateStorageSize * ( _params.getNumericalSteps() % _params.getNumericalStepsPerFile()) );
             break;
+    }
+}
+
+void SolutionData::validateMPIConfiguration() {
+    if ( static_cast<size_t>(_mpi.getSize()) > _params.getGridSize2() ) {
+        if (_mpi.isRoot()) {
+            cerr << "ERROR: Number of MPI ranks (" << _mpi.getSize() << ") exceeds N2 (" << _params.getGridSize2() << ").\n";
+        }
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    if ( _mpi.getLocalAllocationSize() < _mpi.getLocalGridSize() ) {
+        if (_mpi.isRoot()) {
+            cerr << "ERROR: FFTW local allocation is smaller than the local mathematical grid.\n";
+        }
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
+
+    if ( getSize() != _mpi.getLocalAllocationSize() ) {
+        if (_mpi.isRoot()) {
+            cerr << "ERROR: SolutionData allocation does not match the FFTW local allocation size.\n";
+        }
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 }
 

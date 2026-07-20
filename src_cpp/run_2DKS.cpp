@@ -18,29 +18,6 @@
 
 using namespace std;
 
-void validateMPIConfiguration( const Parameters& params, const MPIContext& mpi, const SolutionData& state) {
-    if ( static_cast<size_t>(mpi.getSize()) > params.getGridSize2() ) {
-        if (mpi.isRoot()) {
-            cerr << "ERROR: Number of MPI ranks (" << mpi.getSize() << ") exceeds N2 (" << params.getGridSize2() << ").\n";
-        }
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-
-    if ( mpi.getLocalAllocationSize() < mpi.getLocalGridSize() ) {
-        if (mpi.isRoot()) {
-            cerr << "ERROR: FFTW local allocation is smaller than the local mathematical grid.\n";
-        }
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-
-    if ( state.getSize() != mpi.getLocalAllocationSize() ) {
-        if (mpi.isRoot()) {
-            cerr << "ERROR: SolutionData allocation does not match the FFTW local allocation size.\n";
-        }
-        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-    }
-}
-
 int main(int argc, char* argv[]) {
 
     // Step 1: allocate distributed computing resources
@@ -66,7 +43,7 @@ int main(int argc, char* argv[]) {
 
         // Step 4: allocate storage for states and time-dependent solutions
         SolutionData vStateInitial(params, paths, mpi, InitialState);      
-        validateMPIConfiguration(params, mpi, vStateInitial);
+        vStateInitial.validateMPIConfiguration();
         SolutionData vStateTerminal(params, paths, mpi, TerminalState); 
         SolutionData vObjectiveGradient(params, paths, mpi, BackwardInitialState); 
         SolutionData vHistoryIntermediate(params, paths, mpi, IntermediateHistory);
@@ -77,15 +54,10 @@ int main(int argc, char* argv[]) {
         solver.setSolutionState(SolveInitialState, vStateInitial);
         solver.setSolutionInTime(SolveForwardInTime, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);
         timer.printInterval("Forward problem initialized at ");
-        double dOptimalSolution = solver.getOptimalSolution(OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, 
-                                                            vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
-        if (mpi.isRoot()) {
-            cout << setprecision(12) << "Maximum Energy Amplification: " << dOptimalSolution << defaultfloat << setprecision(6);
-        }
+        solver.getOptimalSolution(OptimizeEnergyAmplification, vObjectiveGradient, vStateInitial, vHistoryIntermediate, vHistoryRemainder, vStateTerminal);  
 
         // Step 6: Stop timer and complete run  
         timer.stop();
-        
     }
 
     // Step 7: deallocate distributed computing resources 

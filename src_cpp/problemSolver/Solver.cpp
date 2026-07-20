@@ -1100,7 +1100,7 @@ double Solver::getOptimalSolution(OptimizeSolutionType targetType, SolutionData&
             }    
             solveRiemmanianOptimization(dTargetValue, vObjectiveGradient, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
             if (_mpi.isRoot()) {
-                cout << "\n";
+                cout << "\n" << setprecision(12) << "Maximum Energy Amplification: " << dTargetValue << defaultfloat << setprecision(6);
             }
             break;
 
