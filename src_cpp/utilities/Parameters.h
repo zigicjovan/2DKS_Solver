@@ -1,9 +1,10 @@
 #ifndef PARAMETERS_H  
 #define PARAMETERS_H     
 
+#include "MPIContext.h"
+
 #include <cmath> 
 #include <string>
-
 #include <vector>
 #include <complex>
 #include <array>
@@ -87,7 +88,7 @@ private:
 public:
     Parameters(int argc, char* argv[]);
 
-    void getMathematicalOperators();
+    void getMathematicalOperators(const MPIContext& mpi);
 
     size_t getIndex(size_t i, size_t j, size_t N);
     size_t getNumericalSteps() const;

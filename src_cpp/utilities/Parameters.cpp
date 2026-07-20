@@ -1,7 +1,8 @@
 #include "Parameters.h"
+
+#include <mpi.h>
 #include <cmath> 
 #include <string>
-
 #include <iostream>
 #include <vector>
 #include <complex>
@@ -119,12 +120,6 @@ Parameters::Parameters(int argc, char* argv[]) {
 
     _iSavedStates = stoi(argv[13]);
 
-    _vLinearOperator.resize(_iTotalGridSize);
-    _vLaplaceOperator.resize(_iTotalGridSize);
-    _vDifferentialOperator1.resize(_iTotalGridSize);
-    _vDifferentialOperator2.resize(_iTotalGridSize);
-    getMathematicalOperators();
-
     _coeffAlphaI = { 343038331393.0 / 1130875731271.0,
                     288176579239.0 / 1140253497719.0,
                     253330171251.0 / 677500478386.0,
@@ -145,31 +140,37 @@ Parameters::Parameters(int argc, char* argv[]) {
     const int dRequiredMemory = 0.640 * (getNumericalSteps() + getNumericalStepsPerFile() - 1) / getNumericalStepsPerFile();
     const int dFinalMemory = _iSavedStates * dRequiredMemory / getNumericalSteps();
 
-    cout << "Parameter settings:\nIC " << _strInitialGuessName 
-              << ", N_x1 " << _iGridSize1 
-              << ", N_x2 " << _iGridSize2       
-              << ", dt " << _dTimeStep         
-              << ", K " << _dInitialEnergy    
-              << ", ell1 " << _dDomainFactor1     
-              << ", ell2 " << _dDomainFactor2  
-              << ", L_1 " << _dDomainSize1     
-              << ", L_2 " << _dDomainSize2     
-              << ", T " << _dTimeWindow       
-              << ", opt " << _bOptimizeSolution       
-              << ", tol " << _dOptimizationTolerance  
-              << ", cont " << _bNumericalContinuation  
-              << ", optT " << _dOptimalTimeWindow      
-              << endl
-              << "Intermediate Storage (for adjoint solve) = " << dRequiredMemory
-              << " GB, Total Timesteps = " << getNumericalSteps() 
-              << " (Max File Timesteps (640MB) " << getNumericalStepsPerFile() 
-              << ", Remainder File Timesteps " << ( getNumericalSteps() % getNumericalStepsPerFile() )
-              << ")" << endl
-              << "Final Storage = " << dFinalMemory
-              << " GB, Total Timesteps = " << _iSavedStates << endl;
+    int mpiRank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+
+    if (mpiRank == 0) {
+        cout << "Parameter settings:\nIC " << _strInitialGuessName 
+                << ", N_x1 " << _iGridSize1 
+                << ", N_x2 " << _iGridSize2       
+                << ", dt " << _dTimeStep         
+                << ", K " << _dInitialEnergy    
+                << ", ell1 " << _dDomainFactor1     
+                << ", ell2 " << _dDomainFactor2  
+                << ", L_1 " << _dDomainSize1     
+                << ", L_2 " << _dDomainSize2     
+                << ", T " << _dTimeWindow       
+                << ", opt " << _bOptimizeSolution       
+                << ", tol " << _dOptimizationTolerance  
+                << ", cont " << _bNumericalContinuation  
+                << ", optT " << _dOptimalTimeWindow      
+                << endl
+                << "Intermediate Storage (for adjoint solve) = " << dRequiredMemory
+                << " GB, Total Timesteps = " << getNumericalSteps() 
+                << " (Max File Timesteps (640MB) " << getNumericalStepsPerFile() 
+                << ", Remainder File Timesteps " << ( getNumericalSteps() % getNumericalStepsPerFile() )
+                << ")" << endl
+                << "Final Storage = " << dFinalMemory
+                << " GB, Total Timesteps = " << _iSavedStates << endl;
+    }
 }
 
-void Parameters::getMathematicalOperators() {
+void Parameters::getMathematicalOperators(const MPIContext& mpi) {
+    
     _dEnergyFactor = _dDomainFactor1 * _dDomainFactor2 * (2.0 * dPI) * (2.0 * dPI) / (static_cast<double>(_iTotalGridSize) * _iTotalGridSize);
     
     _vGridpoints1 = setPhysicalSpace1();
@@ -185,31 +186,37 @@ void Parameters::getMathematicalOperators() {
     _vWavenumbersLinear1 = setFourierModesLinear1();
     _vWavenumbersLinear2 = setFourierModesLinear2();
 
-    _vGrid1.resize(_iTotalGridSize);
-    _vGrid2.resize(_iTotalGridSize);
+    const size_t localGridSize2 = mpi.getLocalGridSize2();
+    const size_t localGridStart2 = mpi.getLocalGridStart2();
+    const size_t localGridSize = mpi.getLocalGridSize();
 
-    _vSpectrumNonlinear1.resize(_iTotalGridSize);
-    _vSpectrumNonlinear2.resize(_iTotalGridSize);
-    _vSpectrumLinear1.resize(_iTotalGridSize);
-    _vSpectrumLinear2.resize(_iTotalGridSize);
+    _vGrid1.resize(localGridSize);
+    _vGrid2.resize(localGridSize);
 
-    _vH1Weight.resize(_iTotalGridSize);
-    _vH2Weight.resize(_iTotalGridSize);
+    _vSpectrumNonlinear1.resize(localGridSize);
+    _vSpectrumNonlinear2.resize(localGridSize);
+    _vSpectrumLinear1.resize(localGridSize);
+    _vSpectrumLinear2.resize(localGridSize);
 
-    _vLinearOperator.resize(_iTotalGridSize);
-    _vLaplaceOperator.resize(_iTotalGridSize);
-    _vDifferentialOperator1.resize(_iTotalGridSize);
-    _vDifferentialOperator2.resize(_iTotalGridSize);
-    _vDealiasingOperator.resize(_iTotalGridSize);
+    _vH1Weight.resize(localGridSize);
+    _vH2Weight.resize(localGridSize);
+
+    _vLinearOperator.resize(localGridSize);
+    _vLaplaceOperator.resize(localGridSize);
+    _vDifferentialOperator1.resize(localGridSize);
+    _vDifferentialOperator2.resize(localGridSize);
+    _vDealiasingOperator.resize(localGridSize);
     const double kCut1 = (2.0 / 3.0) * (static_cast<double>(_iGridSize1) / 2.0);
     const double kCut2 = (2.0 / 3.0) * (static_cast<double>(_iGridSize2) / 2.0);
 
     double maxRadius = 0.0;
-    _vRadialBin.resize(_iTotalGridSize);
+    _vRadialBin.resize(localGridSize);
 
-    for (size_t i = 0; i < _iGridSize2; ++i) {
+    for (size_t iLocal = 0; iLocal < localGridSize2; ++iLocal) {
+        const size_t i = localGridStart2 + iLocal;
+
         for (size_t j = 0; j < _iGridSize1; ++j) {
-            const size_t k = getIndex(i, j, _iGridSize1);
+            const size_t k = getIndex(iLocal, j, _iGridSize1);
             _vGrid1[k] = _vGridpoints1[j];
             _vGrid2[k] = _vGridpoints2[i];
             _vSpectrumNonlinear1[k] = _vWavenumbersNonlinear1[j];
@@ -237,7 +244,10 @@ void Parameters::getMathematicalOperators() {
             maxRadius = max(maxRadius, radius);
         }   
     }
-    _iMaxRadialBin = static_cast<size_t>(ceil(maxRadius));
+
+    double globalMaxRadius = 0.0;
+    MPI_Allreduce(&maxRadius, &globalMaxRadius, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    _iMaxRadialBin = static_cast<size_t>(ceil(globalMaxRadius));
 }
 
 size_t Parameters::getIndex(size_t i, size_t j, size_t N) {

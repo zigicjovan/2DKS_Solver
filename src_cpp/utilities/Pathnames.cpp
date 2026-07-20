@@ -9,7 +9,7 @@
 
 using namespace std;
 
-Pathnames::Pathnames(const Parameters &params) {
+Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
 
     // prepare filenames
     const string fType = ".dat";
@@ -68,31 +68,35 @@ Pathnames::Pathnames(const Parameters &params) {
     _dirOptimizationDiagnostics = _dirData / "OptimizationDiagnostics";
     _dirOptimizationLineSearch = _dirData / "OptimizationLineSearch";
 
-    filesystem::create_directories(_dirForwardSolution);
-    filesystem::create_directories(_dirBackwardSolution);
-    filesystem::create_directories(_dirFourierSpectrumEvolution);
-    filesystem::create_directories(_dirEnergyEvolution);
-    filesystem::create_directories(_dirInitialData);
-    filesystem::create_directories(_dirTerminalData);
-    filesystem::create_directories(_dirSolutionBranches);
-    filesystem::create_directories(_dirOptimizationDiagnostics);
-    filesystem::create_directories(_dirOptimizationLineSearch);
-
-    _fForwardSolution = _dirForwardSolution / ( "fwd" + testcase + fType ); 
-    _fBackwardSolution = _dirBackwardSolution / ( "gradJ" + testcase + fType );
-    _fFourierSpectrumEvolution = _dirFourierSpectrumEvolution / ( "spectrum" + testcase + fType );
-    _fEnergyEvolution = _dirEnergyEvolution / ( "energy" + testcase + fType );
-    _fInitialData = _dirInitialData / ( "fwdIC" + testcase + fType );
-    _fTerminalData = _dirTerminalData / ( "fwdTC" + testcase + fType );
+    _fForwardSolution = _dirForwardSolution / ( "fwd" + fType ); 
+    _fBackwardSolution = _dirBackwardSolution / ( "gradJ" + fType );
+    _fFourierSpectrumEvolution = _dirFourierSpectrumEvolution / ( "spectrum" + fType );
+    _fEnergyEvolution = _dirEnergyEvolution / ( "energy" + fType );
+    _fInitialData = _dirInitialData / ( "fwdIC" + fType );
+    _fTerminalData = _dirTerminalData / ( "fwdTC" + fType );
     _fSolutionBranches = _dirSolutionBranches / ( "branch" + _strTestcaseBranch.str() + fType );
     _fInitialEnergyPowerLaw = _dirSolutionBranches / ( "powerlawK" + _strTestcaseInitialEnergyPowerLaw.str() + fType );
     _fDomainSizePowerLaw = _dirSolutionBranches / ( "powerlawL" + _strTestcaseDomainSizePowerLaw.str() + fType );
     _fEnergyTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTK" + _strTestcaseEnergyTimeWindowPowerLaw.str() + fType );
     _fDomainTimeWindowPowerLaw = _dirSolutionBranches / ( "powerlawTL" + _strTestcaseDomainTimeWindowPowerLaw.str() + fType );
-    _fOptimizationDiagnostics = _dirOptimizationDiagnostics / ( "diagnostics" + testcase + fType );
-    _fOptimizationLineSearch = _dirOptimizationLineSearch / ( "linesearch" + testcase + fType );
+    _fOptimizationDiagnostics = _dirOptimizationDiagnostics / ( "diagnostics" + fType );
+    _fOptimizationLineSearch = _dirOptimizationLineSearch / ( "linesearch" + fType );
 
-    cout << "Directory name: " << testcase << endl;
+    if (mpi.isRoot()) {
+        filesystem::create_directories(_dirForwardSolution);
+        filesystem::create_directories(_dirBackwardSolution);
+        filesystem::create_directories(_dirFourierSpectrumEvolution);
+        filesystem::create_directories(_dirEnergyEvolution);
+        filesystem::create_directories(_dirInitialData);
+        filesystem::create_directories(_dirTerminalData);
+        filesystem::create_directories(_dirSolutionBranches);
+        filesystem::create_directories(_dirOptimizationDiagnostics);
+        filesystem::create_directories(_dirOptimizationLineSearch);
+
+        cout << "Directory name: " << testcase << endl;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 const filesystem::path& Pathnames::getDirData() const {

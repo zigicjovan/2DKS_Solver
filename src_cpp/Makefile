@@ -1,7 +1,7 @@
-CXX = g++
+CXX = mpic++
 CXXFLAGS = -std=c++17 -O3 -march=native -Wall
 LDFLAGS =
-LDLIBS = -lfftw3 -lm
+LDLIBS = -lfftw3_mpi -lfftw3 -lm
 INCLUDES = -I./dataProcessing -I./problemSolver -I./utilities
 
 TARGET := solver

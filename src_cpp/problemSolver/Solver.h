@@ -6,6 +6,7 @@
 #include "SolutionData.h"
 #include "FFTWPlanner.h"
 #include "Timer.h"
+#include "MPIContext.h"
 
 #include <complex>
 
@@ -38,6 +39,7 @@ private:
     Pathnames& _paths;
     FFTWPlanner& _fftwPlan;
     Timer& _timer;
+    const MPIContext& _mpi;
 
     void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
@@ -60,7 +62,7 @@ private:
     void solveLineSearchOptimization(double& dTargetValue, SolutionData& DirectionCurr, SolutionData& vTargetStart, 
                                      SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
 public:
-    Solver(Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer);
+    Solver(Parameters& params, Pathnames& paths, FFTWPlanner& fftwPlan, Timer& timer, const MPIContext& mpi);
 
     void setSolutionState(StateSolutionType targetType, SolutionData& vTargetState);
     void setSolutionInTime(TimeSolutionType targetType, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 

@@ -7,6 +7,7 @@
 
 using namespace std;
 
+// private functions
 string Timer::formatElapsed(double _seconds) const {
     long long total = static_cast<long long>(_seconds);
     long long hours = total / 3600;
@@ -16,6 +17,10 @@ string Timer::formatElapsed(double _seconds) const {
     ostringstream out;
     out << setfill('0') << setw(2) << hours << ":" << setw(2) << minutes << ":" << setw(2) << secs;
     return out.str();
+}
+
+// public functions
+Timer::Timer(const MPIContext& mpi) : _mpi(mpi) {
 }
 
 void Timer::start() {
@@ -29,14 +34,26 @@ double Timer::elapsedSeconds() const {
 }
 
 void Timer::printInterval(const string& label) const {
+    if (!_mpi.isRoot()) {
+        return;
+    }
+    
     cout << label << formatElapsed(elapsedSeconds()) << flush;
 }
 
 void Timer::printIterationInterval() const {
+    if (!_mpi.isRoot()) {
+        return;
+    }
+
     cout << setw(10) << formatElapsed(elapsedSeconds()) << flush; 
 }
 
 void Timer::stop() const {
+    if (!_mpi.isRoot()) {
+        return;
+    }
+
     auto endSteady = chrono::steady_clock::now();
     auto endWall   = chrono::system_clock::now();
     double elapsed = chrono::duration<double>(endSteady - _startSteady).count();

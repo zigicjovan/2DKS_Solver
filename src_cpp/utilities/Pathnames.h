@@ -1,9 +1,8 @@
-// data processed in C++, media (figures/movies) post-processed in MATLAB
-
 #ifndef PATHNAMES_H
 #define PATHNAMES_H
 
 #include "Parameters.h"
+#include "MPIContext.h"
 
 #include <filesystem>
 #include <sstream>
@@ -47,7 +46,7 @@ private:
     filesystem::path _fOptimizationLineSearch;
 
 public:
-    Pathnames(const Parameters &params);
+    Pathnames(const Parameters &params, const MPIContext& mpi);
 
     const filesystem::path& getDirData() const;
     const filesystem::path& getDirForwardSolution() const;

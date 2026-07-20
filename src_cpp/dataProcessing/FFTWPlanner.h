@@ -2,20 +2,23 @@
 #define FFTW_H
 
 #include "Parameters.h"
+#include "MPIContext.h"
 
+#include <fftw3-mpi.h>
 #include <complex>
-#include <fftw3.h>
 
 using namespace std;
 
 class FFTWPlanner {
 private:
+    const MPIContext& _mpi;
+
     vector<complex<double>> _dummy;
     fftw_plan _forwardPlan;
     fftw_plan _backwardPlan;
 
 public:
-    explicit FFTWPlanner(const Parameters& params);
+    FFTWPlanner(const Parameters& params, const MPIContext& mpi);
     ~FFTWPlanner();
 
     void fft2InPlace(complex<double>* vState);
