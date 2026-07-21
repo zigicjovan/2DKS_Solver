@@ -61,6 +61,7 @@ private:
     vector<double> _vH2Weight;
     vector<size_t> _vRadialBin;
     size_t _iMaxRadialBin;
+    double _dRadialBinWidth;
 
     array<double, 4> _coeffAlphaI;
     array<double, 4> _coeffBetaI;
@@ -125,6 +126,7 @@ public:
     const vector<double>& getH2Weight() const;
     const vector<size_t>& getRadialBin() const;
     size_t getMaxRadialBin() const;
+    double getRadialBinWidth() const;
 
     const array<double, 4>& getCoeffAlphaI() const;
     const array<double, 4>& getCoeffBetaI() const;

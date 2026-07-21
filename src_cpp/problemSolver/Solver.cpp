@@ -45,10 +45,13 @@ void Solver::saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory
     
     ofstream file(_paths.getFourierSpectrumEvolutionFile());
     file << setprecision(16) << scientific;
-    size_t maxRadialBin = _params.getMaxRadialBin();
+    const size_t maxRadialBin = _params.getMaxRadialBin();
+    const double radialBinWidth = _params.getRadialBinWidth();
 
     for (size_t i = 0; i <= maxRadialBin; ++i) {
-        file << i;
+        const double radialBinRadius = static_cast<double>(i) * radialBinWidth;
+        file << radialBinRadius;
+        
         for (const auto& spectrum : vSpectrumHistory) {
             file << ' ' << spectrum[i];
         }
@@ -415,7 +418,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     vector<array<double, 4>> vDiagnostics;
     vDiagnostics.reserve(_params.getNumericalSteps() + 1);
     vector<vector<double>> vSpectrumHistory;
-    vSpectrumHistory.reserve(_params.getNumericalSteps() + 1);
+    vSpectrumHistory.reserve(savedStateCount + 1);
 
     SolutionData vStateCurrent = vTargetStart; // set phi_{i} = phi(0)
     SolutionData vStateNext(_params, _paths, _mpi, InitialState); // phi_{i+1}
@@ -439,7 +442,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     }
     else if (!optimizeSolution) {
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
-        vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
     }
     
     for (size_t i = 1; i < totalSteps + 1; ++i) {
@@ -500,7 +502,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
         else if (!optimizeSolution) {
             vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
-            vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         }
     }
 

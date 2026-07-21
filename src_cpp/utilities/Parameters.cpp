@@ -210,6 +210,7 @@ void Parameters::getMathematicalOperators(const MPIContext& mpi) {
     const double kCut2 = (2.0 / 3.0) * (static_cast<double>(_iGridSize2) / 2.0);
 
     double maxRadius = 0.0;
+    _dRadialBinWidth = min(2.0 * dPI / _dDomainSize1, 2.0 * dPI / _dDomainSize2);
     _vRadialBin.resize(localGridSize);
 
     for (size_t iLocal = 0; iLocal < localGridSize2; ++iLocal) {
@@ -240,14 +241,14 @@ void Parameters::getMathematicalOperators(const MPIContext& mpi) {
             const double k1 = _vWavenumbersLinear1[j];
             const double k2 = _vWavenumbersLinear2[i];
             const double radius = sqrt(k1 * k1 + k2 * k2);
-            _vRadialBin[k] = static_cast<size_t>(round(radius));
+            _vRadialBin[k] = static_cast<size_t>(round(radius / _dRadialBinWidth));
             maxRadius = max(maxRadius, radius);
         }   
     }
 
     double globalMaxRadius = 0.0;
     MPI_Allreduce(&maxRadius, &globalMaxRadius, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    _iMaxRadialBin = static_cast<size_t>(ceil(globalMaxRadius));
+    _iMaxRadialBin = static_cast<size_t>(ceil(globalMaxRadius / _dRadialBinWidth));
 }
 
 size_t Parameters::getIndex(size_t i, size_t j, size_t N) {
@@ -368,6 +369,10 @@ const vector<size_t>& Parameters::getRadialBin() const {
 
 size_t Parameters::getMaxRadialBin() const { 
     return _iMaxRadialBin; 
+}
+
+double Parameters::getRadialBinWidth() const {
+    return _dRadialBinWidth;
 }
 
 const array<double, 4>& Parameters::getCoeffAlphaI() const { 
