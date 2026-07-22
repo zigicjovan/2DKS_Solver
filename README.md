@@ -1,9 +1,6 @@
 # Animations of output with various parameter settings:
 https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
-# Main function to run branch of tests for various K, ell, T values:
-main_2DKS(dtc,Nc,Kstart,Kend,Knum,ellstart,ellend,ellgap,Tstart,Tend,Tnum,runc,continuationc,tolc,optTc)
-
 # To run quick test on Linux terminal (assuming 'output' folder exists):
 make run
 
