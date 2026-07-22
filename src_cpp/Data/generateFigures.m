@@ -1,6 +1,6 @@
 close all
 
-testcase = '_IC_s1_N1_64_N2_64_dt_1.0e-04_K_3.2e+03_ell1_3.02_ell2_3.02_T_6.31e-02_opt_1_tol_1e-06_cont_0_optT_6.31e-02';
+testcase = '_IC_s1_N1_64_N2_64_dt_1.0e-04_K_3.2e+03_ell1_3.02_ell2_3.02_T_1.00e-01_opt_1_tol_1e-06_cont_0_optT_1.00e-01';
 forwardDir = 'ForwardSolution';
 forwardFile = 'fwd_';
 energyDir = 'EnergyEvolution';
@@ -709,11 +709,11 @@ for fi = 1:numel(forwardFiles)
                 modalfigylim(2), ...
                 max(labelY) + 0.5*figfrac);
             
-            % Keep the axes box ending at finalT
-            xlim(ax(k),[0,finalT]);
+            % Keep the axes box ending at final T
+            xlim(ax(k),[0,energyDataSampled(end,1)]);
             
             for imode = 1:numel(labelsToPlot)
-                text(ax(k),finalT,labelY(imode),labelsToPlot(imode), ...
+                text(ax(k),energyDataSampled(end,1),labelY(imode),labelsToPlot(imode), ...
                     'HorizontalAlignment','left', ...
                     'VerticalAlignment','middle', ...
                     'Interpreter','latex', ...
@@ -721,7 +721,7 @@ for fi = 1:numel(forwardFiles)
                     'Clipping','off');
             end
             
-            xlim(ax(k),[0,finalT]);
+            xlim(ax(k),[0,energyDataSampled(end,1)]);
             ylim(ax(k),modalfigylim);
             
             hold(ax(k),'off');
