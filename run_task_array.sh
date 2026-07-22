@@ -1,7 +1,7 @@
 #!/bin/bash
 # run_task_array.sh  -- invoked by run_array.sh sbatch
 # Uses PARAM_FILE environment variable passed by sbatch --export
-# Creates a unique per-job temp dir in /scratch and cleans up at exit.
+# Launches one C++/MPI solver run for the selected parameter row.
 
 set -euo pipefail
 
@@ -22,26 +22,15 @@ fi
 mkdir -p ./output
 mkdir -p ./slurm_logs
 
-# create unique scratch temp dir per job
-SCRATCH_BASE=${SCRATCH:-/scratch}/${USER}
-JOB_TAG="${JOB_TAG:-${SLURM_JOB_ID:-$$}}"
-TMPDIR_JOB="${SCRATCH_BASE}/tmp_job_${JOB_TAG}"
-mkdir -p "$TMPDIR_JOB"
-export TMPDIR="$TMPDIR_JOB"
-export MATLAB_PREFDIR="$TMPDIR_JOB/matlab_prefs"
-mkdir -p "$MATLAB_PREFDIR"
-export MFILETMP="$TMPDIR_JOB"
-
 # read the right line (task_id is zero-based; sed is 1-based)
 LINE=$(sed -n "$((TASK_ID+1))p" "$PARAM_FILE")
 if [[ -z "$LINE" ]]; then
     echo "ERROR: empty line for TASK_ID=$TASK_ID in $PARAM_FILE"
-    rm -rf "$TMPDIR_JOB"
     exit 1
 fi
 
-# expected line: idx K ell T dt N mem
-read IDX K ell1 ell2 T dt N mem <<< "$LINE"
+# expected line: idx K ell1 ell2 T dt N MPI_ranks mem
+read -r IDX K ell1 ell2 T dt N MPI_RANKS mem <<< "$LINE"
 
 LOG_DIR="./output"
 mkdir -p "$LOG_DIR"
@@ -50,10 +39,12 @@ ell2_str=$(printf "%.2f" "$ell2")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
 IC_str="s1"
-Kscale=1
-optT=-1
-LOG_FILE="${LOG_DIR}/maxT_${optT}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
-#LOG_FILE="${LOG_DIR}/longT_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}.log"
+optimize=1
+tol=1e-6
+continuation=1
+optT=1
+savestates=100
+LOG_FILE="${LOG_DIR}/run_${IDX}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}_${MPI_RANKS}r.log"
 
 # --- Write SLURM Job ID to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
@@ -61,44 +52,28 @@ echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-N/A}" >> "$LOG_FILE"
 echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-N/A}  SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID:-N/A}" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
 
-module load matlab/2024b.1
-
-# MATLAB command for max energy optimization:
-MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},log10(10^${K}/${Kscale}),log10(10^${K}/${Kscale}),1,${ell1},${ell1},0.02,${ell2},${ell2},0.02,${T},${T},1,'optimize','IC',IC_list,1e-6,${optT}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
-# MATLAB command for asymptotic simulations:
-#MATLAB_CMD="try; addpath('src'); IC_list = strsplit('${IC_str}', ','); main_2DKS(${dt},${N},log10(10^${K}/${Kscale}),log10(10^${K}/${Kscale}),1,${ell1},${ell1},0.02,${ell2},${ell2},0.02,${T},${T},1,'plotOptIC','IC',IC_list,1e-6,${optT}); catch e; disp(getReport(e)); exit(1); end; exit(0);"
-
-# --- Retry loop with success-string check ---
+# --- Retry once if the solver returns a nonzero exit code ---
 attempt=0
 max_attempts=2
 rc=1
 
 while [[ $attempt -lt $max_attempts ]]; do
-    if grep -q "run complete" "$LOG_FILE" 2>/dev/null; then
-        echo "[$(date)] MATLAB reported success. Skipping retry." >> "$LOG_FILE"
-        rc=0
-        break
-    fi
+    echo "[$(date)] Running C++ attempt $((attempt+1))/$max_attempts for TASK_ID=${TASK_ID} (IDX=${IDX})" >> "$LOG_FILE"
+    rc=0
+    srun --ntasks="$MPI_RANKS" ./solver "$IC_str" "$N" "$N" "$dt" "$K" "$ell1" "$ell2" "$T" \
+        "$optimize" "$tol" "$continuation" "$optT" "$savestates" >> "$LOG_FILE" 2>&1 || rc=$?
 
-    echo "[$(date)] Running MATLAB attempt $((attempt+1))/$max_attempts for TASK_ID=${TASK_ID} (IDX=${IDX})" >> "$LOG_FILE"
-    matlab -nodisplay -nodesktop -nosplash -r "$MATLAB_CMD" >> "$LOG_FILE" 2>&1 || rc=$?
-
-    if grep -q "run complete" "$LOG_FILE"; then
-        echo "[$(date)] MATLAB finished successfully (success string found)." >> "$LOG_FILE"
+    if [[ $rc -eq 0 ]]; then
+        echo "[$(date)] C++ solver finished successfully." >> "$LOG_FILE"
         rc=0
         break
     else
-        echo "[$(date)] MATLAB failed or success string missing." >> "$LOG_FILE"
+        echo "[$(date)] C++ solver failed with rc=${rc}." >> "$LOG_FILE"
         sleep 10
     fi
 
     attempt=$((attempt+1))
 done
-
-# --- Cleanup ---
-if [[ -d "$TMPDIR_JOB" ]]; then
-    rm -rf "$TMPDIR_JOB" 2>/dev/null || echo "Warning: could not fully remove $TMPDIR_JOB" >&2
-fi
 
 if [[ $rc -ne 0 ]]; then
     echo "[$(date)] TASK ${TASK_ID} finished with error (rc=${rc}). See $LOG_FILE" >&2
