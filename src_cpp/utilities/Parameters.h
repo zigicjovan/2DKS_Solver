@@ -55,7 +55,7 @@ private:
     vector<complex<double>> _vLaplaceOperator;
     vector<complex<double>> _vDifferentialOperator1;
     vector<complex<double>> _vDifferentialOperator2;
-    vector<complex<double>> _vDealiasingOperator;
+    vector<unsigned char> _vDealiasingOperator;
 
     vector<double> _vH1Weight;
     vector<double> _vH2Weight;
@@ -120,7 +120,7 @@ public:
     const vector<complex<double>>& getLaplaceOperator() const;
     const vector<complex<double>>& getDifferentialOperator1() const;
     const vector<complex<double>>& getDifferentialOperator2() const;
-    const vector<complex<double>>& getDealiasingOperator() const;
+    const vector<unsigned char>& getDealiasingOperator() const;
 
     const vector<double>& getH1Weight() const;
     const vector<double>& getH2Weight() const;

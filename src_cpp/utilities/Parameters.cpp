@@ -206,8 +206,8 @@ void Parameters::getMathematicalOperators(const MPIContext& mpi) {
     _vDifferentialOperator1.resize(localGridSize);
     _vDifferentialOperator2.resize(localGridSize);
     _vDealiasingOperator.resize(localGridSize);
-    const double kCut1 = (2.0 / 3.0) * (static_cast<double>(_iGridSize1) / 2.0);
-    const double kCut2 = (2.0 / 3.0) * (static_cast<double>(_iGridSize2) / 2.0);
+    const size_t cutoff1 = _iGridSize1 / 3;
+    const size_t cutoff2 = _iGridSize2 / 3;
 
     double maxRadius = 0.0;
     _dRadialBinWidth = min(2.0 * dPI / _dDomainSize1, 2.0 * dPI / _dDomainSize2);
@@ -215,6 +215,7 @@ void Parameters::getMathematicalOperators(const MPIContext& mpi) {
 
     for (size_t iLocal = 0; iLocal < localGridSize2; ++iLocal) {
         const size_t i = localGridStart2 + iLocal;
+        const size_t mode2 = min(i, _iGridSize2 - i);
 
         for (size_t j = 0; j < _iGridSize1; ++j) {
             const size_t k = getIndex(iLocal, j, _iGridSize1);
@@ -235,8 +236,9 @@ void Parameters::getMathematicalOperators(const MPIContext& mpi) {
             _vDifferentialOperator1[k] = Imaginary * _vSpectrumNonlinear1[k];
             _vDifferentialOperator2[k] = Imaginary * _vSpectrumNonlinear2[k];
 
-            const bool keepMode = abs(_vWavenumbersNonlinear1[j]) <= kCut1 && abs(_vWavenumbersNonlinear2[i]) <= kCut2;
-            _vDealiasingOperator[k] = keepMode ? complex<double>{1.0, 0.0} : complex<double>{0.0, 0.0};
+            const size_t mode1 = min(j, _iGridSize1 - j);
+            const bool keepMode = mode1 <= cutoff1 && mode2 <= cutoff2;
+            _vDealiasingOperator[k] = keepMode ? 1 : 0;
 
             const double k1 = _vWavenumbersLinear1[j];
             const double k2 = _vWavenumbersLinear2[i];
@@ -351,7 +353,7 @@ const vector<complex<double>>& Parameters::getDifferentialOperator2() const {
     return _vDifferentialOperator2;
 }
 
-const vector<complex<double>>& Parameters::getDealiasingOperator() const {
+const vector<unsigned char>& Parameters::getDealiasingOperator() const {
     return _vDealiasingOperator;
 }
 

@@ -328,6 +328,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
         }
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
+
     vTargetState.setInitialEnergyL2();
 }
 
@@ -406,7 +407,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     const vector<complex<double>>& differentialOperator1 = _params.getDifferentialOperator1();
     const vector<complex<double>>& differentialOperator2 = _params.getDifferentialOperator2();
     const vector<complex<double>>& linearOperator = _params.getLinearOperator();
-    const vector<complex<double>>& dealiasingOperator = _params.getDealiasingOperator();
+    const vector<unsigned char>& dealiasingOperator = _params.getDealiasingOperator();
     const array<double, 4>& coeffAlphaI = _params.getCoeffAlphaI();
     const array<double, 4>& coeffBetaI = _params.getCoeffBetaI();
     const array<double, 4>& coeffAlphaE = _params.getCoeffAlphaE();
@@ -470,7 +471,9 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             _fftwPlan.fft2InPlace(vNonlinearTermCurrent.getDataPointer());
             for (size_t k = 0; k < localGridSize; ++k) {
                 const complex<double> Lin = linearOperator[k];
-                vNonlinearTermCurrent[k] *= dealiasingOperator[k];
+                if (!dealiasingOperator[k]) {
+                    vNonlinearTermCurrent[k] = complex<double>{0.0, 0.0};
+                }
                 vStateNext[k] = ( (1.0 - dt * coeffBetaI[j] * Lin) * vStateCurrent[k]
                                  - dt * coeffAlphaE[j] * vNonlinearTermCurrent[k]
                                  - dt * coeffBetaE[j]  * vNonlinearTermPrevious[k] ) 
@@ -567,7 +570,7 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
     const vector<complex<double>>& differentialOperator2 = _params.getDifferentialOperator2();
     const vector<complex<double>>& linearOperator = _params.getLinearOperator();
     const vector<complex<double>>& laplaceOperator = _params.getLaplaceOperator();
-    const vector<complex<double>>& dealiasingOperator = _params.getDealiasingOperator();
+    const vector<unsigned char>& dealiasingOperator = _params.getDealiasingOperator();
     const array<double, 4>& coeffAlphaI = _params.getCoeffAlphaI();
     const array<double, 4>& coeffBetaI = _params.getCoeffBetaI();
     const array<double, 4>& coeffAlphaE = _params.getCoeffAlphaE();
@@ -635,7 +638,9 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
             _fftwPlan.fft2InPlace(vNonlinearTermCurrent.getDataPointer());
             for (size_t k = 0; k < localGridSize; ++k) {
                 const complex<double> Lin = linearOperator[k];
-                vNonlinearTermCurrent[k] *= dealiasingOperator[k];
+                if (!dealiasingOperator[k]) {
+                    vNonlinearTermCurrent[k] = complex<double>{0.0, 0.0};
+                }
                 vStateNext[k] = ( (1.0 - dt * coeffBetaI[j] * Lin) * vStateCurrent[k]
                                  - dt * coeffAlphaE[j] * vNonlinearTermCurrent[k]
                                  - dt * coeffBetaE[j]  * vNonlinearTermPrevious[k] ) 
