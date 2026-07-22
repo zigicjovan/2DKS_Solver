@@ -13,12 +13,12 @@ import time
 
 # User-editable parameter ranges
 K_start =           4.0
-K_end =             5.0
+K_end =             4.0
 K_step =            0.5
 num_modes_start =   1
 num_modes_end =     num_modes_start
 ell1_start =        1.05
-ell1_end =          1.50
+ell1_end =          1.35
 ell1_step =         0.15
 ell2_start =        ell1_start
 ell2_end =          ell1_end 
@@ -44,8 +44,8 @@ SAVE_STATES = 100
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
-    N_choice =  [ 48,   64,   96,   128,  160,  192,  256,  320,  384,  512,  648,  768,  864,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
-    dt_choice = [ 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8, 4e-8, 3e-8, 2e-8 ]
+    N_choice =  [ 64,   96,   128,  160,  192,  256,  320,  384,  512,  576,  648,  720,  768,  864,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
+    dt_choice = [ 5e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8, 4e-8, 3e-8, 2e-8 ]
     K_ref = 3.5
     T_width = round(0.1, 2)
     T_step = round(0.05, 2)
@@ -69,10 +69,17 @@ def generate_tasks():
                 # T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
                 # T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
                 T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
-                idx = max( 0 , min( int( np.round(elltemp + 2*(K - K_ref) + 3) ) , len(N_choice) - 1) ) 
-                N = N_choice[idx+0] 
-                dt = dt_choice[idx+0]
-                MPIrank = max(1, N // 32) # 192 cores per node on Nibi
+
+                base_index = 4
+                K_increment = int(np.floor((K - 4.0) / 0.5 + 1e-10))
+                ell_increment = int(np.floor((ell1 - 1.0) / 0.5 + 1e-10))
+                choice_index = base_index + K_increment + ell_increment
+                N_index = max(0, min(choice_index, len(N_choice) - 1))
+                dt_index = max(0, min(choice_index, len(dt_choice) - 1))
+                N = N_choice[N_index]
+                dt = dt_choice[dt_index]
+                MPIrank = 1 # max(1, N // 64) # 192 cores per node on Nibi
+
                 for T in T_range:
                     mem_est = 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
                                                 + 0.23432402 * K + 0.18691756 * elltemp * np.log10((N**2) * (10.0**T) / dt) )) / 8.0 )

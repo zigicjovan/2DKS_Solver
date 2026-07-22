@@ -39,7 +39,7 @@ ell1_str=$(printf "%.2f" "$ell1")
 ell2_str=$(printf "%.2f" "$ell2")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-LOG_FILE="${LOG_DIR}/run_${IDX}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}_${MPI_RANKS}r.log"
+LOG_FILE="${LOG_DIR}/run_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}_${MPI_RANKS}r.log"
 
 # --- Write SLURM Job ID to log file ---
 echo -e "\n=============================" >> "$LOG_FILE"
