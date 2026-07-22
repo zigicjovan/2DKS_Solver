@@ -2,7 +2,7 @@
 https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
 ### To run quick test on Linux terminal (assuming 'output' folder exists):
-make run
+1. make run
 
 ### To run on HPC cluster:
 1. Modify param_driver.py
