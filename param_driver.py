@@ -5,6 +5,7 @@ Generates runscripts/task_params_<mem>_<ranks>r_<timestamp>.txt and run scripts,
 and writes an array driver grouped by memory and MPI rank count.
 """
 
+import math
 import numpy as np # type: ignore
 import os
 from pathlib import Path
@@ -17,7 +18,7 @@ K_step =            0.5
 num_modes_start =   1
 num_modes_end =     num_modes_start
 ell1_start =        1.05
-ell1_end =          1.95
+ell1_end =          1.50
 ell1_step =         0.15
 ell2_start =        ell1_start
 ell2_end =          ell1_end 
@@ -37,14 +38,14 @@ SEQUENTIAL_TASKS = False
 IC = "s1"
 OPTIMIZE = 1
 TOL = "1e-6"
-CONTINUATION = 1
+CONTINUATION = 0
 OPT_T = 1
 SAVE_STATES = 100
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
     N_choice =  [ 48,   64,   96,   128,  160,  192,  256,  320,  384,  512,  648,  768,  864,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
-    dt_choice = [ 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8 ]
+    dt_choice = [ 2e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8, 4e-8, 3e-8, 2e-8 ]
     K_ref = 3.5
     T_width = round(0.1, 2)
     T_step = round(0.05, 2)
@@ -105,10 +106,15 @@ def write_runscripts(tasks, out_dir='runscripts'):
         param_fname = out / f"task_params_{mem_tag}_{mpi_ranks}r_{tag}.txt"
         with param_fname.open('w') as pf:
             for (idx, (K, ell1, ell2, T, dt, N, mpi_ranks, mem)) in items:
-                pf.write(f"{idx} {K} {ell1:.2f} {ell2:.2f} {T:.2f} {dt:.0e} {N} {mpi_ranks} {mem}\n")
+                pf.write(f"{idx} {K} {ell1:.2f} {ell2:.2f} {T:.2f} "
+                         f"{dt:.0e} {N} {mpi_ranks} {mem} "
+                         f"{IC} {OPTIMIZE} {TOL} {CONTINUATION} {OPT_T} {SAVE_STATES}\n"
+                         )
 
     # Standalone scripts matching the same C++ invocation used by the array worker.
     for idx, (K, ell1, ell2, T, dt, N, mpi_ranks, mem) in enumerate(tasks):
+        mem_gib = int(mem.removesuffix("G"))
+        mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
         fname = out / f"run_{K}_{ell1:.2f}_{ell2:.2f}_{T:.2f}_{dt:.0e}_{N}_{mpi_ranks}r.sh"
         with fname.open('w') as fh:
             fh.write(f"""#!/bin/bash
@@ -117,7 +123,7 @@ def write_runscripts(tasks, out_dir='runscripts'):
 #SBATCH --mail-type=ALL
 #SBATCH --ntasks={mpi_ranks}
 #SBATCH --cpus-per-task=1
-#SBATCH --mem={mem}
+#SBATCH --mem-per-cpu={mem_per_cpu_mib}M
 #SBATCH --time={SBATCH_TIME}
 set -euo pipefail
 mkdir -p output
@@ -132,13 +138,15 @@ srun ./solver "{IC}" "{N}" "{N}" "{dt:.0e}" "{K}" "{ell1:.2f}" "{ell2:.2f}" "{T:
 def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
     lines = [
         "#!/bin/bash",
+        "set -euo pipefail",
         'mkdir -p slurm_logs output runscripts',
         ''
     ]
 
     for (mem, mpi_ranks), items in groups.items():
-        mem_tag = mem.replace('G', 'G')
-        param_file = f"runscripts/task_params_{mem_tag}_{mpi_ranks}r_{tag}.txt"
+        mem_gib = int(mem.removesuffix("G"))
+        mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
+        param_file = f"runscripts/task_params_{mem}_{mpi_ranks}r_{tag}.txt"
         count = len(items)
         if SEQUENTIAL_TASKS:
             array_spec = f"0-{count-1}%1"  # for sequential tasks
@@ -149,16 +157,16 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
 
         if SEQUENTIAL_TASKS:
             ### sequential groups ###
-            lines.append("  if [[ -z \"$prev_jobid\" ]]; then")
+            lines.append('if [[ -z "${prev_jobid:-}" ]]; then')
             lines.append(f"    prev_jobid=$(sbatch --parsable --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
             lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
-            lines.append(f"                     --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem={mem} \\")
+            lines.append(f"                     --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem-per-cpu={mem_per_cpu_mib}M \\")
             lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
             lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
             lines.append("  else")
             lines.append(f"    prev_jobid=$(sbatch --parsable --dependency=afterany:${{prev_jobid}} --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
             lines.append(f"                     --job-name={RUN_ARRAY_NAME} \\")
-            lines.append(f"                     --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem={mem} \\")
+            lines.append(f"                     --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem-per-cpu={mem_per_cpu_mib}M \\")
             lines.append(f"                     --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
             lines.append(f"                     --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
             lines.append("  fi")
@@ -166,7 +174,7 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
             ### concurrent groups ###
             lines.append(f"prev_jobid=$(sbatch --parsable --account=def-bprotas --mail-user=zigicj@mcmaster.ca --mail-type=ALL \\")
             lines.append(f"                 --job-name={RUN_ARRAY_NAME} \\")
-            lines.append(f"                 --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem={mem} \\")
+            lines.append(f"                 --ntasks={mpi_ranks} --cpus-per-task=1 --time={SBATCH_TIME} --mem-per-cpu={mem_per_cpu_mib}M \\")
             lines.append(f"                 --array={array_spec} --output=slurm_logs/slurm-%A_%a.out --error=slurm_logs/slurm-%A_%a.err \\")
             lines.append(f"                 --export=ALL,PARAM_FILE={param_file} ./run_task_array.sh)")
         

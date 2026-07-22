@@ -30,7 +30,8 @@ if [[ -z "$LINE" ]]; then
 fi
 
 # expected line: idx K ell1 ell2 T dt N MPI_ranks mem
-read -r IDX K ell1 ell2 T dt N MPI_RANKS mem <<< "$LINE"
+read -r IDX K ell1 ell2 T dt N MPI_RANKS mem \
+    IC_str optimize tol continuation optT savestates <<< "$LINE"
 
 LOG_DIR="./output"
 mkdir -p "$LOG_DIR"
@@ -38,12 +39,6 @@ ell1_str=$(printf "%.2f" "$ell1")
 ell2_str=$(printf "%.2f" "$ell2")
 T_str=$(printf "%.2f" "$T")
 dt_str="$dt"
-IC_str="s1"
-optimize=1
-tol=1e-6
-continuation=1
-optT=1
-savestates=100
 LOG_FILE="${LOG_DIR}/run_${IDX}_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_str}_${N}_${MPI_RANKS}r.log"
 
 # --- Write SLURM Job ID to log file ---
@@ -56,6 +51,8 @@ echo "=============================" >> "$LOG_FILE"
 attempt=0
 max_attempts=2
 rc=1
+
+module load fftw-mpi/3.3.10
 
 while [[ $attempt -lt $max_attempts ]]; do
     echo "[$(date)] Running C++ attempt $((attempt+1))/$max_attempts for TASK_ID=${TASK_ID} (IDX=${IDX})" >> "$LOG_FILE"
