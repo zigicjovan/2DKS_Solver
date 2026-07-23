@@ -619,7 +619,7 @@ function generateFigures(testcase)
                 
                 xlabel(ax(k),'Time $t$');
                 ylabel(ax(k),'$P(a_k)$');
-                title(ax(k),'Radial modal energy');
+                title(ax(k),'Modal energy');
                 axis(ax(k),'square');
     
                 % ---- enforce fonts/interpreters AFTER all plotting calls ----
