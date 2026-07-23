@@ -9,12 +9,11 @@ https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 2. [Terminal] python3 param_driver.py
 3. Run execution script from terminal output of param_driver.py
 
-### To generate figures on cluster:
+### To generate figures (offline):
 1. cd Data
-2. module load matlab/2024b.1
-3. matlab -nodisplay -nosplash
-4. testDir = '[folder name]';
-5. generateFigures(testDir);
+2. matlab -nodisplay -nosplash
+3. testDir = '[folder name]';
+4. generateFigures(testDir);
 
 ### To get PID from queue to check status or to kill process:
 1. sq
