@@ -11,9 +11,10 @@ https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 
 ### To generate figures on cluster:
 1. cd Data
-2. matlab -nodisplay -nosplash [use 2024b]
-3. testDir = '[folder name]';
-4. generateFigures(testDir);
+2. module load matlab/2024b.1
+3. matlab -nodisplay -nosplash
+4. testDir = '[folder name]';
+5. generateFigures(testDir);
 
 ### To get PID from queue to check status or to kill process:
 1. sq
