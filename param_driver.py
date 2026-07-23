@@ -17,7 +17,7 @@ K_end =             4.0
 K_step =            0.5
 num_modes_start =   1
 num_modes_end =     num_modes_start
-ell1_start =        1.05
+ell1_start =        1.35
 ell1_end =          1.35
 ell1_step =         0.15
 ell2_start =        ell1_start
@@ -30,22 +30,22 @@ ell2_range =        np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_
 # ell2_range = ell1_range
 
 # User-editable global settings
-SBATCH_TIME = "00-10:00"  # requested time limit (D-HH:MM) 
-RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}.sh"
+SBATCH_TIME = "03-00:00"  # requested time limit (D-HH:MM) 
+RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-1.sh"
 SEQUENTIAL_TASKS = False
 
 # Solver settings shared by all generated production runs
 IC = "s1"
 OPTIMIZE = 1
-TOL = "1e-6"
+TOL = "1e-10"
 CONTINUATION = 0
 OPT_T = 1
 SAVE_STATES = 100
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
-    N_choice =  [ 64,   96,   128,  160,  192,  256,  320,  384,  512,  576,  648,  720,  768,  864,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
-    dt_choice = [ 5e-4, 1e-4, 5e-5, 2e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 1e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8, 4e-8, 3e-8, 2e-8 ]
+    N_choice =  [ 64,   128,  192,  256,  320,  384,  512,  576,  640,  768,  896,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
+    dt_choice = [ 1e-4, 5e-5, 1e-5, 5e-6, 2e-6, 1e-6, 5e-7, 4e-7, 3e-7, 2e-7, 9e-8, 8e-8, 7e-8, 6e-8, 5e-8, 4e-8, 3e-8, 2e-8, 1e-8 ]
     K_ref = 3.5
     T_width = round(0.1, 2)
     T_step = round(0.05, 2)
@@ -59,26 +59,27 @@ def generate_tasks():
             # for ell2 in ell2_range:
                 ell2 = ell1
                 elltemp = ell1
-                T_target = 0.5*ell1 + 2.1
+                T_target = 0.5*ell1 + 2.0
                 # targettemp = 1.02*np.sqrt(1)
                 # T_target = 0.5*targettemp + 2.1
                 # T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # symmetry
                 # T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
-                # T_range = np.round(np.array([-1.0]), 2) # fixed
+                T_range = np.round(np.array([-1.43]), 2) # fixed
                 # T_range = np.round(np.array([(T_target) - K ]), 2) # Target
                 # T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
                 # T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
-                T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
+                # T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
 
-                base_index = 4
+                base_index = 2
+                tempidx = 11
                 K_increment = int(np.floor((K - 4.0) / 0.5 + 1e-10))
                 ell_increment = int(np.floor((ell1 - 1.0) / 0.5 + 1e-10))
                 choice_index = base_index + K_increment + ell_increment
                 N_index = max(0, min(choice_index, len(N_choice) - 1))
                 dt_index = max(0, min(choice_index, len(dt_choice) - 1))
-                N = N_choice[N_index]
-                dt = dt_choice[dt_index]
-                MPIrank = 1 # max(1, N // 64) # 192 cores per node on Nibi
+                N = N_choice[tempidx] #N_choice[N_index]
+                dt = dt_choice[tempidx] #dt_choice[dt_index]
+                MPIrank = 128 #max(1, N // 32) # 192 cores per node on Nibi
 
                 for T in T_range:
                     mem_est = 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp

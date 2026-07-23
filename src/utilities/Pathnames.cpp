@@ -24,7 +24,8 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
         << "_opt_" << params.getOptimizeSolution()       
         << "_tol_" << scientific << setprecision(0) << params.getOptimizationTolerance()  
         << "_cont_" << params.getNumericalContinuation()  
-        << "_optT_" << scientific << setprecision(2) << params.getOptimalTimeWindow();
+        << "_optT_" << scientific << setprecision(2) << params.getOptimalTimeWindow()
+        << "_rank_" << mpi.getSize();
     
     _strTestcaseGenericTime << "_IC_" << params.getInitialGuessName() 
         << "_N1_" << params.getGridSize1() 

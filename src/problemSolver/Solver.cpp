@@ -867,9 +867,15 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         }
         
         _timer.printInterval("Energy maximization problem solved at ");
-        cout << '\n' << "Initial spectral tail-energy ratio = " << scientific ;
+
+        if (_mpi.isRoot()) {
+            cout << '\n' << "Initial spectral tail-energy ratio = " << scientific ;
+        }
         checkSpectralResolution(vTargetStart);
-        cout << '\n' << "Terminal spectral tail-energy ratio = " << scientific ;
+        
+        if (_mpi.isRoot()) {
+            cout << '\n' << "Terminal spectral tail-energy ratio = " << scientific ;
+        }    
         checkSpectralResolution(vTargetEnd);
     }
 }
