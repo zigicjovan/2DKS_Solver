@@ -31,7 +31,7 @@ ell2_range =        np.round(np.arange(ell2_start, ell2_end + ell2_step/2, ell2_
 
 # User-editable global settings
 SBATCH_TIME = "03-00:00"  # requested time limit (D-HH:MM) 
-RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-1.sh"
+RUN_ARRAY_NAME = f"b_{K_start}_{K_end}-{ell1_start:.2f}_{ell1_end:.2f}_{ell2_start:.2f}_{ell2_end:.2f}-rank.sh"
 SEQUENTIAL_TASKS = False
 
 # Solver settings shared by all generated production runs
@@ -64,14 +64,14 @@ def generate_tasks():
                 # T_target = 0.5*targettemp + 2.1
                 # T_range = np.round(np.array([(T_target / 2) - 3*K ]), 2) # symmetry
                 # T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
-                T_range = np.round(np.array([-1.43]), 2) # fixed
+                T_range = np.round(np.array([-1.30]), 2) # fixed
                 # T_range = np.round(np.array([(T_target) - K ]), 2) # Target
                 # T_range = np.round(np.array([(T_target - T_width) - K ]), 2) # Lower Bound LB
                 # T_range = np.round(np.array([(T_target + T_width) - K ]), 2) # Upper Bound UB
                 # T_range = np.round(np.arange((T_target - T_width) - K, (T_target + T_width) - K + T_step/2, T_step), 2) # [LB,UB] branch
 
                 base_index = 2
-                tempidx = 11
+                tempidx = 3
                 K_increment = int(np.floor((K - 4.0) / 0.5 + 1e-10))
                 ell_increment = int(np.floor((ell1 - 1.0) / 0.5 + 1e-10))
                 choice_index = base_index + K_increment + ell_increment
@@ -79,7 +79,7 @@ def generate_tasks():
                 dt_index = max(0, min(choice_index, len(dt_choice) - 1))
                 N = N_choice[tempidx] #N_choice[N_index]
                 dt = dt_choice[tempidx] #dt_choice[dt_index]
-                MPIrank = 128 #max(1, N // 32) # 192 cores per node on Nibi
+                MPIrank = 1 #max(1, N // 32) # 192 cores per node on Nibi
 
                 for T in T_range:
                     mem_est = 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
@@ -204,7 +204,7 @@ def main():
     write_run_array_sh(groups, tag, out_fname=RUN_ARRAY_NAME, max_concurrent=0)
     print(f"Wrote runscripts/ (task param files with tag {tag})")
     print(f"Execution script: bash {RUN_ARRAY_NAME}")
-    print("Priority check: sshare -l -A def-bprotas_cpu -u fabianbl,zigicj,noahb")
+    print("Priority check: sshare -l -A def-bprotas_cpu,rrg-bprotas_cpu -u fabianbl,fu6,zigicj,noahb")
 
 if __name__ == "__main__":
     main()
