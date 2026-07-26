@@ -436,7 +436,7 @@ function generateFigures(testcase)
         set(ax(k),'Position',pos);
     end
     
-    title1 = 'Forward-time 2DKS solution';
+    title1 = 'Time-Dependent Solution to the 2D Kuramoto-Sivashinsky Equation';
     title2 = '';
     sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',ceil(1.25*wordsize));
     
