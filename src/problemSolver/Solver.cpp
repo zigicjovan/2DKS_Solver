@@ -492,7 +492,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         vNonlinearTermPrevious[i] = complex<double>{0.0, 0.0};
     }
 
-    if (!optimizeSolution && savedStateCount > 0) {
+    if (!optimizeSolution && savedStateCount > 1) {
         ++savedStateIndex;
         saveForwardState( dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
         if (savedStateIndex < savedStateCount) {
@@ -501,9 +501,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
 
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
-    }
-    else if (!optimizeSolution) {
-        vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
     }
     
     for (size_t i = 1; i < totalSteps + 1; ++i) {
@@ -554,7 +551,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         if (optimizeSolution && !activeLineSearch) {
             saveForwardState(dTimePoint, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
         }
-        else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep) {
+        else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep && savedStateCount > 1) {
             ++savedStateIndex;
             saveForwardState(dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
             
@@ -573,7 +570,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     vTargetEnd.moveDataFrom(vStateCurrent);
     setSolutionState(SolveTerminalState, vTargetEnd);
     
-    if (!optimizeSolution) {
+    if (!optimizeSolution && savedStateCount > 1) {
         saveSolutionDiagnostics(vDiagnostics); 
         saveSolutionSpectrum(vSpectrumHistory);
     }
@@ -1137,12 +1134,18 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
             else {
                 findContinuationForInitialData(vTargetState);
             }
-            vTargetState.saveData(InitialState);
+            
+            if (_params.getSavedStates() > 1) {
+                vTargetState.saveData(InitialState);
+            }
             break;
         }
 
         case SolveTerminalState:
-            vTargetState.saveData(TerminalState);
+            
+            if (_params.getSavedStates() > 1) {
+                vTargetState.saveData(InitialState);
+            }
             break;
         
         case SolveBackwardInitialState: 
@@ -1189,3 +1192,4 @@ double Solver::getOptimalSolution(OptimizeSolutionType targetType, SolutionData&
     } 
     return dTargetValue;
 }
+
