@@ -851,8 +851,9 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         }
 
         _params.setOptimizeSolution(false);
-
         vHistoryIntermediate.deleteData();
+        
+        _paths.setTempDir(false);
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
         EnergyData maxEnergyResult = getMaxEnergyL2InTimeWindow();
         vOptimalEnergySolution = { _params.getInitialEnergy(), _params.getDomainFactor1(), _params.getDomainFactor2(), _params.getTimeWindow(), dObjectiveValue, 
@@ -1192,4 +1193,3 @@ double Solver::getOptimalSolution(OptimizeSolutionType targetType, SolutionData&
     } 
     return dTargetValue;
 }
-

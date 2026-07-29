@@ -40,6 +40,8 @@ private:
     size_t _iGridSize2;
     size_t _iTotalGridSize;
     size_t _iSavedStates;
+    int _iRequiredMemory;
+    int _iFinalMemory;
 
     double _dTimeStep;
     double _dSpaceStep;
@@ -105,6 +107,8 @@ public:
     size_t getGridSize2() const;
     size_t getTotalGridSize() const;
     size_t getSavedStates() const;
+    int getRequiredMemory() const;
+    int getFinalMemory() const;
 
     double getTimeStep() const;
     double getSpaceStep() const;

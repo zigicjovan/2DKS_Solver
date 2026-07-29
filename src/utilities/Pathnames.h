@@ -11,6 +11,9 @@ using namespace std;
 
 class Pathnames {
 private:
+
+    bool _useTempDir;
+
     // directories 
     filesystem::path _dirData;
     filesystem::path _dirForwardSolution;
@@ -23,6 +26,17 @@ private:
     filesystem::path _dirOptimizationDiagnostics;
     filesystem::path _dirOptimizationLineSearch;
 
+    filesystem::path _dirDataTemp;
+    filesystem::path _dirForwardSolutionTemp;
+    filesystem::path _dirBackwardSolutionTemp;
+    filesystem::path _dirFourierSpectrumEvolutionTemp;
+    filesystem::path _dirEnergyEvolutionTemp;
+    filesystem::path _dirInitialDataTemp;
+    filesystem::path _dirTerminalDataTemp;
+    filesystem::path _dirSolutionBranchesTemp;
+    filesystem::path _dirOptimizationDiagnosticsTemp;
+    filesystem::path _dirOptimizationLineSearchTemp;
+
     // filenames
     ostringstream _strTestcase;
     ostringstream _strTestcaseGenericTime;
@@ -31,6 +45,7 @@ private:
     ostringstream _strTestcaseDomainSizePowerLaw;
     ostringstream _strTestcaseEnergyTimeWindowPowerLaw;
     ostringstream _strTestcaseDomainTimeWindowPowerLaw;
+
     filesystem::path _fForwardSolution; // note: multiple files 
     filesystem::path _fBackwardSolution;
     filesystem::path _fFourierSpectrumEvolution;
@@ -45,8 +60,25 @@ private:
     filesystem::path _fOptimizationDiagnostics;
     filesystem::path _fOptimizationLineSearch;
 
+    filesystem::path _fForwardSolutionTemp; // note: multiple files 
+    filesystem::path _fBackwardSolutionTemp;
+    filesystem::path _fFourierSpectrumEvolutionTemp;
+    filesystem::path _fEnergyEvolutionTemp;
+    filesystem::path _fInitialDataTemp;
+    filesystem::path _fTerminalDataTemp;
+    filesystem::path _fSolutionBranchesTemp; 
+    filesystem::path _fInitialEnergyPowerLawTemp; 
+    filesystem::path _fDomainSizePowerLawTemp; 
+    filesystem::path _fEnergyTimeWindowPowerLawTemp;
+    filesystem::path _fDomainTimeWindowPowerLawTemp; 
+    filesystem::path _fOptimizationDiagnosticsTemp;
+    filesystem::path _fOptimizationLineSearchTemp;
+
+
 public:
     Pathnames(const Parameters &params, const MPIContext& mpi);
+
+    void setTempDir(bool useTempDir);
 
     const filesystem::path& getDirData() const;
     const filesystem::path& getDirForwardSolution() const;

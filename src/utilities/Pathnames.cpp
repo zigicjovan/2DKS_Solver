@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iomanip>
 #include <filesystem>
+#include <cstdlib>
 
 using namespace std;
 
@@ -54,7 +55,22 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
     _strTestcaseDomainTimeWindowPowerLaw << "_IC_" << params.getInitialGuessName()        
         << "_K_" << scientific << setprecision(1) << params.getInitialEnergy();
 
-    const filesystem::path dataRoot = "Data";
+    const char* scratch = getenv("SCRATCH");
+    const filesystem::path dataRoot = scratch ? filesystem::path(scratch) / "Data" : filesystem::path("Data");
+    const char* slurmTemp = getenv("SLURM_TMPDIR");
+    const bool haveTmpDir = (slurmTemp != nullptr);
+    filesystem::path dataRootTemp = dataRoot;
+    _useTempDir = false;
+
+    if (params.getOptimizeSolution() && haveTmpDir) {
+        dataRootTemp = filesystem::path(slurmTemp) / "Data";
+
+        const auto spaceInfo = filesystem::space(slurmTemp);
+        const double availableGB = static_cast<double>(spaceInfo.available) / (1024.0 * 1024.0 * 1024.0);
+
+        _useTempDir = (params.getRequiredMemory() <= 0.8 * availableGB);
+    }
+
     const string testcase = _strTestcase.str();
 
     // create directories if they do not exist
@@ -83,6 +99,32 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
     _fOptimizationDiagnostics = _dirOptimizationDiagnostics / ( "diagnostics" + fType );
     _fOptimizationLineSearch = _dirOptimizationLineSearch / ( "linesearch" + fType );
 
+    // create directories if they do not exist
+    _dirDataTemp = dataRootTemp / testcase ;
+    _dirForwardSolutionTemp = _dirDataTemp / "ForwardSolution" ;
+    _dirBackwardSolutionTemp = _dirDataTemp / "BackwardSolution";
+    _dirFourierSpectrumEvolutionTemp = _dirDataTemp / "FourierSpectrumEvolution";
+    _dirEnergyEvolutionTemp = _dirDataTemp / "EnergyEvolution";
+    _dirInitialDataTemp = _dirDataTemp / "InitialData";
+    _dirTerminalDataTemp = _dirDataTemp / "TerminalData";
+    _dirSolutionBranchesTemp = dataRootTemp / "SolutionBranches" / testcase ;
+    _dirOptimizationDiagnosticsTemp = _dirDataTemp / "OptimizationDiagnostics";
+    _dirOptimizationLineSearchTemp = _dirDataTemp / "OptimizationLineSearch";
+
+    _fForwardSolutionTemp = _dirForwardSolutionTemp / ( "fwd" + fType ); 
+    _fBackwardSolutionTemp = _dirBackwardSolutionTemp / ( "gradJ" + fType );
+    _fFourierSpectrumEvolutionTemp = _dirFourierSpectrumEvolutionTemp / ( "spectrum" + fType );
+    _fEnergyEvolutionTemp = _dirEnergyEvolutionTemp / ( "energy" + fType );
+    _fInitialDataTemp = _dirInitialDataTemp / ( "fwdIC" + fType );
+    _fTerminalDataTemp = _dirTerminalDataTemp / ( "fwdTC" + fType );
+    _fSolutionBranchesTemp = _dirSolutionBranchesTemp / ( "branch" + _strTestcaseBranch.str() + fType );
+    _fInitialEnergyPowerLawTemp = _dirSolutionBranchesTemp / ( "powerlawK" + _strTestcaseInitialEnergyPowerLaw.str() + fType );
+    _fDomainSizePowerLawTemp = _dirSolutionBranchesTemp / ( "powerlawL" + _strTestcaseDomainSizePowerLaw.str() + fType );
+    _fEnergyTimeWindowPowerLawTemp = _dirSolutionBranchesTemp / ( "powerlawTK" + _strTestcaseEnergyTimeWindowPowerLaw.str() + fType );
+    _fDomainTimeWindowPowerLawTemp = _dirSolutionBranchesTemp / ( "powerlawTL" + _strTestcaseDomainTimeWindowPowerLaw.str() + fType );
+    _fOptimizationDiagnosticsTemp = _dirOptimizationDiagnosticsTemp / ( "diagnostics" + fType );
+    _fOptimizationLineSearchTemp = _dirOptimizationLineSearchTemp / ( "linesearch" + fType );
+
     if (mpi.isRoot()) {
         filesystem::create_directories(_dirForwardSolution);
         filesystem::create_directories(_dirBackwardSolution);
@@ -94,50 +136,115 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
         filesystem::create_directories(_dirOptimizationDiagnostics);
         filesystem::create_directories(_dirOptimizationLineSearch);
 
+        filesystem::create_directories(_dirForwardSolutionTemp);
+        filesystem::create_directories(_dirBackwardSolutionTemp);
+        filesystem::create_directories(_dirFourierSpectrumEvolutionTemp);
+        filesystem::create_directories(_dirEnergyEvolutionTemp);
+        filesystem::create_directories(_dirInitialDataTemp);
+        filesystem::create_directories(_dirTerminalDataTemp);
+        filesystem::create_directories(_dirSolutionBranchesTemp);
+        filesystem::create_directories(_dirOptimizationDiagnosticsTemp);
+        filesystem::create_directories(_dirOptimizationLineSearchTemp);
+
+        cout << "Writing temporary data to " << (_useTempDir ? "SLURM_TMPDIR" : "SCRATCH") << endl;
         cout << "Directory name: " << testcase << endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
+void Pathnames::setTempDir(bool useTempDir) {
+    _useTempDir = useTempDir;
+}
+
 const filesystem::path& Pathnames::getDirData() const {
-    return _dirData;
+    if (!_useTempDir) {
+        return _dirData;
+    }
+    else {
+        return _dirDataTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirForwardSolution() const {
-    return _dirForwardSolution;
+    if (!_useTempDir) {
+        return _dirForwardSolution;
+    }
+    else {
+        return _dirForwardSolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirBackwardSolution() const {
-    return _dirBackwardSolution;
+    if (!_useTempDir) {
+        return _dirBackwardSolution;
+    }
+    else {
+        return _dirBackwardSolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirFourierSpectrumEvolution() const {
-    return _dirFourierSpectrumEvolution;
+    if (!_useTempDir) {
+        return _dirFourierSpectrumEvolution;
+    }
+    else {
+        return _dirFourierSpectrumEvolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirEnergyEvolution() const {
-    return _dirEnergyEvolution;
+    if (!_useTempDir) {
+        return _dirEnergyEvolution;
+    }
+    else {
+        return _dirEnergyEvolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirInitialData() const {
-    return _dirInitialData;
+    if (!_useTempDir) {
+        return _dirInitialData;
+    }
+    else {
+        return _dirInitialDataTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirTerminalData() const {
-    return _dirTerminalData;
+    if (!_useTempDir) {
+        return _dirTerminalData;
+    }
+    else {
+        return _dirTerminalDataTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirSolutionBranches() const {
-    return _dirSolutionBranches;
+    if (!_useTempDir) {
+        return _dirSolutionBranches;
+    }
+    else {
+        return _dirSolutionBranchesTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirOptimizationDiagnostics() const {
-    return _dirOptimizationDiagnostics;
+    if (!_useTempDir) {
+        return _dirOptimizationDiagnostics;
+    }
+    else {
+        return _dirOptimizationDiagnosticsTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDirOptimizationLineSearch() const {
-    return _dirOptimizationLineSearch;
+    if (!_useTempDir) {
+        return _dirOptimizationLineSearch;
+    }
+    else {
+        return _dirOptimizationLineSearchTemp;
+    }
 }
 
 string Pathnames::getTestcase() const {
@@ -169,23 +276,48 @@ string Pathnames::getTestcaseDomainTimeWindowPowerLaw() const {
 }
 
 const filesystem::path& Pathnames::getForwardSolutionFile() const {
-    return _fForwardSolution;
+    if (!_useTempDir) {
+        return _fForwardSolution;
+    }
+    else {
+        return _fForwardSolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getBackwardSolutionFile() const {
-    return _fBackwardSolution;
+    if (!_useTempDir) {
+        return _fBackwardSolution;
+    }
+    else {
+        return _fBackwardSolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getFourierSpectrumEvolutionFile() const {
-    return _fFourierSpectrumEvolution;
+    if (!_useTempDir) {
+        return _fFourierSpectrumEvolution;
+    }
+    else {
+        return _fFourierSpectrumEvolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getEnergyEvolutionFile() const {
-    return _fEnergyEvolution;
+    if (!_useTempDir) {
+        return _fEnergyEvolution;
+    }
+    else {
+        return _fEnergyEvolutionTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getInitialDataFile() const {
-    return _fInitialData;
+    if (!_useTempDir) {
+        return _fInitialData;
+    }
+    else {
+        return _fInitialDataTemp;
+    }
 }
 
 void Pathnames::setInitialDataFile(const filesystem::path& initialDataFile) {
@@ -193,33 +325,73 @@ void Pathnames::setInitialDataFile(const filesystem::path& initialDataFile) {
 }
 
 const filesystem::path& Pathnames::getTerminalDataFile() const {
-    return _fTerminalData;
+    if (!_useTempDir) {
+        return _fTerminalData;
+    }
+    else {
+        return _fTerminalDataTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getSolutionBranchesFile() const {
-    return _fSolutionBranches;
+    if (!_useTempDir) {
+        return _fSolutionBranches;
+    }
+    else {
+        return _fSolutionBranchesTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getInitialEnergyPowerLawFile() const {
-    return _fInitialEnergyPowerLaw;
+    if (!_useTempDir) {
+        return _fInitialEnergyPowerLaw;
+    }
+    else {
+        return _fInitialEnergyPowerLawTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDomainSizePowerLawFile() const {
-    return _fDomainSizePowerLaw;
+    if (!_useTempDir) {
+        return _fDomainSizePowerLaw;
+    }
+    else {
+        return _fDomainSizePowerLawTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getEnergyTimeWindowPowerLawFile() const {
-    return _fEnergyTimeWindowPowerLaw;
+    if (!_useTempDir) {
+        return _fEnergyTimeWindowPowerLaw;
+    }
+    else {
+        return _fEnergyTimeWindowPowerLawTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getDomainTimeWindowPowerLawFile() const {
-    return _fDomainTimeWindowPowerLaw;
+    if (!_useTempDir) {
+        return _fDomainTimeWindowPowerLaw;
+    }
+    else {
+        return _fDomainTimeWindowPowerLawTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getOptimizationDiagnosticsFile() const {
-    return _fOptimizationDiagnostics;
+    if (!_useTempDir) {
+        return _fOptimizationDiagnostics;
+    }
+    else {
+        return _fOptimizationDiagnosticsTemp;
+    }
 }
 
 const filesystem::path& Pathnames::getOptimizationLineSearchFile() const {
-    return _fOptimizationLineSearch;
+    if (!_useTempDir) {
+        return _fOptimizationLineSearch;
+    }
+    else {
+        return _fOptimizationLineSearchTemp;
+    }
 }

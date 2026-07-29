@@ -137,8 +137,8 @@ Parameters::Parameters(int argc, char* argv[]) {
                   -383714262797.0 / 1103637129625.0,
                   -403360439203.0 / 1888264787188.0 };
 
-    const int dRequiredMemory = 0.640 * (getNumericalSteps() + getNumericalStepsPerFile() - 1) / getNumericalStepsPerFile();
-    const int dFinalMemory = _iSavedStates * dRequiredMemory / getNumericalSteps();
+    _iRequiredMemory = 0.8 * (getNumericalSteps() - getNumericalStepsPerFile() + (getNumericalSteps() % getNumericalStepsPerFile())) / getNumericalStepsPerFile();
+    _iFinalMemory = _iSavedStates * _iRequiredMemory / getNumericalSteps();
 
     int mpiRank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
@@ -159,12 +159,12 @@ Parameters::Parameters(int argc, char* argv[]) {
                 << ", cont " << _bNumericalContinuation  
                 << ", optT " << _dOptimalTimeWindow      
                 << endl
-                << "Intermediate Storage (for adjoint solve) = " << dRequiredMemory
+                << "Intermediate Storage (for adjoint solve) = " << _iRequiredMemory
                 << " GB, Total Timesteps = " << getNumericalSteps() 
-                << " (Max File Timesteps (640MB) " << getNumericalStepsPerFile() 
+                << " (Max File Timesteps (800 MB) " << getNumericalStepsPerFile() 
                 << ", Remainder File Timesteps " << ( getNumericalSteps() % getNumericalStepsPerFile() )
                 << ")" << endl
-                << "Final Storage = " << dFinalMemory
+                << "Final Storage = " << _iFinalMemory
                 << " GB, Total Timesteps = " << _iSavedStates << endl;
     }
 }
@@ -262,7 +262,7 @@ size_t Parameters::getNumericalSteps() const {
 }
 
 size_t Parameters::getNumericalStepsPerFile() const {   
-    return static_cast<size_t>(round( 4e7 / (_iTotalGridSize) ));
+    return static_cast<size_t>(round( 5e7 / (_iTotalGridSize) ));
 }
 
 const vector<double>& Parameters::getGrid1() const { 
@@ -299,6 +299,14 @@ size_t Parameters::getTotalGridSize() const {
 
 size_t Parameters::getSavedStates() const { 
     return _iSavedStates; 
+}
+
+int Parameters::getRequiredMemory() const { 
+    return _iRequiredMemory; 
+}
+
+int Parameters::getFinalMemory() const { 
+    return _iFinalMemory; 
 }
 
 double Parameters::getTimeStep() const { 
