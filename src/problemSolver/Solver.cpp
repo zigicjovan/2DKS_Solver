@@ -831,7 +831,9 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             
             // Solve updated forward problem
             setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
+            _paths.setTempDir(false);
             vTargetStart.saveData(InitialState);
+            _paths.resetTempDir();
             _timer.printIterationInterval(); 
 
             dObjectiveValuePrev = dObjectiveValue;                                                                                
