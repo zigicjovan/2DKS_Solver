@@ -13,6 +13,7 @@ class Pathnames {
 private:
 
     bool _useTempDir;
+    bool _tempDirChoice;
 
     // directories 
     filesystem::path _dirData;
@@ -79,6 +80,7 @@ public:
     Pathnames(const Parameters &params, const MPIContext& mpi);
 
     void setTempDir(bool useTempDir);
+    void resetTempDir();
 
     const filesystem::path& getDirData() const;
     const filesystem::path& getDirForwardSolution() const;

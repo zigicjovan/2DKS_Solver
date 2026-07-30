@@ -61,6 +61,7 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
     const bool haveTmpDir = (slurmTemp != nullptr);
     filesystem::path dataRootTemp = dataRoot;
     _useTempDir = false;
+    _tempDirChoice = _useTempDir;
 
     if (params.getOptimizeSolution() && haveTmpDir) {
         dataRootTemp = filesystem::path(slurmTemp) / "Data";
@@ -69,6 +70,7 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
         const double availableGB = static_cast<double>(spaceInfo.available) / (1024.0 * 1024.0 * 1024.0);
 
         _useTempDir = (params.getRequiredMemory() <= 0.8 * availableGB);
+        _tempDirChoice = _useTempDir;
     }
 
     const string testcase = _strTestcase.str();
@@ -155,6 +157,10 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
 
 void Pathnames::setTempDir(bool useTempDir) {
     _useTempDir = useTempDir;
+}
+
+void Pathnames::resetTempDir() {
+    _useTempDir = _tempDirChoice;
 }
 
 const filesystem::path& Pathnames::getDirData() const {
