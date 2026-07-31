@@ -66,7 +66,7 @@ function generateFigures(testcase)
     spectrumFiles = dir(fullfile([testcase '/' spectrumDir], [spectrumFile, '*.dat']));
     initialconditionFiles = dir(fullfile([testcase '/' initialconditionDir], [initialconditionFile, '*.dat']));
     terminalconditionFiles = dir(fullfile([testcase '/' terminalconditionDir], [terminalconditionFile, '*.dat']));
-    
+
     %% plot settings and handles
     wordsize = 20;
     number_of_plots = 7;
@@ -87,8 +87,8 @@ function generateFigures(testcase)
     
     h_surf1 = []; h_surf2 = []; a_xline = []; 
     h_spec1 = []; h_proj = []; h_spec2 = [];
-    proj_strip = []; proj_coeffpts = [];
-    didInitPlots = false;
+    proj_strip = []; 
+    proj_coeffpts = [];
     
     %% set field coordinates
     xField = linspace(0, params.ell1, params.N1);
@@ -100,12 +100,12 @@ function generateFigures(testcase)
     [ x2x , y2x ] = meshgrid(x2_pts,y2_pts); % 2-dimensional grid
     
     %% set energy coordinates
-    filename = fullfile(energyFiles(k).folder, energyFiles(k).name);
+    filename = fullfile(energyFiles.folder, energyFiles.name);
     fid = fopen(filename, 'r');
     energyData = fscanf(fid, '%f', [4, Inf]).';
     fclose(fid);
-    numPoints = size(energyData, 1);
-    xEnergy = linspace(0, energyData(end,1), numPoints);
+    %numPoints = size(energyData, 1);
+    %xEnergy = linspace(0, energyData(end,1), numPoints);
     ymin_energy = 0.5 * min(min(energyData(:,2:4)));
     ymax_energy = 1.5 * max(max(energyData(:,2:4)));
     
@@ -113,12 +113,12 @@ function generateFigures(testcase)
     energyDataSampled = energyData(energyIndices, :);
     
     %% set spectrum coordinates
-    k1 = [0:params.N1/2-1, -params.N1/2:-1] / params.ell1;
-    k2 = [0:params.N2/2-1, -params.N2/2:-1] / params.ell2;
-    maxRadius = hypot(max(abs(k1)), max(abs(k2)));
-    numRadialBins = round(maxRadius) + 1;
+    %k1 = [0:params.N1/2-1, -params.N1/2:-1] / params.ell1;
+    %k2 = [0:params.N2/2-1, -params.N2/2:-1] / params.ell2;
+    %maxRadius = hypot(max(abs(k1)), max(abs(k2)));
+    %numRadialBins = round(maxRadius) + 1;
     
-    filename = fullfile(spectrumFiles(k).folder, spectrumFiles(k).name);
+    filename = fullfile(spectrumFiles.folder, spectrumFiles.name);
     fid = fopen(filename, 'r');
     spectrumData = fscanf(fid, '%f', [numberOfStates + 1, Inf]).';
     spectrumData = spectrumData(2:end,:);
@@ -135,13 +135,13 @@ function generateFigures(testcase)
     set(ax, 'FontSize', wordsize);
     set(ax, 'Color', 'white');
     
-    semilogy(ax(k), 1:xmax_spec, spectrumData(:,2), "--");
-    xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
-    legend(ax(k),'$E(k)$','Box','off','FontSize',wordsize);
-    title(ax(k),"Energy spectrum" );
-    xlim(ax(k), [1 xmax_spec]);
-    ylim(ax(k), [1e-20 ymax_spec]);
-    axis(ax(k),'square');
+    semilogy(ax, 1:xmax_spec, spectrumData(:,2), "--");
+    xlabel(ax,'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
+    legend(ax,'$E(k)$','Box','off','FontSize',wordsize);
+    title(ax,"Energy spectrum" );
+    xlim(ax, [1 xmax_spec]);
+    ylim(ax, [1e-20 ymax_spec]);
+    axis(ax,'square');
     
     filename = fullfile(spectrumDir, ['spectrumIC' testcase]);
     saveas(currentFig,[filename '.fig'])
@@ -156,14 +156,14 @@ function generateFigures(testcase)
     set(ax, 'FontSize', wordsize);
     set(ax, 'Color', 'white');
     
-    semilogy(ax(k), 1:xmax_spec, spectrumData(:,end), "--");
-    xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
-    %legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$','Box','off','FontSize',wordsize);
-    legend(ax(k),'$E(k)$','Box','off','FontSize',wordsize);
-    title(ax(k),"Energy spectrum" );
-    xlim(ax(k), [1 xmax_spec]);
-    ylim(ax(k), [1e-20 ymax_spec]);
-    axis(ax(k),'square');
+    semilogy(ax, 1:xmax_spec, spectrumData(:,end), "--");
+    xlabel(ax,'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
+    %legend(ax,'$E(k)$','$Ce^{-2\delta k}$','Box','off','FontSize',wordsize);
+    legend(ax,'$E(k)$','Box','off','FontSize',wordsize);
+    title(ax,"Energy spectrum" );
+    xlim(ax, [1 xmax_spec]);
+    ylim(ax, [1e-20 ymax_spec]);
+    axis(ax,'square');
     
     filename = fullfile(spectrumDir, ['spectrumTC' testcase]);
     saveas(currentFig,[filename '.fig'])
@@ -195,7 +195,7 @@ function generateFigures(testcase)
     set(ax, 'FontSize', wordsize);
     set(ax, 'Color', 'white');
     
-    filename = fullfile(initialconditionFiles(k).folder, initialconditionFiles(k).name);
+    filename = fullfile(initialconditionFiles.folder, initialconditionFiles.name);
     fid = fopen(filename, 'rb');
     raw = fread(fid, Inf, 'double');
     fclose(fid);
@@ -245,7 +245,7 @@ function generateFigures(testcase)
     ylabel(ax, '$\frac{x_2}{2\pi}$', 'Interpreter', 'latex');
     axis(ax, 'equal', 'tight');
     
-    currentT = fileTimes(k)*(i-1)/(numberOfStates-1);
+    currentT = fileTimes(1)*(i-1)/(numberOfStates-1);
     titleText = sprintf( ...
                     ['${N_1 = %d, N_2 = %d, \\Delta t = %.1e, K = %.0e,' ...
                      ' \\ell_1 = %.2f, \\ell_2 = %.2f, T = %.6f}$'], ...
@@ -275,7 +275,7 @@ function generateFigures(testcase)
     set(ax, 'FontSize', wordsize);
     set(ax, 'Color', 'white');
     
-    filename = fullfile(terminalconditionFiles(k).folder, terminalconditionFiles(k).name);
+    filename = fullfile(terminalconditionFiles.folder, terminalconditionFiles.name);
     fid = fopen(filename, 'rb');
     raw = fread(fid, Inf, 'double');
     fclose(fid);
@@ -286,8 +286,8 @@ function generateFigures(testcase)
     states(:, all(states == 0, 1)) = [];
     terminalField = states(:);
     
-    indexStart = (i - 1) * gridSize + 1;
-    indexEnd   = i * gridSize;
+    %indexStart = (i - 1) * gridSize + 1;
+    %indexEnd   = i * gridSize;
     
     u_hat = reshape(terminalField(1:gridSize), params.N1, params.N2);
     u = real(ifft2(u_hat));
@@ -322,6 +322,7 @@ function generateFigures(testcase)
     exportgraphics(currentFig,[filename '.pdf'])
     
     %% Create movie
+    close all
     gifFile = fullfile(forwardDir, ['movie' testcase '.gif']);
     frameDelay = 1/20;  % equivalent to 20 frames per second
     isFirstFrame = true;
@@ -332,28 +333,30 @@ function generateFigures(testcase)
     numberOfStates = size(spectrumData,2) - 1;
     projcoeffradialevolution = [spectrumData(:,1), zeros(size(spectrumData,1),numberOfStates)];
     
-    radialModeLabels = strings(size(projcoeffradialevolution,1),1);
+    %radialModeLabels = strings(size(projcoeffradialevolution,1),1);
     projcoeffmodeevolution = [];
     
     stateIndex = 0;
     
     for fi = 1:numel(forwardFiles)
-        filename = fullfile(forwardFiles(fi).folder,forwardFiles(fi).name);
-    
-        fid = fopen(filename,'rb');
-        raw = fread(fid,Inf,'double');
+        filename = fullfile(forwardFiles(fi).folder, forwardFiles(fi).name);
+        fid = fopen(filename, 'rb');
+        raw = fread(fid, Inf, 'double');
         fclose(fid);
     
-        fwdField = raw(1:2:end) + 1i*raw(2:2:end);
-        fileStates = reshape(fwdField,gridSize,[]);
+        % Convert alternating real and imaginary values to complex values
+        fwdField = raw(1:2:end) + 1i * raw(2:2:end);
+        fwdField = reshape(fwdField, gridSize, []);
+        fwdField(:, all(fwdField == 0, 1)) = [];
+        numStatesInFile = size(fwdField, 2);
     
-        % Remove unused preallocated zero states
-        fileStates(:,all(fileStates == 0,1)) = [];
-    
-        for localIndex = 1:numberOfStates
+        for localIndex = 1:numStatesInFile
             stateIndex = stateIndex + 1;
+            if stateIndex > numberOfStates
+                break;
+            end
     
-            u_hat = reshape(fileStates(:,localIndex),params.N1,params.N2);
+            u_hat = reshape(fwdField(:,localIndex),params.N1,params.N2);
     
             u = real(ifft2(u_hat));
             u = circshift(u,[drow,dcol]);
@@ -413,8 +416,7 @@ function generateFigures(testcase)
     projcoeffradialcut = projcoeffradialevolution;
     
     % Choose fixed limits appropriate for your solution.
-    close all
-    colorLimits = [-100, 100];
+    %colorLimits = [-100, 100];
     
     currentFig = figure( ...
 	    'Visible', 'off', ...
@@ -451,14 +453,18 @@ function generateFigures(testcase)
     
         % Convert alternating real and imaginary values to complex values
         fwdField = raw(1:2:end) + 1i * raw(2:2:end);
-        states = reshape(fwdField, gridSize, []);
-        states(:, all(states == 0, 1)) = [];
-        fwdField = states(:);
+        fwdField = reshape(fwdField, gridSize, []);
+        fwdField(:, all(fwdField == 0, 1)) = [];
+        numStatesInFile = size(fwdField, 2);
+        fwdField = fwdField(:);
     
         % Number of complete states contained in this file
-        for i = 1:numberOfStates
+        for i = 1:numStatesInFile
             stateIndex = stateIndex + 1;
-            currentT = energyDataSampled(i,1);
+            if stateIndex > numberOfStates
+                break;
+            end
+            currentT = energyDataSampled(stateIndex,1);
     
             %% prepare physical field
             indexStart = (i - 1) * gridSize + 1;
@@ -662,7 +668,6 @@ function generateFigures(testcase)
                 set(h_proj, 'YData',projcoeffradialcut(:,stateIndex+1));
                 
                 % Axis X: update proj coeff evolution
-                k = 7;
                 set(proj_coeffpts, 'XData',currentT*ones(numberOfRadialGroups,1), 'YData',projcoeffradialcut(:,stateIndex+1));
             end    
     
