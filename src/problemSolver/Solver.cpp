@@ -1120,6 +1120,7 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
     switch (targetType) {
         
         case SolveInitialState: {               
+            _paths.setTempDir(false);
             if (!_params.getNumericalContinuation()) {
                 setInitialCondition(vTargetState);
                 
@@ -1138,6 +1139,7 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
                 findContinuationForInitialData(vTargetState);
             }
             
+            _paths.resetTempDir();            
             if (_params.getSavedStates() > 1) {
                 vTargetState.saveData(InitialState);
             }
@@ -1147,7 +1149,7 @@ void Solver::setSolutionState(StateSolutionType targetType, SolutionData& vTarge
         case SolveTerminalState:
             
             if (_params.getSavedStates() > 1) {
-                vTargetState.saveData(InitialState);
+                vTargetState.saveData(TerminalState);
             }
             break;
         
