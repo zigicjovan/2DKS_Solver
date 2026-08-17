@@ -113,6 +113,10 @@ SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, con
         case RemainderHistory:
             _vData.resize(stateStorageSize * ( _params.getNumericalSteps() % _params.getNumericalStepsPerFile()) );
             break;
+
+        case FinalRemainder:
+            _vData.resize(stateStorageSize * ( _params.getSavedStates() % _params.getNumericalStepsPerFile()) );
+            break;
     }
 }
 
@@ -350,6 +354,8 @@ void SolutionData::loadData(SolutionDataType storedDataType, double dCurrentT) {
         }
 
         case IntermediateHistory: // fall through  
+
+        case FinalRemainder:
         
         case RemainderHistory: {
             readDistributedFile(appendTimeStep(_paths.getForwardSolutionFile(), dCurrentT));
@@ -377,6 +383,8 @@ void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {
         }
 
         case IntermediateHistory: // fall through 
+
+        case FinalRemainder:
 
         case RemainderHistory: {
             writeDistributedFile(appendTimeStep(_paths.getForwardSolutionFile(), dCurrentT));

@@ -385,7 +385,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
     filesystem::path continuedFile;
     const filesystem::path dirDataRoot = _paths.getDirData().parent_path();
     const string testcaseGenericTime = _paths.getTestcaseGenericTime();
-    const double currentTimeWindow = _params.getOptimalTimeWindow();
+    const double currentTimeWindow = (_params.getOptimalTimeWindow() * 1.01);
     double dBestT = -numeric_limits<double>::infinity();
 
     // Search for nearest previous time window in directory
@@ -480,7 +480,8 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     vector<array<double, 4>> vDiagnostics;
     vDiagnostics.reserve(_params.getNumericalSteps() + 1);
     vector<vector<double>> vSpectrumHistory;
-    vSpectrumHistory.reserve(savedStateCount + 1);
+    size_t nExtraInitialSteps = 4;
+    vSpectrumHistory.reserve(savedStateCount + 1 + nExtraInitialSteps);
 
     SolutionData vStateCurrent = vTargetStart; // set phi_{i} = phi(0)
     SolutionData vStateNext(_params, _paths, _mpi, InitialState); // phi_{i+1}
@@ -491,6 +492,10 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     for (size_t i = 0; i < localGridSize; ++i) {
         vNonlinearTermPrevious[i] = complex<double>{0.0, 0.0};
     }
+
+    // if (!optimizeSolution) {
+        SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
+    // }
 
     if (!optimizeSolution && savedStateCount > 1) {
         ++savedStateIndex;
@@ -553,13 +558,16 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
         else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep && savedStateCount > 1) {
             ++savedStateIndex;
-            saveForwardState(dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+            saveForwardState(dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
             
             if (savedStateIndex < savedStateCount) {
                 nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
             }
 
             vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
+            vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
+        }
+        else if (!optimizeSolution && i < (nExtraInitialSteps + 1) ) {
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         }
         else if (!optimizeSolution) {

@@ -20,7 +20,8 @@ enum SolutionDataType {
     TerminalState,              
     BackwardInitialState,       
     IntermediateHistory,        
-    RemainderHistory,           
+    RemainderHistory, 
+    FinalRemainder,           
 };
 
 class SolutionData {

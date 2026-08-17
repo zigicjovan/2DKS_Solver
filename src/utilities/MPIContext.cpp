@@ -39,7 +39,7 @@ std::size_t MPIContext::getLocalAllocationSize() const {
 }
 
 void MPIContext::printDecomposition() const {
-    for (int rank = 0; rank < _size; ++rank) {
+    for (int rank = 0; rank < 1; ++rank) {
         if (_rank == rank) {
             const size_t rowStart = getLocalGridStart2();
             const size_t rowEnd = rowStart + getLocalGridSize2();

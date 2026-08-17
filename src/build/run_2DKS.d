@@ -35,8 +35,8 @@ src/build/run_2DKS.o: src/run_2DKS.cpp src/utilities/Parameters.h \
  /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcc12/openmpi/4.1.5/include/openmpi/ompi/mpi/cxx/file_inln.h \
  src/utilities/Pathnames.h src/utilities/Parameters.h \
  src/dataProcessing/FFTWPlanner.h src/utilities/MPIContext.h \
- /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/MPI/gcc12/openmpi4/fftw-mpi/3.3.10/include/fftw3-mpi.h \
- /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/MPI/gcc12/openmpi4/fftw-mpi/3.3.10/include/fftw3.h \
+ /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/imkl/2023.2.0/mkl/2023.2.0/include/fftw/fftw3-mpi.h \
+ /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/imkl/2023.2.0/mkl/2023.2.0/include/fftw/fftw3.h \
  src/utilities/Timer.h src/problemSolver/Solver.h \
  src/dataProcessing/SolutionData.h src/dataProcessing/FFTWPlanner.h
 src/utilities/Parameters.h:
@@ -78,8 +78,8 @@ src/utilities/Pathnames.h:
 src/utilities/Parameters.h:
 src/dataProcessing/FFTWPlanner.h:
 src/utilities/MPIContext.h:
-/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/MPI/gcc12/openmpi4/fftw-mpi/3.3.10/include/fftw3-mpi.h:
-/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/MPI/gcc12/openmpi4/fftw-mpi/3.3.10/include/fftw3.h:
+/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/imkl/2023.2.0/mkl/2023.2.0/include/fftw/fftw3-mpi.h:
+/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/imkl/2023.2.0/mkl/2023.2.0/include/fftw/fftw3.h:
 src/utilities/Timer.h:
 src/problemSolver/Solver.h:
 src/dataProcessing/SolutionData.h:
