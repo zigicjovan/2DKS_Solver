@@ -1,0 +1,51 @@
+unset xrange
+unset yrange
+unset logscale
+
+set terminal pdfcairo size 12in,8in
+set xlabel "Time Window" font "Helvetica,20"
+set ylabel "Maximum L^2 Energy Amplification" font "Helvetica,20"
+set title "Solution Branches for K = [10^4, 10^4^.^5, ... , 10^6] and $\\ell$ = [1.05, 1.20, ... , 1.95]" font "Helvetica,20"
+set key font "Helvetica,20"
+set key top right horizontal maxcols 5
+set log xy
+set gr
+set au
+set xtics font "Helvetica,20"
+set ytics font "Helvetica,20"
+
+plot 'branch_IC_s1_K_1.0e+04_ell1_1.05_ell2_1.05.dat' u 4:7 w lp lc 1 title '1.05', \
+'branch_IC_s1_K_1.0e+04_ell1_1.20_ell2_1.20.dat' u 4:7 w lp lc 2 title '1.20', \
+'branch_IC_s1_K_1.0e+04_ell1_1.35_ell2_1.35.dat' u 4:7 w lp lc 3 title '1.35', \
+'branch_IC_s1_K_1.0e+04_ell1_1.50_ell2_1.50.dat' u 4:7 w lp lc 4 title '1.50', \
+'branch_IC_s1_K_1.0e+04_ell1_1.65_ell2_1.65.dat' u 4:7 w lp lc 5 title '1.65', \
+'branch_IC_s1_K_1.0e+04_ell1_1.80_ell2_1.80.dat' u 4:7 w lp lc 6 title '1.80', \
+'branch_IC_s1_K_1.0e+04_ell1_1.95_ell2_1.95.dat' u 4:7 w lp lc 7 title '1.95', \
+'branch_IC_s1_K_3.2e+04_ell1_1.05_ell2_1.05.dat' u 4:7 w lp lc 1 title '1.05', \
+'branch_IC_s1_K_3.2e+04_ell1_1.20_ell2_1.20.dat' u 4:7 w lp lc 2 title '1.20', \
+'branch_IC_s1_K_3.2e+04_ell1_1.35_ell2_1.35.dat' u 4:7 w lp lc 3 title '1.35', \
+'branch_IC_s1_K_3.2e+04_ell1_1.50_ell2_1.50.dat' u 4:7 w lp lc 4 title '1.50', \
+'branch_IC_s1_K_3.2e+04_ell1_1.65_ell2_1.65.dat' u 4:7 w lp lc 5 title '1.65', \
+'branch_IC_s1_K_3.2e+04_ell1_1.80_ell2_1.80.dat' u 4:7 w lp lc 6 title '1.80', \
+'branch_IC_s1_K_3.2e+04_ell1_1.95_ell2_1.95.dat' u 4:7 w lp lc 7 title '1.95', \
+'branch_IC_s1_K_1.0e+05_ell1_1.05_ell2_1.05.dat' u 4:7 w lp lc 1 title '1.05', \
+'branch_IC_s1_K_1.0e+05_ell1_1.20_ell2_1.20.dat' u 4:7 w lp lc 2 title '1.20', \
+'branch_IC_s1_K_1.0e+05_ell1_1.35_ell2_1.35.dat' u 4:7 w lp lc 3 title '1.35', \
+'branch_IC_s1_K_1.0e+05_ell1_1.50_ell2_1.50.dat' u 4:7 w lp lc 4 title '1.50', \
+'branch_IC_s1_K_1.0e+05_ell1_1.65_ell2_1.65.dat' u 4:7 w lp lc 5 title '1.65', \
+'branch_IC_s1_K_1.0e+05_ell1_1.80_ell2_1.80.dat' u 4:7 w lp lc 6 title '1.80', \
+'branch_IC_s1_K_1.0e+05_ell1_1.95_ell2_1.95.dat' u 4:7 w lp lc 7 title '1.95', \
+'branch_IC_s1_K_3.2e+05_ell1_1.05_ell2_1.05.dat' u 4:7 w lp lc 1 title '1.05', \
+'branch_IC_s1_K_3.2e+05_ell1_1.20_ell2_1.20.dat' u 4:7 w lp lc 2 title '1.20', \
+'branch_IC_s1_K_3.2e+05_ell1_1.35_ell2_1.35.dat' u 4:7 w lp lc 3 title '1.35', \
+'branch_IC_s1_K_3.2e+05_ell1_1.50_ell2_1.50.dat' u 4:7 w lp lc 4 title '1.50', \
+'branch_IC_s1_K_3.2e+05_ell1_1.65_ell2_1.65.dat' u 4:7 w lp lc 5 title '1.65', \
+'branch_IC_s1_K_3.2e+05_ell1_1.80_ell2_1.80.dat' u 4:7 w lp lc 6 title '1.80', \
+'branch_IC_s1_K_3.2e+05_ell1_1.95_ell2_1.95.dat' u 4:7 w lp lc 7 title '1.95', \
+'branch_IC_s1_K_1.0e+06_ell1_1.05_ell2_1.05.dat' u 4:7 w lp lc 1 title '1.05', \
+'branch_IC_s1_K_1.0e+06_ell1_1.20_ell2_1.20.dat' u 4:7 w lp lc 2 title '1.20', \
+'branch_IC_s1_K_1.0e+06_ell1_1.35_ell2_1.35.dat' u 4:7 w lp lc 3 title '1.35', \
+'branch_IC_s1_K_1.0e+06_ell1_1.50_ell2_1.50.dat' u 4:7 w lp lc 4 title '1.50', \
+'branch_IC_s1_K_1.0e+06_ell1_1.65_ell2_1.65.dat' u 4:7 w lp lc 5 title '1.65', \
+'branch_IC_s1_K_1.0e+06_ell1_1.80_ell2_1.80.dat' u 4:7 w lp lc 6 title '1.80', \
+'branch_IC_s1_K_1.0e+06_ell1_1.95_ell2_1.95.dat' u 4:7 w lp lc 7 title '1.95'
