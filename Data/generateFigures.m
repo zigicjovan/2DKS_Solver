@@ -122,7 +122,7 @@ function generateFigures(testcase, plots, numberOfStates)
     %maxRadius = hypot(max(abs(k1)), max(abs(k2)));
     %numRadialBins = round(maxRadius) + 1;
     
-    nExtraInitialSteps = 4; %4;
+    nExtraInitialSteps = 4;
     filename = fullfile(spectrumFiles.folder, spectrumFiles.name);
     fid = fopen(filename, 'r');
     spectrumData = fscanf(fid, '%f', [1 + nExtraInitialSteps + numberOfStates, Inf]).';

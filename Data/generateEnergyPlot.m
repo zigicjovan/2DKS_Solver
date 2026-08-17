@@ -28,11 +28,21 @@ figPosition = [100 100 1200 800];
 colors = lines(max(numel(ells), numel(K_values)));
 
 %% ========================================================================
-%  1. L^2 ENERGY EVOLUTION
+%  ENERGY EVOLUTION
 % ========================================================================
 
-figure('Position', figPosition);
-hold on;
+%% Create figures first
+figL2 = figure('Position', figPosition);
+axL2 = axes(figL2);
+hold(axL2, 'on');
+
+figH1 = figure('Position', figPosition);
+axH1 = axes(figH1);
+hold(axH1, 'on');
+
+figH2 = figure('Position', figPosition);
+axH2 = axes(figH2);
+hold(axH2, 'on');
 
 for j = numel(K_values):-1:1
     for i = numel(ells):-1:1
@@ -57,7 +67,9 @@ for j = numel(K_values):-1:1
             frewind(fid);  
             nSamples = ceil(lengthdata / samplestep);
             timept = zeros(nSamples, 1);
-            energy = zeros(nSamples, 1);
+            energyL2 = zeros(nSamples, 1);
+            energyH1 = zeros(nSamples, 1);
+            energyH2 = zeros(nSamples, 1);
             
             ik = 1;
             jk = 1;
@@ -71,7 +83,9 @@ for j = numel(K_values):-1:1
                 if mod(ik-1, samplestep) == 0
                     vals = sscanf(line, '%f');
                     timept(jk) = vals(1);
-                    energy(jk) = vals(2);
+                    energyL2(jk) = vals(2);
+                    energyH1(jk) = vals(3);
+                    energyH2(jk) = vals(4);
                     jk = jk + 1;
                 end
             
@@ -80,150 +94,62 @@ for j = numel(K_values):-1:1
             
             fclose(fid);
             
-            timept = timept(1:jk-1);
-            energy = energy(1:jk-1);
-            loglog( timept, energy, '-', ...
-                    'Color', colors(i,:), ...
-                    'LineWidth', 1.5, ...
-                    'MarkerSize', 6);
+            %% Remove unused preallocated entries
+            timept   = timept(1:jk-1);
+            energyL2 = energyL2(1:jk-1);
+            energyH1 = energyH1(1:jk-1);
+            energyH2 = energyH2(1:jk-1);
+
+            %% Plot all three
+            loglog(axL2, timept, energyL2, '-', 'Color', colors(i,:), 'LineWidth', 1.5);
+            loglog(axH1, timept, energyH1, '-', 'Color', colors(i,:), 'LineWidth', 1.5);
+            loglog(axH2, timept, energyH2, '-', 'Color', colors(i,:), 'LineWidth', 1.5);
         catch
+            if exist('fid','var') && fid ~= -1
+                fclose(fid);
+            end
         end
     end
 end
-xlabel('Time $t$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
 
-ylabel('$L^2$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{L^2}$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
-
-title('$L^2$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
-      'Interpreter', 'latex', ...
-      'FontSize', fontSize);
-
-subtitle([ '$K=[10^4,10^{4.5},\ldots,10^6]$ and ' ...
-    '$\ell=[1.05,1.20,\ldots,1.95]$'], ...
-    'Interpreter', 'latex', ...
-    'FontSize', fontSize);
-
-grid on;
-box on;
-%xlim([1e4 1e6]);
-
-set(gca, ...
-    'XScale', 'log', ...
-    'YScale', 'log', ...
-    'FontSize', fontSize);
-
-exportgraphics(gcf, 'energyL2evolution.pdf', 'ContentType', 'vector');
-
-%% ========================================================================
-%  2. H^1 ENERGY EVOLUTION
-% ========================================================================
-
-figure('Position', figPosition);
-hold on;
-
-for j = numel(K_values):-1:1
-    for i = numel(ells):-1:1
-    
-        ell = ells(i);
-        Kstr = K_file_strings{j};
-    
-        filename = sprintf('*K_%s_ell1_%.2f_ell2_%.2f_*.dat', Kstr, ell, ell);
-    
-        try
-            data = readmatrix(dir(filename).name);
-            timept = data(:,1);
-            energy = data(:,3);
-            loglog( timept, energy, '-', ...
-                    'Color', colors(i,:), ...
-                    'LineWidth', 1.5, ...
-                    'MarkerSize', 6);
-        catch
-        end
-    end
+%% Common formatting
+axesList = [axL2, axH1, axH2];
+for ax = axesList
+    grid(ax, 'on');
+    box(ax, 'on');
+    %xlim(ax, 'tight');
+    xlim(ax, [1e-6 1.2e0])
+    ylim(ax, 'tight');
+    set(ax, 'XScale', 'log', 'YScale', 'log', 'FontSize', fontSize);
+    xlabel(ax, 'Time $t$', 'Interpreter', 'latex', 'FontSize', fontSize);
 end
-xlabel('Time $t$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
 
-ylabel('$H^1$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{H^1}$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
+%% L2
+ylabel(axL2, '$L^2$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{L^2}$', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
+title(axL2, '$L^2$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
 
-title('$H^1$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
-      'Interpreter', 'latex', ...
-      'FontSize', fontSize);
+%% H1
+ylabel(axH1, '$H^1$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{H^1}$', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
+title(axH1, '$H^1$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
 
-subtitle([ '$K=[10^4,10^{4.5},\ldots,10^6]$ and ' ...
-    '$\ell=[1.05,1.20,\ldots,1.95]$'], ...
-    'Interpreter', 'latex', ...
-    'FontSize', fontSize);
+%% H2
+ylabel(axH2, '$H^2$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{H^2}$', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
+title(axH2, '$H^2$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
+    'Interpreter', 'latex', 'FontSize', fontSize);
 
-grid on;
-box on;
-%xlim([1e4 1e6]);
+%% Same subtitle
+subtitleText = '$K=[10^4,10^{4.5},\ldots,10^6]$ and $\ell=[1.05,1.20,\ldots,1.95]$';
 
-set(gca, ...
-    'XScale', 'log', ...
-    'YScale', 'log', ...
-    'FontSize', fontSize);
+subtitle(axL2, subtitleText, 'Interpreter','latex', 'FontSize',fontSize);
+subtitle(axH1, subtitleText, 'Interpreter','latex', 'FontSize',fontSize);
+subtitle(axH2, subtitleText, 'Interpreter','latex', 'FontSize',fontSize);
 
-exportgraphics(gcf, 'energyH1evolution.pdf', 'ContentType', 'vector');
-
-%% ========================================================================
-%  3. H^2 ENERGY EVOLUTION
-% ========================================================================
-
-figure('Position', figPosition);
-hold on;
-
-for j = numel(K_values):-1:1
-    for i = numel(ells):-1:1
-    
-        ell = ells(i);
-        Kstr = K_file_strings{j};
-    
-        filename = sprintf('*K_%s_ell1_%.2f_ell2_%.2f_*.dat', Kstr, ell, ell);
-    
-        try
-            data = readmatrix(dir(filename).name);
-            timept = data(:,1);
-            energy = data(:,4);
-            loglog( timept, energy, '-', ...
-                    'Color', colors(i,:), ...
-                    'LineWidth', 1.5, ...
-                    'MarkerSize', 6);
-        catch
-        end
-    end
-end
-xlabel('Time $t$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
-
-ylabel('$H^2$ Energy $\| \phi(t;\widetilde \varphi) \|^2_{H^2}$', ...
-       'Interpreter', 'latex', ...
-       'FontSize', fontSize);
-
-title('$H^2$ Energy Evolution for Energy-Optimized 2D Kuramoto-Sivashinsky', ...
-      'Interpreter', 'latex', ...
-      'FontSize', fontSize);
-
-subtitle([ '$K=[10^4,10^{4.5},\ldots,10^6]$ and ' ...
-    '$\ell=[1.05,1.20,\ldots,1.95]$'], ...
-    'Interpreter', 'latex', ...
-    'FontSize', fontSize);
-
-grid on;
-box on;
-%xlim([1e4 1e6]);
-
-set(gca, ...
-    'XScale', 'log', ...
-    'YScale', 'log', ...
-    'FontSize', fontSize);
-
-exportgraphics(gcf, 'energyH2evolution.pdf', 'ContentType', 'vector');
+%% Export
+exportgraphics(figL2, 'energyL2evolution.pdf', 'ContentType', 'vector');
+exportgraphics(figH1, 'energyH1evolution.pdf', 'ContentType', 'vector');
+exportgraphics(figH2, 'energyH2evolution.pdf', 'ContentType', 'vector');
