@@ -1,4 +1,4 @@
-function generateFigures(testcase)
+function generateFigures(testcase, plots, numberOfStates)
 
     close all
     
@@ -33,7 +33,11 @@ function generateFigures(testcase)
     root = pwd;
     addpath(genpath(fullfile(root,testcase)));
     
-    numberOfStates = 100;
+    if nargin < 3
+        numberOfStates = 100;
+    elseif nargin < 2
+        plots = 'all';
+    end
     
     % Match parameter names followed by numerical values
     tokens = regexp(testcase, ...
@@ -118,9 +122,10 @@ function generateFigures(testcase)
     %maxRadius = hypot(max(abs(k1)), max(abs(k2)));
     %numRadialBins = round(maxRadius) + 1;
     
+    nExtraInitialSteps = 4; %4;
     filename = fullfile(spectrumFiles.folder, spectrumFiles.name);
     fid = fopen(filename, 'r');
-    spectrumData = fscanf(fid, '%f', [numberOfStates + 1, Inf]).';
+    spectrumData = fscanf(fid, '%f', [1 + nExtraInitialSteps + numberOfStates, Inf]).';
     spectrumData = spectrumData(2:end,:);
     fclose(fid);
     xmax_spec = size(spectrumData,1);
@@ -135,10 +140,15 @@ function generateFigures(testcase)
     set(ax, 'FontSize', wordsize);
     set(ax, 'Color', 'white');
     
-    semilogy(ax, 1:xmax_spec, spectrumData(:,2), "--");
+    semilogy(ax, 1:xmax_spec, spectrumData(:,2), "--", 'DisplayName', sprintf('State %d', 1));
+    hold on
+    for i = 1:nExtraInitialSteps
+        semilogy(ax, 1:xmax_spec, spectrumData(:,2+i), "--", 'DisplayName', sprintf('State %d', i+1));
+    end
+    hold off
     xlabel(ax,'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
-    legend(ax,'$E(k)$','Box','off','FontSize',wordsize);
-    title(ax,"Energy spectrum" );
+    legend(ax,'Box','off','FontSize',wordsize);
+    title(ax, sprintf('Energy spectrum $E(k)$: Initial %d states', round(nExtraInitialSteps + 1)));
     xlim(ax, [1 xmax_spec]);
     ylim(ax, [1e-20 ymax_spec]);
     axis(ax,'square');
@@ -170,6 +180,7 @@ function generateFigures(testcase)
     exportgraphics(currentFig,[filename '.pdf'])
     
     %% AS strip width fit
+    spectrumData = spectrumData(:,[1:2 (2 + nExtraInitialSteps + 1):end]);
     astripwidth = NaN(numberOfStates,2);
     for i = 1:numberOfStates    
         % Width of the analyticity strip [C , delta]
@@ -321,374 +332,377 @@ function generateFigures(testcase)
     saveas(currentFig,[filename '.fig'])
     exportgraphics(currentFig,[filename '.pdf'])
     
-    %% Create movie
-    close all
-    gifFile = fullfile(forwardDir, ['movie' testcase '.gif']);
-    frameDelay = 1/20;  % equivalent to 20 frames per second
-    isFirstFrame = true;
-    
-    %% Precompute projection coefficients for all states
-    
-    % Copy only the radial-bin radii, not the spectrum values
-    numberOfStates = size(spectrumData,2) - 1;
-    projcoeffradialevolution = [spectrumData(:,1), zeros(size(spectrumData,1),numberOfStates)];
-    
-    %radialModeLabels = strings(size(projcoeffradialevolution,1),1);
-    projcoeffmodeevolution = [];
-    
-    stateIndex = 0;
-    
-    for fi = 1:numel(forwardFiles)
-        filename = fullfile(forwardFiles(fi).folder, forwardFiles(fi).name);
-        fid = fopen(filename, 'rb');
-        raw = fread(fid, Inf, 'double');
-        fclose(fid);
-    
-        % Convert alternating real and imaginary values to complex values
-        fwdField = raw(1:2:end) + 1i * raw(2:2:end);
-        fwdField = reshape(fwdField, gridSize, []);
-        fwdField(:, all(fwdField == 0, 1)) = [];
-        numStatesInFile = size(fwdField, 2);
-    
-        for localIndex = 1:numStatesInFile
-            stateIndex = stateIndex + 1;
-            if stateIndex > numberOfStates
-                break;
-            end
-    
-            u_hat = reshape(fwdField(:,localIndex),params.N1,params.N2);
-    
-            u = real(ifft2(u_hat));
-            u = circshift(u,[drow,dcol]);
-    
-            [~,projcoeffs,unstablemodes] = eigenfunction_validation(u(:),params.ell1,params.N1,'full');
-    
-            projectionWeights = abs(projcoeffs).^2;
-            weightSum = sum(projectionWeights);
-    
-            if weightSum > 0
-                projectionWeights = projectionWeights/weightSum;
-            else
-                projectionWeights(:) = 0;
-            end
-    
-            if stateIndex == 1
-                numberOfModes = size(unstablemodes,1);
-                projcoeffmodeevolution = zeros(numberOfModes,numberOfStates + 2);
-                projcoeffmodeevolution(:,1:2) = unstablemodes(:,1:2);
-    
-                % Exact physical radius of every unstable mode
-                modeRadii = hypot(unstablemodes(:,1)/params.ell1, unstablemodes(:,2)/params.ell2);
-            
-                % Group sign changes and symmetric modes having equal radii
-                [radialRadii,representativeIdx,modeToRadialGroup] = uniquetol(modeRadii,1e-10,'DataScale',1);
-            
-                numberOfRadialGroups = numel(radialRadii);
-                projcoeffradialevolution = [radialRadii, zeros(numberOfRadialGroups,numberOfStates)];
-                representativeModes = unstablemodes(representativeIdx,1:2);
-            
-                % Make representative labels consistent:
-                % axial modes as (0,n), mixed modes with larger index first.
-                representativeModes = abs(representativeModes);
-            
-                for j = 1:size(representativeModes,1)
-                    if all(representativeModes(j,:) > 0) && representativeModes(j,1) < representativeModes(j,2)
-                        representativeModes(j,:) = fliplr(representativeModes(j,:));
-                    elseif representativeModes(j,2) == 0
-                        representativeModes(j,:) = fliplr(representativeModes(j,:));
-                    end
+    switch plots
+        case 'all'
+        %% Create movie
+        close all
+        gifFile = fullfile(forwardDir, ['movie' testcase '.gif']);
+        frameDelay = 1/20;  % equivalent to 20 frames per second
+        isFirstFrame = true;
+        
+        %% Precompute projection coefficients for all states
+        
+        % Copy only the radial-bin radii, not the spectrum values
+        numberOfStates = size(spectrumData,2) - 1;
+        projcoeffradialevolution = [spectrumData(:,1), zeros(size(spectrumData,1),numberOfStates)];
+        
+        %radialModeLabels = strings(size(projcoeffradialevolution,1),1);
+        projcoeffmodeevolution = [];
+        
+        stateIndex = 0;
+        
+        for fi = 1:numel(forwardFiles)
+            filename = fullfile(forwardFiles(fi).folder, forwardFiles(fi).name);
+            fid = fopen(filename, 'rb');
+            raw = fread(fid, Inf, 'double');
+            fclose(fid);
+        
+            % Convert alternating real and imaginary values to complex values
+            fwdField = raw(1:2:end) + 1i * raw(2:2:end);
+            fwdField = reshape(fwdField, gridSize, []);
+            fwdField(:, all(fwdField == 0, 1)) = [];
+            numStatesInFile = size(fwdField, 2);
+        
+            for localIndex = 1:numStatesInFile
+                stateIndex = stateIndex + 1;
+                if stateIndex > numberOfStates
+                    break;
                 end
-            
-                modelabels = "(" + string(representativeModes(:,1)) + "," + string(representativeModes(:,2)) + ")"; 
-                modecats = categorical(modelabels,modelabels,'Ordinal',true);
-            elseif ~isequal(unstablemodes(:,1:2), projcoeffmodeevolution(:,1:2))
-                error('Unstable-mode ordering changed at state %d.', stateIndex);
+        
+                u_hat = reshape(fwdField(:,localIndex),params.N1,params.N2);
+        
+                u = real(ifft2(u_hat));
+                u = circshift(u,[drow,dcol]);
+        
+                [~,projcoeffs,unstablemodes] = eigenfunction_validation(u(:),params.ell1,params.N1,'full');
+        
+                projectionWeights = abs(projcoeffs).^2;
+                weightSum = sum(projectionWeights);
+        
+                if weightSum > 0
+                    projectionWeights = projectionWeights/weightSum;
+                else
+                    projectionWeights(:) = 0;
+                end
+        
+                if stateIndex == 1
+                    numberOfModes = size(unstablemodes,1);
+                    projcoeffmodeevolution = zeros(numberOfModes,numberOfStates + 2);
+                    projcoeffmodeevolution(:,1:2) = unstablemodes(:,1:2);
+        
+                    % Exact physical radius of every unstable mode
+                    modeRadii = hypot(unstablemodes(:,1)/params.ell1, unstablemodes(:,2)/params.ell2);
+                
+                    % Group sign changes and symmetric modes having equal radii
+                    [radialRadii,representativeIdx,modeToRadialGroup] = uniquetol(modeRadii,1e-10,'DataScale',1);
+                
+                    numberOfRadialGroups = numel(radialRadii);
+                    projcoeffradialevolution = [radialRadii, zeros(numberOfRadialGroups,numberOfStates)];
+                    representativeModes = unstablemodes(representativeIdx,1:2);
+                
+                    % Make representative labels consistent:
+                    % axial modes as (0,n), mixed modes with larger index first.
+                    representativeModes = abs(representativeModes);
+                
+                    for j = 1:size(representativeModes,1)
+                        if all(representativeModes(j,:) > 0) && representativeModes(j,1) < representativeModes(j,2)
+                            representativeModes(j,:) = fliplr(representativeModes(j,:));
+                        elseif representativeModes(j,2) == 0
+                            representativeModes(j,:) = fliplr(representativeModes(j,:));
+                        end
+                    end
+                
+                    modelabels = "(" + string(representativeModes(:,1)) + "," + string(representativeModes(:,2)) + ")"; 
+                    modecats = categorical(modelabels,modelabels,'Ordinal',true);
+                elseif ~isequal(unstablemodes(:,1:2), projcoeffmodeevolution(:,1:2))
+                    error('Unstable-mode ordering changed at state %d.', stateIndex);
+                end
+        
+                projcoeffmodeevolution(:,stateIndex+2) = projectionWeights;
+        
+                % Sum equivalent modes into their exact radial groups
+                radialWeights = accumarray(modeToRadialGroup, projectionWeights, [numberOfRadialGroups,1], @sum,0);        
+                projcoeffradialevolution(:,stateIndex+1) = radialWeights;
             end
-    
-            projcoeffmodeevolution(:,stateIndex+2) = projectionWeights;
-    
-            % Sum equivalent modes into their exact radial groups
-            radialWeights = accumarray(modeToRadialGroup, projectionWeights, [numberOfRadialGroups,1], @sum,0);        
-            projcoeffradialevolution(:,stateIndex+1) = radialWeights;
         end
-    end
-    
-    projcoeffradialcut = projcoeffradialevolution;
-    
-    % Choose fixed limits appropriate for your solution.
-    %colorLimits = [-100, 100];
-    
-    currentFig = figure( ...
-	    'Visible', 'off', ...
-	    'Color', 'white', ...
-	    'Units', 'pixels', ...
-	    'Position', [100 100 figwidth figheight], ...
-	    'Resize', 'off');
-    set(currentFig, 'Color', 'white');
-    
-    for k = 1:number_of_plots
-        ax(k) = subplot(number_of_plot_rows,maxplotcols,k);
-    end
-    
-    for k = 1:number_of_plots
-        set(ax(k),'Color','white');
-        axis(ax(k), 'square');
-        pos = get(ax(k),'Position');
-        pos(2) = pos(2) - 0.05;
-        set(ax(k),'Position',pos);
-    end
-    
-    title1 = 'Time-Dependent Solution to the 2D Kuramoto-Sivashinsky Equation';
-    title2 = '';
-    sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',ceil(1.25*wordsize));
-    
-    stateIndex = 0;
-    
-    for fi = 1:numel(forwardFiles)
-    
-        filename = fullfile(forwardFiles(fi).folder, forwardFiles(fi).name);
-        fid = fopen(filename, 'rb');
-        raw = fread(fid, Inf, 'double');
-        fclose(fid);
-    
-        % Convert alternating real and imaginary values to complex values
-        fwdField = raw(1:2:end) + 1i * raw(2:2:end);
-        fwdField = reshape(fwdField, gridSize, []);
-        fwdField(:, all(fwdField == 0, 1)) = [];
-        numStatesInFile = size(fwdField, 2);
-        fwdField = fwdField(:);
-    
-        % Number of complete states contained in this file
-        for i = 1:numStatesInFile
-            stateIndex = stateIndex + 1;
-            if stateIndex > numberOfStates
-                break;
-            end
-            currentT = energyDataSampled(stateIndex,1);
-    
-            %% prepare physical field
-            indexStart = (i - 1) * gridSize + 1;
-            indexEnd   = i * gridSize;
-    
-            u_hat = reshape(fwdField(indexStart:indexEnd), params.N1, params.N2);
-            u = real(ifft2(u_hat));
-            u = circshift(u, [drow, dcol]);
-            u_2x = [u , u ; u , u];
-            
-            %% produce subplots
-            if stateIndex == 1
-                % ------------ AXIS 1: physical field ---------------
-                k = 1;
-                h_surf1 = surfc(ax(k), xField, yField, u);
-                xlabel(ax(k),'$\frac{x_1}{2\pi}$');
-                ylabel(ax(k),'$\frac{x_2}{2\pi}$');
-                %title(ax(k),"Periodic solution field");
-                shading(ax(k),'interp');
-                colormap(ax(k), redblue);
-                view(ax(k),3);
-                pbaspect(ax(k), [ params.ell1 params.ell2 max(params.ell1, params.ell2) ])
-            
-                % ------------ AXIS 2: tiled domain -----------------
-                k = 2;
-                h_surf2 = surfc(ax(k), x2x, y2x, u_2x);
-                xlabel(ax(k),'$\frac{x_1}{2\pi}$' );
-                ylabel(ax(k),'$\frac{x_2}{2\pi}$' );
-                title(ax(k),"Tiled solution field" );
-                shading(ax(k),'interp');
-                colormap(ax(k), redblue);
-                xline(ax(k), params.ell1, '--');
-                yline(ax(k), params.ell2, '--');
-                view(ax(k),2);
-                axis(ax(k), [0 2*params.ell1 0 2*params.ell2])
-                axis(ax(k), 'equal')
-    
-                % ------------ AXIS 3: energy evolution -------------
-                k = 3;
-                semilogy(ax(k), energyData(:,1), energyData(:,4), 'g'); 
-                hold(ax(k),'on');
-                semilogy(ax(k), energyData(:,1), energyData(:,3), 'r');
-                semilogy(ax(k), energyData(:,1), energyData(:,2), 'b');
-                H2_xline = plot(ax(k), energyData(i,1), energyData(i,4), 'ko');
-                H1_xline = plot(ax(k), energyData(i,1), energyData(i,3), 'ko');
-                L2_xline = plot(ax(k), energyData(i,1), energyData(i,2), 'ko');
-                hold(ax(k),'off');
-                
-                xlabel(ax(k),'Time $t$' );
-                ylabel(ax(k),'$\| \phi(t;\varphi) \|^2_{S}$' );
-                xlim(ax(k), [0 energyData(end,1)]);
-                ylim(ax(k), [ymin_energy ymax_energy]);
-                title(ax(k), "Energy");
-                legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast','Box','off');
-                axis(ax(k),'square');
-    
-                % ------------ AXIS 4: radial spectrum --------------
-                k = 4;
-                h_spec1 = semilogy(ax(k), 1:xmax_spec, spectrumData(:,i+1), "--");
-                hold(ax(k),'on');
-                h_spec2 = semilogy(ax(k), 1:xmax_spec, asstrip_fit(:,i), "r--");
-                hold(ax(k),'off');
-                xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
-                legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$','Box','off','FontSize',wordsize);
-                title(ax(k),"Spectrum" );
-                xlim(ax(k), [1 xmax_spec]);
-                ylim(ax(k), [1e-20 ymax_spec]);
-                axis(ax(k),'square');
-    
-                % ------------ AXIS 5: analyticity strip -----------
-                k = 5;
-                plot(ax(k), energyDataSampled(:,1), astripwidth(:,2), 'b'); 
-                hold(ax(k),'on');
-                a_xline = plot(ax(k), energyDataSampled(stateIndex,1), astripwidth(stateIndex,2), 'ko');
-                yline(ax(k), max(2*pi*params.ell1/params.N1,2*pi*params.ell2/params.N2), '--');
-                ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
-                xlim(ax(k), [0 energyDataSampled(end,1)]);
-                hold(ax(k),'off');
-                
-                xlabel(ax(k),'Time $t$' );
-                ylabel(ax(k),'$\delta(t)$' );
-                title(ax(k), "Analyticity Strip Width");
-                axis(ax(k),'square');
-    
-                % ------------ AXIS 6: projection coefficients by radial group ------------
-                k = 6;
-                cla(ax(k));
-                
-                numberOfRadialGroups = size(projcoeffradialcut,1);
-                xmodelabels = 1:numberOfRadialGroups;
-                
-                h_proj = bar(ax(k), xmodelabels, projcoeffradialcut(:,stateIndex+1), 'BarWidth',1.0);
-                
-                ax(k).XTick = xmodelabels;
-                ax(k).XTickLabel = cellstr(modecats);
-                ax(k).XLim = [0.5,numberOfRadialGroups + 0.5];        
-                xlabel(ax(k),'$(k_1,k_2)$', 'Interpreter','latex');
-                ylabel(ax(k),'$P(a_k)$', 'Interpreter','latex');            
-                title(ax(k),'Projection coefficient weights');
-                
-                maxRadialWeight = max(projcoeffradialcut(:,2:end),[],'all');
-                
-                if maxRadialWeight > 0
-                    ylim(ax(k),[0,1.1*maxRadialWeight]);
-                else
-                    ylim(ax(k),[0,1]);
+        
+        projcoeffradialcut = projcoeffradialevolution;
+        
+        % Choose fixed limits appropriate for your solution.
+        %colorLimits = [-100, 100];
+        
+        currentFig = figure( ...
+	        'Visible', 'off', ...
+	        'Color', 'white', ...
+	        'Units', 'pixels', ...
+	        'Position', [100 100 figwidth figheight], ...
+	        'Resize', 'off');
+        set(currentFig, 'Color', 'white');
+        
+        for k = 1:number_of_plots
+            ax(k) = subplot(number_of_plot_rows,maxplotcols,k);
+        end
+        
+        for k = 1:number_of_plots
+            set(ax(k),'Color','white');
+            axis(ax(k), 'square');
+            pos = get(ax(k),'Position');
+            pos(2) = pos(2) - 0.05;
+            set(ax(k),'Position',pos);
+        end
+        
+        title1 = 'Time-Dependent Solution to the 2D Kuramoto-Sivashinsky Equation';
+        title2 = '';
+        sg = sgtitle({title1, title2}, 'Interpreter','latex','FontSize',ceil(1.25*wordsize));
+        
+        stateIndex = 0;
+        
+        for fi = 1:numel(forwardFiles)
+        
+            filename = fullfile(forwardFiles(fi).folder, forwardFiles(fi).name);
+            fid = fopen(filename, 'rb');
+            raw = fread(fid, Inf, 'double');
+            fclose(fid);
+        
+            % Convert alternating real and imaginary values to complex values
+            fwdField = raw(1:2:end) + 1i * raw(2:2:end);
+            fwdField = reshape(fwdField, gridSize, []);
+            fwdField(:, all(fwdField == 0, 1)) = [];
+            numStatesInFile = size(fwdField, 2);
+            fwdField = fwdField(:);
+        
+            % Number of complete states contained in this file
+            for i = 1:numStatesInFile
+                stateIndex = stateIndex + 1;
+                if stateIndex > numberOfStates
+                    break;
                 end
+                currentT = energyDataSampled(stateIndex,1);
+        
+                %% prepare physical field
+                indexStart = (i - 1) * gridSize + 1;
+                indexEnd   = i * gridSize;
+        
+                u_hat = reshape(fwdField(indexStart:indexEnd), params.N1, params.N2);
+                u = real(ifft2(u_hat));
+                u = circshift(u, [drow, dcol]);
+                u_2x = [u , u ; u , u];
                 
-                axis(ax(k),'square');
-    
-                % ------------ AXIS 7: radial projection coefficients v time ------------
-                k = 7;
-                proj_strip = plot(ax(k), energyDataSampled(:,1), projcoeffradialcut(:,2:end)');            
-                maxRadialWeight = max(projcoeffradialcut(:,2:end),[],'all');
+                %% produce subplots
+                if stateIndex == 1
+                    % ------------ AXIS 1: physical field ---------------
+                    k = 1;
+                    h_surf1 = surfc(ax(k), xField, yField, u);
+                    xlabel(ax(k),'$\frac{x_1}{2\pi}$');
+                    ylabel(ax(k),'$\frac{x_2}{2\pi}$');
+                    %title(ax(k),"Periodic solution field");
+                    shading(ax(k),'interp');
+                    colormap(ax(k), redblue);
+                    view(ax(k),3);
+                    pbaspect(ax(k), [ params.ell1 params.ell2 max(params.ell1, params.ell2) ])
                 
-                if maxRadialWeight > 0
-                    modalfigylim = [0,1.05*maxRadialWeight];
-                else
-                    modalfigylim = [0,1];
-                end
-                
-                hold(ax(k),'on');
-                numberOfRadialGroups = size(projcoeffradialcut,1);
-                projcoeff_xpts = currentT*ones(numberOfRadialGroups,1);
-                projcoeff_ypts = projcoeffradialcut(:,stateIndex+1);
-                proj_coeffpts = plot(ax(k), projcoeff_xpts, projcoeff_ypts, 'ko', 'LineStyle','none');
-                
-                % One label for each radial group
-                labelsToPlot = modelabels;
-                labelY = projcoeffradialcut(:,end);
-                
-                [labelY,order] = sort(labelY);
-                labelsToPlot = labelsToPlot(order);
-                
-                figfrac = 0.07*diff(modalfigylim);
-                
-                for imode = 2:numel(labelY)
-                    if labelY(imode) - labelY(imode-1) < figfrac
-                        labelY(imode) = labelY(imode-1) + figfrac;
-                    end
-                end
-                
-                modalfigylim(2) = max(modalfigylim(2), max(labelY) + 0.5*figfrac);
-                
-                % Keep the axes box ending at final T
-                xlim(ax(k),[0,energyDataSampled(end,1)]);
-                
-                for imode = 1:numel(labelsToPlot)
-                    text(ax(k),energyDataSampled(end,1),labelY(imode),labelsToPlot(imode), ...
-                        'HorizontalAlignment','left', 'VerticalAlignment','middle', ...
-                        'Interpreter','latex', 'FontSize',ceil(0.75*wordsize), 'Clipping','off');
-                end
-                
-                xlim(ax(k),[0,energyDataSampled(end,1)]);
-                ylim(ax(k),modalfigylim);
-                
-                hold(ax(k),'off');
-                
-                xlabel(ax(k),'Time $t$');
-                ylabel(ax(k),'$P(a_k)$');
-                title(ax(k),'Modal energy');
-                axis(ax(k),'square');
-    
-                % ---- enforce fonts/interpreters AFTER all plotting calls ----
-                for kk = 1:number_of_plots
-                set(ax(kk), 'FontSize', ceil(0.75*wordsize), 'LabelFontSizeMultiplier', 1.0, ...
-                    'TitleFontSizeMultiplier', 1.0, 'TickLabelInterpreter', 'latex');  % axes tick labels
-                
-                % Ensure existing labels/titles use LaTeX + correct size
-                ax(kk).XLabel.Interpreter = 'latex';
-                ax(kk).YLabel.Interpreter = 'latex';
-                ax(kk).Title.Interpreter  = 'latex';
-                
-                ax(kk).XLabel.FontSize = wordsize;
-                ax(kk).YLabel.FontSize = wordsize;
-                ax(kk).Title.FontSize  = wordsize;
-                end
-                
-                % Legends: force font size/interpreter (since legend does not inherit axes)
-                lg = findall(currentFig, 'Type', 'Legend');
-                set(lg, 'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
-    
-            else
-                % Axis 1 & 2 surfaces:
-                set(h_surf1, 'ZData', u);
-                set(h_surf2, 'ZData', u_2x);
-                
-                % Axis 3: just move the xline (curves are static arrays)
-                set(H2_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,4));
-                set(H1_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,3));
-                set(L2_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,2));
-                
-                % Axis 4: update spectrum
-                set(h_spec1, 'YData', spectrumData(:,stateIndex+1));
-                set(h_spec2, 'YData', asstrip_fit(:,stateIndex));
+                    % ------------ AXIS 2: tiled domain -----------------
+                    k = 2;
+                    h_surf2 = surfc(ax(k), x2x, y2x, u_2x);
+                    xlabel(ax(k),'$\frac{x_1}{2\pi}$' );
+                    ylabel(ax(k),'$\frac{x_2}{2\pi}$' );
+                    title(ax(k),"Tiled solution field" );
+                    shading(ax(k),'interp');
+                    colormap(ax(k), redblue);
+                    xline(ax(k), params.ell1, '--');
+                    yline(ax(k), params.ell2, '--');
+                    view(ax(k),2);
+                    axis(ax(k), [0 2*params.ell1 0 2*params.ell2])
+                    axis(ax(k), 'equal')
+        
+                    % ------------ AXIS 3: energy evolution -------------
+                    k = 3;
+                    semilogy(ax(k), energyData(:,1), energyData(:,4), 'g'); 
+                    hold(ax(k),'on');
+                    semilogy(ax(k), energyData(:,1), energyData(:,3), 'r');
+                    semilogy(ax(k), energyData(:,1), energyData(:,2), 'b');
+                    H2_xline = plot(ax(k), energyData(i,1), energyData(i,4), 'ko');
+                    H1_xline = plot(ax(k), energyData(i,1), energyData(i,3), 'ko');
+                    L2_xline = plot(ax(k), energyData(i,1), energyData(i,2), 'ko');
+                    hold(ax(k),'off');
                     
-                % Axis 5: update analyticity strip
-                set(a_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', astripwidth(stateIndex,2));
+                    xlabel(ax(k),'Time $t$' );
+                    ylabel(ax(k),'$\| \phi(t;\varphi) \|^2_{S}$' );
+                    xlim(ax(k), [0 energyData(end,1)]);
+                    ylim(ax(k), [ymin_energy ymax_energy]);
+                    title(ax(k), "Energy");
+                    legend(ax(k), '$S=H^2$','$S=H^1$','$S=L^2$','Location','southeast','Box','off');
+                    axis(ax(k),'square');
+        
+                    % ------------ AXIS 4: radial spectrum --------------
+                    k = 4;
+                    h_spec1 = semilogy(ax(k), 1:xmax_spec, spectrumData(:,i+1), "--");
+                    hold(ax(k),'on');
+                    h_spec2 = semilogy(ax(k), 1:xmax_spec, asstrip_fit(:,i), "r--");
+                    hold(ax(k),'off');
+                    xlabel(ax(k),'$k \approx \sqrt{k_1^2+k^2_2}$' ); 
+                    legend(ax(k),'$E(k)$','$Ce^{-2\delta k}$','Box','off','FontSize',wordsize);
+                    title(ax(k),"Spectrum" );
+                    xlim(ax(k), [1 xmax_spec]);
+                    ylim(ax(k), [1e-20 ymax_spec]);
+                    axis(ax(k),'square');
+        
+                    % ------------ AXIS 5: analyticity strip -----------
+                    k = 5;
+                    plot(ax(k), energyDataSampled(:,1), astripwidth(:,2), 'b'); 
+                    hold(ax(k),'on');
+                    a_xline = plot(ax(k), energyDataSampled(stateIndex,1), astripwidth(stateIndex,2), 'ko');
+                    yline(ax(k), max(2*pi*params.ell1/params.N1,2*pi*params.ell2/params.N2), '--');
+                    ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
+                    xlim(ax(k), [0 energyDataSampled(end,1)]);
+                    hold(ax(k),'off');
+                    
+                    xlabel(ax(k),'Time $t$' );
+                    ylabel(ax(k),'$\delta(t)$' );
+                    title(ax(k), "Analyticity Strip Width");
+                    axis(ax(k),'square');
+        
+                    % ------------ AXIS 6: projection coefficients by radial group ------------
+                    k = 6;
+                    cla(ax(k));
+                    
+                    numberOfRadialGroups = size(projcoeffradialcut,1);
+                    xmodelabels = 1:numberOfRadialGroups;
+                    
+                    h_proj = bar(ax(k), xmodelabels, projcoeffradialcut(:,stateIndex+1), 'BarWidth',1.0);
+                    
+                    ax(k).XTick = xmodelabels;
+                    ax(k).XTickLabel = cellstr(modecats);
+                    ax(k).XLim = [0.5,numberOfRadialGroups + 0.5];        
+                    xlabel(ax(k),'$(k_1,k_2)$', 'Interpreter','latex');
+                    ylabel(ax(k),'$P(a_k)$', 'Interpreter','latex');            
+                    title(ax(k),'Projection coefficient weights');
+                    
+                    maxRadialWeight = max(projcoeffradialcut(:,2:end),[],'all');
+                    
+                    if maxRadialWeight > 0
+                        ylim(ax(k),[0,1.1*maxRadialWeight]);
+                    else
+                        ylim(ax(k),[0,1]);
+                    end
+                    
+                    axis(ax(k),'square');
+        
+                    % ------------ AXIS 7: radial projection coefficients v time ------------
+                    k = 7;
+                    proj_strip = plot(ax(k), energyDataSampled(:,1), projcoeffradialcut(:,2:end)');            
+                    maxRadialWeight = max(projcoeffradialcut(:,2:end),[],'all');
+                    
+                    if maxRadialWeight > 0
+                        modalfigylim = [0,1.05*maxRadialWeight];
+                    else
+                        modalfigylim = [0,1];
+                    end
+                    
+                    hold(ax(k),'on');
+                    numberOfRadialGroups = size(projcoeffradialcut,1);
+                    projcoeff_xpts = currentT*ones(numberOfRadialGroups,1);
+                    projcoeff_ypts = projcoeffradialcut(:,stateIndex+1);
+                    proj_coeffpts = plot(ax(k), projcoeff_xpts, projcoeff_ypts, 'ko', 'LineStyle','none');
+                    
+                    % One label for each radial group
+                    labelsToPlot = modelabels;
+                    labelY = projcoeffradialcut(:,end);
+                    
+                    [labelY,order] = sort(labelY);
+                    labelsToPlot = labelsToPlot(order);
+                    
+                    figfrac = 0.07*diff(modalfigylim);
+                    
+                    for imode = 2:numel(labelY)
+                        if labelY(imode) - labelY(imode-1) < figfrac
+                            labelY(imode) = labelY(imode-1) + figfrac;
+                        end
+                    end
+                    
+                    modalfigylim(2) = max(modalfigylim(2), max(labelY) + 0.5*figfrac);
+                    
+                    % Keep the axes box ending at final T
+                    xlim(ax(k),[0,energyDataSampled(end,1)]);
+                    
+                    for imode = 1:numel(labelsToPlot)
+                        text(ax(k),energyDataSampled(end,1),labelY(imode),labelsToPlot(imode), ...
+                            'HorizontalAlignment','left', 'VerticalAlignment','middle', ...
+                            'Interpreter','latex', 'FontSize',ceil(0.75*wordsize), 'Clipping','off');
+                    end
+                    
+                    xlim(ax(k),[0,energyDataSampled(end,1)]);
+                    ylim(ax(k),modalfigylim);
+                    
+                    hold(ax(k),'off');
+                    
+                    xlabel(ax(k),'Time $t$');
+                    ylabel(ax(k),'$P(a_k)$');
+                    title(ax(k),'Modal energy');
+                    axis(ax(k),'square');
+        
+                    % ---- enforce fonts/interpreters AFTER all plotting calls ----
+                    for kk = 1:number_of_plots
+                    set(ax(kk), 'FontSize', ceil(0.75*wordsize), 'LabelFontSizeMultiplier', 1.0, ...
+                        'TitleFontSizeMultiplier', 1.0, 'TickLabelInterpreter', 'latex');  % axes tick labels
+                    
+                    % Ensure existing labels/titles use LaTeX + correct size
+                    ax(kk).XLabel.Interpreter = 'latex';
+                    ax(kk).YLabel.Interpreter = 'latex';
+                    ax(kk).Title.Interpreter  = 'latex';
+                    
+                    ax(kk).XLabel.FontSize = wordsize;
+                    ax(kk).YLabel.FontSize = wordsize;
+                    ax(kk).Title.FontSize  = wordsize;
+                    end
+                    
+                    % Legends: force font size/interpreter (since legend does not inherit axes)
+                    lg = findall(currentFig, 'Type', 'Legend');
+                    set(lg, 'Interpreter','latex', 'FontSize', ceil(0.75*wordsize));
+        
+                else
+                    % Axis 1 & 2 surfaces:
+                    set(h_surf1, 'ZData', u);
+                    set(h_surf2, 'ZData', u_2x);
+                    
+                    % Axis 3: just move the xline (curves are static arrays)
+                    set(H2_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,4));
+                    set(H1_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,3));
+                    set(L2_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', energyDataSampled(stateIndex,2));
+                    
+                    % Axis 4: update spectrum
+                    set(h_spec1, 'YData', spectrumData(:,stateIndex+1));
+                    set(h_spec2, 'YData', asstrip_fit(:,stateIndex));
+                        
+                    % Axis 5: update analyticity strip
+                    set(a_xline, 'XData', energyDataSampled(stateIndex,1), 'YData', astripwidth(stateIndex,2));
+                    
+                    % Axis 6: update projection coefficient spectrum
+                    set(h_proj, 'YData',projcoeffradialcut(:,stateIndex+1));
+                    
+                    % Axis X: update proj coeff evolution
+                    set(proj_coeffpts, 'XData',currentT*ones(numberOfRadialGroups,1), 'YData',projcoeffradialcut(:,stateIndex+1));
+                end    
+        
+                titleText = sprintf( ...
+                            ['${N_1 = %d, N_2 = %d, \\Delta t = %.1e, K = %.0e,' ...
+                             ' \\ell_1 = %.2f, \\ell_2 = %.2f, T = %.6f}$'], ...
+                            params.N1, params.N2, params.dt, params.K, ...
+                            params.ell1, params.ell2, currentT);
+                sg.String = {title1, titleText};
+        
+                drawnow;
+        
+                frame = getframe(currentFig);
+                rgbImage = frame2im(frame);
+                [indexedImage, colorMap] = rgb2ind(rgbImage, 256);
                 
-                % Axis 6: update projection coefficient spectrum
-                set(h_proj, 'YData',projcoeffradialcut(:,stateIndex+1));
-                
-                % Axis X: update proj coeff evolution
-                set(proj_coeffpts, 'XData',currentT*ones(numberOfRadialGroups,1), 'YData',projcoeffradialcut(:,stateIndex+1));
-            end    
-    
-            titleText = sprintf( ...
-                        ['${N_1 = %d, N_2 = %d, \\Delta t = %.1e, K = %.0e,' ...
-                         ' \\ell_1 = %.2f, \\ell_2 = %.2f, T = %.6f}$'], ...
-                        params.N1, params.N2, params.dt, params.K, ...
-                        params.ell1, params.ell2, currentT);
-            sg.String = {title1, titleText};
-    
-            drawnow;
-    
-            frame = getframe(currentFig);
-            rgbImage = frame2im(frame);
-            [indexedImage, colorMap] = rgb2ind(rgbImage, 256);
-            
-            if isFirstFrame
-                imwrite(indexedImage, colorMap, gifFile, 'gif', 'LoopCount', Inf, 'DelayTime', frameDelay);
-                isFirstFrame = false;
-            else
-                imwrite(indexedImage, colorMap, gifFile, 'gif', 'WriteMode', 'append', 'DelayTime', frameDelay);
+                if isFirstFrame
+                    imwrite(indexedImage, colorMap, gifFile, 'gif', 'LoopCount', Inf, 'DelayTime', frameDelay);
+                    isFirstFrame = false;
+                else
+                    imwrite(indexedImage, colorMap, gifFile, 'gif', 'WriteMode', 'append', 'DelayTime', frameDelay);
+                end
             end
         end
     end
