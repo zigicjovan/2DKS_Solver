@@ -9,25 +9,35 @@ scratch_data_dir="$HOME/Desktop/2DKS/2DKS_cpp/Data"
 
 cd "$project_data_dir"
 
+testcase_dirs=()
+
 for testcase_dir in "$scratch_data_dir"/*/; do
     [[ -d "$testcase_dir" ]] || continue
 
     forward_dir="${testcase_dir%/}/ForwardSolution"
 
-    # Skip cases with no forward solution files.
-    if ! compgen -G "${forward_dir}/f*.dat" > /dev/null; then
-        continue
+    if compgen -G "${forward_dir}/f*.dat" > /dev/null; then
+        testcase_dirs+=("$testcase_dir")
     fi
+done
 
+total=${#testcase_dirs[@]}
+echo "Found ${total} testcase director$([[ "$total" -eq 1 ]] && echo "y" || echo "ies") to process."
+
+for index in "${!testcase_dirs[@]}"; do
+    testcase_dir="${testcase_dirs[$index]}"
+    forward_dir="${testcase_dir%/}/ForwardSolution"
     testcase="$(basename "${testcase_dir%/}")"
 
-    echo "Generating figures for: ${testcase}"
+    current=$((index + 1))
 
-    # Assumes your MATLAB function is generateFigures(testcase).
-    matlab -batch "set(0,'DefaultFigureVisible','off'); generateFigures('${testcase}')"
+    echo
+    echo "${current} of ${total}: Generating figures for ${testcase}"
 
-    # Runs only if MATLAB exited successfully.
+    matlab -batch \
+        "set(0,'DefaultFigureVisible','off'); generateFigures('${testcase}')"
+
     find "$forward_dir" -maxdepth 1 -type f -name 'f*.dat' -delete
 
-    echo "Deleted forward data for: ${testcase}"
+    echo "${current} of ${total}: Deleted forward data."
 done
