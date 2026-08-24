@@ -33,10 +33,13 @@ function generateFigures(testcase, plots, numberOfStates)
     root = pwd;
     addpath(genpath(fullfile(root,testcase)));
     
-    if nargin < 3
+    if nargin == 1
         numberOfStates = 100;
-    elseif nargin < 2
         plots = 'all';
+    end
+    
+    if nargin == 2
+        numberOfStates = 100;
     end
     
     % Match parameter names followed by numerical values
