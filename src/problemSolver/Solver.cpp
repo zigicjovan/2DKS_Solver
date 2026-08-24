@@ -387,6 +387,8 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
     const string testcaseGenericTime = _paths.getTestcaseGenericTime();
     const double currentTimeWindow = (_params.getOptimalTimeWindow() * 1.01);
     double dBestT = -numeric_limits<double>::infinity();
+    int bestPriority = numeric_limits<int>::max();
+    const int currentRankCount = _mpi.getSize();
 
     // Search for nearest previous time window in directory
     for (const auto& testcaseEntry : filesystem::directory_iterator(dirDataRoot)) {
@@ -398,6 +400,42 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         const string testcaseName = testcaseEntry.path().filename().string();
         if (testcaseName.find(testcaseGenericTime) == string::npos) {
             continue;
+        }
+
+        const size_t contBegin = testcaseName.find("_cont_");
+        const size_t rankBegin = testcaseName.rfind("_rank_");
+
+        if (contBegin == string::npos || rankBegin == string::npos) {
+            continue;
+        }
+
+        const size_t contValueBegin = contBegin + 6;
+        const size_t contValueEnd = testcaseName.find('_', contValueBegin);
+        if (contValueEnd == string::npos) {
+            continue;
+        }
+
+        const int contValue = stoi(testcaseName.substr(contValueBegin, contValueEnd - contValueBegin));
+        const int rankCount = stoi(testcaseName.substr(rankBegin + 6));
+
+        if (contValue != 0 && contValue != 1) {
+            continue;
+        }
+
+        const bool sameRank = (rankCount == currentRankCount);
+
+        int priority;
+        if (contValue == 1 && sameRank) {
+            priority = 0;
+        }
+        else if (contValue == 0 && sameRank) {
+            priority = 1;
+        }
+        else if (contValue == 1) {
+            priority = 2;
+        }
+        else {
+            priority = 3;
         }
         
         const size_t timeBegin = testcaseName.find("_T_");
@@ -412,19 +450,25 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         }
 
         double timeWindow = stod(testcaseName.substr(valueBegin, valueEnd - valueBegin));
-        if (timeWindow > currentTimeWindow || timeWindow <= dBestT) {
+        if (timeWindow > currentTimeWindow) {
             continue;
         }
 
-        if (timeWindow <= currentTimeWindow && timeWindow > dBestT) {
-            const filesystem::path candidateDir = testcaseEntry.path() / "InitialData";
+        if (priority > bestPriority || (priority == bestPriority && timeWindow <= dBestT)) {
+            continue;
+        }
 
-            for (const auto& fileEntry : filesystem::directory_iterator(candidateDir)) {
-                if (fileEntry.is_regular_file()) {
-                    dBestT = timeWindow;
-                    continuedFile = fileEntry.path();
-                    break;
-                }
+        const filesystem::path candidateDir = testcaseEntry.path() / "InitialData";
+        if (!filesystem::is_directory(candidateDir)) {
+            continue;
+        }
+
+        for (const auto& fileEntry : filesystem::directory_iterator(candidateDir)) {
+            if (fileEntry.is_regular_file()) {
+                dBestT = timeWindow;
+                bestPriority = priority;
+                continuedFile = fileEntry.path();
+                break;
             }
         }
     }
@@ -437,6 +481,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
 
         if (_mpi.isRoot()) {
             cout << "Loaded continued initial data from T = " << dBestT << '\n' << flush;
+            cout << "Path: " << continuedFile << '\n' << flush;
         }
     }
     else {
