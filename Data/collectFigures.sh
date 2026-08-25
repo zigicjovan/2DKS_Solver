@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# project_data_dir="$HOME/projects/rrg-bprotas/zigicj/2DKS_Solver/Data"
-# scratch_data_dir="$HOME/scratch/Data"
-
-project_data_dir="$HOME/Desktop/2DKS/2DKS_cpp/Data"
-scratch_data_dir="$HOME/Desktop/2DKS/2DKS_cpp/Data"
+project_data_dir="$HOME/projects/rrg-bprotas/zigicj/2DKS_Solver/Data"
+scratch_data_dir="$HOME/scratch/Data"
 
 cd "$project_data_dir"
 
