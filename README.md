@@ -23,3 +23,6 @@ https://www.youtube.com/playlist?list=PLwsovxEJkjzJrUHeRQMrPbvsQRfkz0e-W
 1. du -h -d 3 /user/foldername/ | sort -h
 2. diskusage_report
 3. sshare -l -A def-prof1_cpu -u prof1,grad2,postdoc3
+
+### Find text:
+rg -n "[text]"
