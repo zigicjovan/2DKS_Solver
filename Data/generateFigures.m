@@ -30,8 +30,9 @@ function generateFigures(testcase, plots, numberOfStates)
     terminalconditionDir = 'TerminalData';
     terminalconditionFile = 'fwdTC';
     
-    root = pwd;
-    addpath(genpath(fullfile(root,testcase)));
+    set(0,'DefaultFigureVisible','off');
+    %root = pwd;
+    %addpath(genpath(fullfile(root,testcase)));
     
     if nargin == 1
         numberOfStates = 100;
@@ -556,7 +557,7 @@ function generateFigures(testcase, plots, numberOfStates)
                     hold(ax(k),'on');
                     a_xline = plot(ax(k), energyDataSampled(stateIndex,1), astripwidth(stateIndex,2), 'ko');
                     yline(ax(k), max(2*pi*params.ell1/params.N1,2*pi*params.ell2/params.N2), '--');
-                    ylim(ax(k), [0 1.5*max(astripwidth(:,2))]);
+                    ylim(ax(k), [0 max(1,1.5*max(astripwidth(:,2))) ]);
                     xlim(ax(k), [0 energyDataSampled(end,1)]);
                     hold(ax(k),'off');
                     

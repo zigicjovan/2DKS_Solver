@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project_data_dir="$HOME/projects/rrg-bprotas/zigicj/2DKS_Solver/Data"
-scratch_data_dir="$HOME/scratch/Data"
+# project_data_dir="$HOME/projects/rrg-bprotas/zigicj/2DKS_Solver/Data"
+# scratch_data_dir="$HOME/scratch/Data"
+
+project_data_dir="$HOME/Desktop/2DKS/2DKS_cpp/Data"
+scratch_data_dir="$HOME/Desktop/2DKS/2DKS_cpp/Data"
 
 cd "$project_data_dir"
 
@@ -31,8 +34,11 @@ for index in "${!testcase_dirs[@]}"; do
     echo
     echo "${current} of ${total}: Generating figures for ${testcase}"
 
-    matlab -batch \
-        "set(0,'DefaultFigureVisible','off'); generateFigures('${testcase}')"
+    #matlab -batch "generateFigures('${testcase}')"
+    apptainer exec \
+    --env AGREE_TO_MATLAB_RUNTIME_LICENSE=yes \
+    matlab-runtime-r2025b.sif \
+    ./run_generateFigures.sh /opt/matlabruntime/R2025b "$testcase"
 
     find "$forward_dir" -maxdepth 1 -type f -name 'f*.dat' -delete
 
