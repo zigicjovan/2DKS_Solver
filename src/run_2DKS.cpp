@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         SolutionData vStateTerminal(params, paths, mpi, TerminalState); 
         SolutionData vObjectiveGradient(params, paths, mpi, BackwardInitialState); 
         SolutionData vHistoryIntermediate(params, paths, mpi, IntermediateHistory);
-        SolutionData vHistoryRemainder(params, paths, mpi, RemainderHistory);
+        SolutionData vHistoryRemainder(params, paths, mpi, CheckpointRemainder);
 
         // Step 5: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
         Solver solver(params, paths, fftwPlan, timer, mpi);

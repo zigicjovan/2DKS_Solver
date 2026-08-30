@@ -69,7 +69,7 @@ Pathnames::Pathnames(const Parameters &params, const MPIContext& mpi) {
         const auto spaceInfo = filesystem::space(slurmTemp);
         const double availableGB = static_cast<double>(spaceInfo.available) / (1024.0 * 1024.0 * 1024.0);
 
-        _useTempDir = (params.getRequiredMemory() <= 0.8 * availableGB);
+        _useTempDir = (params.getCheckpointMemory() <= 0.8 * availableGB);
         _tempDirChoice = _useTempDir;
     }
 

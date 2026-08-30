@@ -21,6 +21,7 @@ enum SolutionDataType {
     BackwardInitialState,       
     IntermediateHistory,        
     RemainderHistory, 
+    CheckpointRemainder,
     FinalRemainder,           
 };
 

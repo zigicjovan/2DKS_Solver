@@ -12,6 +12,35 @@
 using namespace std;
 
 // Private functions
+void Parameters::displayParameters() {   
+    cout << "Parameter settings:\nIC " << _strInitialGuessName 
+         << ", N_x1 " << _iGridSize1 
+         << ", N_x2 " << _iGridSize2       
+         << ", dt " << _dTimeStep         
+         << ", K " << _dInitialEnergy    
+         << ", ell1 " << _dDomainFactor1     
+         << ", ell2 " << _dDomainFactor2  
+         << ", L_1 " << _dDomainSize1     
+         << ", L_2 " << _dDomainSize2     
+         << ", T " << _dTimeWindow       
+         << ", opt " << _bOptimizeSolution       
+         << ", tol " << _dOptimizationTolerance  
+         << ", cont " << _bNumericalContinuation  
+         << ", optT " << _dOptimalTimeWindow      
+         << endl;
+}
+
+void Parameters::setSolverCoefficients() {   
+    _coeffAlphaI = { 343038331393.0 / 1130875731271.0, 288176579239.0 / 1140253497719.0,
+                     253330171251.0 / 677500478386.0, 189462239225.0 / 1091147436423.0 };
+    _coeffBetaI = { 35965327958.0 / 140127563663.0, 19632212512.0 / 2700543775099.0,
+                   -173747147147.0 / 351772688865.0, 91958533623.0 / 727726057489.0 };
+    _coeffAlphaE = { 14.0 / 25.0, 777974228744.0 / 1346157007247.0,
+                    251277807242.0 / 1103637129625.0, 113091689455.0 / 220187950967.0 };
+    _coeffBetaE = { 0.0, -251352885992.0 / 790610919619.0,
+                  -383714262797.0 / 1103637129625.0, -403360439203.0 / 1888264787188.0 };
+}
+
 vector<double> Parameters::setPhysicalSpace1() {
     vector<double> gridpoints(_iGridSize1);
 
@@ -120,52 +149,38 @@ Parameters::Parameters(int argc, char* argv[]) {
 
     _iSavedStates = stoi(argv[13]);
 
-    _coeffAlphaI = { 343038331393.0 / 1130875731271.0,
-                    288176579239.0 / 1140253497719.0,
-                    253330171251.0 / 677500478386.0,
-                    189462239225.0 / 1091147436423.0 };
-    _coeffBetaI = { 35965327958.0 / 140127563663.0,
-                   19632212512.0 / 2700543775099.0,
-                  -173747147147.0 / 351772688865.0,
-                   91958533623.0 / 727726057489.0 };
-    _coeffAlphaE = { 14.0 / 25.0,
-                    777974228744.0 / 1346157007247.0,
-                    251277807242.0 / 1103637129625.0,
-                    113091689455.0 / 220187950967.0 };
-    _coeffBetaE = { 0.0,
-                  -251352885992.0 / 790610919619.0,
-                  -383714262797.0 / 1103637129625.0,
-                  -403360439203.0 / 1888264787188.0 };
-
-    _iRequiredMemory = 0.8 * (getNumericalSteps() - getNumericalStepsPerFile() + (getNumericalSteps() % getNumericalStepsPerFile())) / getNumericalStepsPerFile();
-    _iFinalMemory = _iSavedStates * _iRequiredMemory / getNumericalSteps();
+    setAdjointSolution(false);
+    setSolverCoefficients();
 
     int mpiRank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
 
+    // Adjust these two constants as required by filesystem. Prefer larger sizes for both.
+    const double _dFileSizeGB = 16.0 * static_cast<double>(_iTotalGridSize) * static_cast<double>(getNumericalStepsPerFile()) / 1e9;
+    const double _dMaxStorageSizeGB = 800.0;
+
+    const size_t _iMaxSaveFileCount = static_cast<size_t>( ceil( _dMaxStorageSizeGB / _dFileSizeGB) );
+    _iActualSteps = min( getNumericalSteps(), getNumericalStepsPerFile() );
+    
+    const size_t _iFullFileCount = (getNumericalSteps() + _iActualSteps - 1) / _iActualSteps;
+    _dRequiredMemory = _dFileSizeGB * static_cast<double>(_iFullFileCount);
+    _dFinalMemory = static_cast<double>(_iSavedStates) * _dRequiredMemory / static_cast<double>(getNumericalSteps());
+    
+    const size_t checkpointStatesMinimumRequired = (getNumericalSteps() + _iActualSteps - 1) / _iActualSteps + 1;
+    const size_t checkpointStatesMaximumAllowed = _iMaxSaveFileCount * _iActualSteps;
+    _iCheckpointStates = max( _iSavedStates, min(checkpointStatesMinimumRequired , checkpointStatesMaximumAllowed) ); 
+    const size_t _iCheckpointFileCount = (_iCheckpointStates + _iActualSteps - 1) / _iActualSteps;
+    _dCheckpointMemory = _dFileSizeGB * static_cast<double>(_iCheckpointFileCount);
+
+    const size_t _iFinalFileCount = (_iSavedStates + _iActualSteps - 1) / _iActualSteps;
+
     if (mpiRank == 0) {
-        cout << "Parameter settings:\nIC " << _strInitialGuessName 
-                << ", N_x1 " << _iGridSize1 
-                << ", N_x2 " << _iGridSize2       
-                << ", dt " << _dTimeStep         
-                << ", K " << _dInitialEnergy    
-                << ", ell1 " << _dDomainFactor1     
-                << ", ell2 " << _dDomainFactor2  
-                << ", L_1 " << _dDomainSize1     
-                << ", L_2 " << _dDomainSize2     
-                << ", T " << _dTimeWindow       
-                << ", opt " << _bOptimizeSolution       
-                << ", tol " << _dOptimizationTolerance  
-                << ", cont " << _bNumericalContinuation  
-                << ", optT " << _dOptimalTimeWindow      
-                << endl
-                << "Intermediate Storage (for adjoint solve) = " << _iRequiredMemory
-                << " GB, Total Timesteps = " << getNumericalSteps() 
-                << " (Max File Timesteps (800 MB) " << getNumericalStepsPerFile() 
-                << ", Remainder File Timesteps " << ( getNumericalSteps() % getNumericalStepsPerFile() )
-                << ")" << endl
-                << "Final Storage = " << _iFinalMemory
-                << " GB, Total Timesteps = " << _iSavedStates << endl;
+        displayParameters();
+        cout << "Max File Timesteps (8 GB): " << getNumericalStepsPerFile() << ", Remainder File Timesteps: " 
+             << ( getNumericalSteps() % _iActualSteps ) << endl
+             << "Raw Storage (all data): " << _dRequiredMemory << " GB, " << getNumericalSteps() << " Timesteps, " << _iFullFileCount << " Files" << endl
+             << "Temporary Storage (checkpointed): " << _dCheckpointMemory << " GB, " << _iCheckpointStates << " Timesteps, " << _iCheckpointFileCount << " Files" << endl
+             << "Final Storage (sample data): " << _dFinalMemory << " GB, " << _iSavedStates << " Timesteps, " << _iFinalFileCount << " Files" << endl;
     }
 }
 
@@ -262,7 +277,15 @@ size_t Parameters::getNumericalSteps() const {
 }
 
 size_t Parameters::getNumericalStepsPerFile() const {   
-    return static_cast<size_t>(round( 5e7 / (_iTotalGridSize) ));
+    return max<size_t>( 1, static_cast<size_t>(round( 5e7 / _iTotalGridSize ))); 
+}
+
+size_t Parameters::getCheckpointNumericalSteps() const {   
+    return _iCheckpointSteps;
+}
+
+void Parameters::setCheckpointNumericalSteps(const size_t numberOfSteps) {   
+    _iCheckpointSteps = numberOfSteps;
 }
 
 const vector<double>& Parameters::getGrid1() const { 
@@ -301,12 +324,36 @@ size_t Parameters::getSavedStates() const {
     return _iSavedStates; 
 }
 
+size_t Parameters::getCheckpointStates() const { 
+    return _iCheckpointStates; 
+}
+
 int Parameters::getRequiredMemory() const { 
-    return _iRequiredMemory; 
+    return _dRequiredMemory; 
+}
+
+int Parameters::getCheckpointMemory() const { 
+    return _dCheckpointMemory; 
+}
+
+double Parameters::getCheckpointStart() const { 
+    return _dCheckpointStart; 
+}
+
+double Parameters::getCheckpointEnd() const { 
+    return _dCheckpointEnd; 
+}
+
+void Parameters::setCheckpointStart(double timePoint) { 
+    _dCheckpointStart = timePoint; 
+}
+
+void Parameters::setCheckpointEnd(double timePoint) { 
+    _dCheckpointEnd = timePoint; 
 }
 
 int Parameters::getFinalMemory() const { 
-    return _iFinalMemory; 
+    return _dFinalMemory; 
 }
 
 double Parameters::getTimeStep() const { 
@@ -407,6 +454,14 @@ bool Parameters::getOptimizeSolution() const {
 
 void Parameters::setOptimizeSolution(bool optimizeSolution) {
     _bOptimizeSolution = optimizeSolution;
+}
+
+bool Parameters::getAdjointSolution() const { 
+    return _bAdjointSolution; 
+}
+
+void Parameters::setAdjointSolution(bool adjointSolution) {
+    _bAdjointSolution = adjointSolution;
 }
 
 bool Parameters::getActiveLineSearch() const { 

@@ -494,16 +494,37 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
 }
 
 void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
+    const bool adjointSolution = _params.getAdjointSolution();
     double dTimePoint = 0.0;
-    const size_t totalSteps = _params.getNumericalSteps();
+    size_t totalSteps = _params.getNumericalSteps();  
+    bool optimizeSolution = _params.getOptimizeSolution();
+    bool activeLineSearch = _params.getActiveLineSearch();
+    bool bSaveData = true;
+    
+    if (adjointSolution) {
+        dTimePoint = _params.getCheckpointStart(); 
+        totalSteps = _params.getCheckpointNumericalSteps();
+        optimizeSolution = true;
+        activeLineSearch = false;
+        bSaveData = false;
+    }
+     
     const size_t stepsPerFile = _params.getNumericalStepsPerFile();
     const size_t remainderSteps = totalSteps % stepsPerFile;
     const size_t fullSteps = totalSteps - remainderSteps;
+
     const size_t savedStateCount = min(_params.getSavedStates(), totalSteps + 1);
     const size_t savedStepsPerFile = min(stepsPerFile, savedStateCount);
     const size_t savedRemainderSteps = savedStateCount % savedStepsPerFile;
     const size_t savedFullSteps = savedStateCount - savedRemainderSteps;
+
+    const size_t checkpointStateCount = min(_params.getCheckpointStates(), totalSteps + 1);
+    const size_t checkpointStepsPerFile = min(stepsPerFile, checkpointStateCount);
+    const size_t checkpointRemainderSteps = checkpointStateCount % checkpointStepsPerFile;
+    const size_t checkpointFullSteps = checkpointStateCount - checkpointRemainderSteps;
+
     size_t savedStateIndex = 0;
+    size_t checkpointStateIndex = 0;
     size_t nextSavedStep = 0;    
 
     const size_t localGridSize = _mpi.getLocalGridSize();
@@ -518,9 +539,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     const array<double, 4>& coeffBetaI = _params.getCoeffBetaI();
     const array<double, 4>& coeffAlphaE = _params.getCoeffAlphaE();
     const array<double, 4>& coeffBetaE = _params.getCoeffBetaE();
-
-    const bool optimizeSolution = _params.getOptimizeSolution();
-    const bool activeLineSearch = _params.getActiveLineSearch();
 
     vector<array<double, 4>> vDiagnostics;
     vDiagnostics.reserve(_params.getNumericalSteps() + 1);
@@ -538,19 +556,25 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         vNonlinearTermPrevious[i] = complex<double>{0.0, 0.0};
     }
 
-    // if (!optimizeSolution) {
-        SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
-    // }
-
+    SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
     if (!optimizeSolution && savedStateCount > 1) {
         ++savedStateIndex;
-        saveForwardState( dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
         if (savedStateIndex < savedStateCount) {
-            nextSavedStep = static_cast<size_t>(std::llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
+            nextSavedStep = static_cast<size_t>( std::llround( static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1) ) );
         }
 
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
+    }
+    else if (optimizeSolution && !adjointSolution) {
+        _params.setCheckpointStart(dTimePoint);
+        ++checkpointStateIndex;
+        saveForwardState(dTimePoint, bSaveData, checkpointStateIndex, checkpointFullSteps, checkpointStepsPerFile, checkpointStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        
+        if (checkpointStateIndex < checkpointStateCount) {
+            nextSavedStep = static_cast<size_t>(llround(static_cast<double>(checkpointStateIndex) * totalSteps / (checkpointStateCount - 1) ));
+        }
     }
     
     for (size_t i = 1; i < totalSteps + 1; ++i) {
@@ -598,12 +622,21 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vStateCurrent[0] = complex<double>{0.0, 0.0};
         }
 
-        if (optimizeSolution && !activeLineSearch) {
-            saveForwardState(dTimePoint, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        if (adjointSolution) {
+            saveForwardState(dTimePoint, bSaveData, i, fullSteps, stepsPerFile, totalSteps, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+        }
+        else if (optimizeSolution && checkpointStateIndex < checkpointStateCount && i == nextSavedStep && !activeLineSearch) {
+            ++checkpointStateIndex;
+            _params.setCheckpointStart(dTimePoint);
+            saveForwardState(dTimePoint, bSaveData, checkpointStateIndex, checkpointFullSteps, checkpointStepsPerFile, checkpointStateCount, vHistoryIntermediate, vHistoryRemainder, vStateCurrent);
+
+            if (checkpointStateIndex < checkpointStateCount) {
+                nextSavedStep = static_cast<size_t>(llround(static_cast<double>(checkpointStateIndex) * (totalSteps) / (checkpointStateCount - 1) ));    
+            }
         }
         else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep && savedStateCount > 1) {
             ++savedStateIndex;
-            saveForwardState(dTimePoint, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
+            saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
             
             if (savedStateIndex < savedStateCount) {
                 nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
@@ -629,13 +662,13 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     }
 }
 
-void Solver::saveForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile,  size_t totalSteps,
+void Solver::saveForwardState(double dTimePoint, bool bSaveData, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile,  size_t totalSteps,
                               SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vStateCurrent) {
     if (forwardIndex <= fullSteps) {
         const size_t localIndex = (forwardIndex - 1) % stepsPerFile;
         vHistoryIntermediate.setData(vStateCurrent, localIndex);
 
-        if (forwardIndex % stepsPerFile == 0) {
+        if (forwardIndex % stepsPerFile == 0 && bSaveData) {
             vHistoryIntermediate.saveData(IntermediateHistory, dTimePoint);
         }
     }
@@ -643,7 +676,7 @@ void Solver::saveForwardState(double dTimePoint, size_t forwardIndex, size_t ful
         const size_t localIndex = forwardIndex - fullSteps - 1;
         vHistoryRemainder.setData(vStateCurrent, localIndex);
 
-        if (forwardIndex == totalSteps) {
+        if (forwardIndex == totalSteps && bSaveData) {
             vHistoryRemainder.saveData(RemainderHistory, dTimePoint);
         }
     }
@@ -671,8 +704,15 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
     double dTimePoint = 0.0;
     const size_t totalSteps = _params.getNumericalSteps();
     const size_t stepsPerFile = _params.getNumericalStepsPerFile();
-    const size_t remainderSteps = totalSteps % stepsPerFile;
-    const size_t fullSteps = totalSteps - remainderSteps;
+
+    const size_t checkpointStateCount = min(_params.getCheckpointStates(), totalSteps + 1);
+    const size_t checkpointStepsPerFile = min(stepsPerFile, checkpointStateCount);
+    const size_t checkpointRemainderSteps = checkpointStateCount % checkpointStepsPerFile;
+    const size_t checkpointFullSteps = checkpointStateCount - checkpointRemainderSteps;
+
+    size_t checkpointStateIndex = checkpointStateCount;
+    size_t nextSavedStep = totalSteps;
+    _params.setCheckpointEnd(_params.getTimeWindow());
 
     const size_t localGridSize = _mpi.getLocalGridSize();
     const size_t localGridSize2 = _mpi.getLocalGridSize2();
@@ -695,6 +735,9 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
     }
 
     SolutionData vForwardStateCurrent = vTargetEnd; // phi_{i}
+    SolutionData vForwardStateCheckpoint = vTargetEnd; // phi_{i}
+    SolutionData vHistoryIntermediateFull(_params, _paths, _mpi, IntermediateHistory);
+    
     SolutionData vStateNext(_params, _paths, _mpi, InitialState); // phi^*_{i-1}
     SolutionData vNonlinearTermCurrent(_params, _paths, _mpi, InitialState); // N(phi^*_{i})
     SolutionData vForwardSpatialDerivative1(_params, _paths, _mpi, InitialState); // (phi_{i})_{x_1}
@@ -709,7 +752,27 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
 
     for (size_t i = totalSteps; i > 0; --i) {
         dTimePoint = i * dt;
-        loadForwardState(dTimePoint, i, fullSteps, stepsPerFile, vHistoryIntermediate, vHistoryRemainder, vForwardStateCurrent);
+
+        if (checkpointStateIndex > 1 && i == nextSavedStep) {
+            --checkpointStateIndex;
+            nextSavedStep = static_cast<size_t>(llround(static_cast<double>(checkpointStateIndex - 1) * totalSteps / (checkpointStateCount - 1) ));
+            _params.setCheckpointStart(nextSavedStep * dt);
+            loadForwardState(_params.getCheckpointStart(), checkpointStateIndex, checkpointFullSteps, checkpointStepsPerFile, vHistoryIntermediate, vHistoryRemainder, vForwardStateCheckpoint);      
+            
+            const size_t reconstructedSteps = i - nextSavedStep;
+            _params.setCheckpointNumericalSteps(reconstructedSteps);
+
+            _params.setAdjointSolution(true);
+            solveForwardInTime(vForwardStateCheckpoint, vHistoryIntermediateFull, vHistoryIntermediateFull, vForwardStateCurrent);
+            _params.setAdjointSolution(false); 
+
+            _params.setCheckpointEnd(dTimePoint);
+        }
+
+        // Load phi from the newly reconstructed forward history
+        const size_t reconstructedIndex = i - nextSavedStep;
+        const size_t localIndex = reconstructedIndex - 1;
+        vHistoryIntermediateFull.getData(vForwardStateCurrent, localIndex);
 
         // Laplacian(phi), phi_{x_1} and phi_{x_2} in physical space
         for (size_t j = 0; j < localGridSize; ++j) {

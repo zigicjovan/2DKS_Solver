@@ -42,7 +42,7 @@ void SolutionData::writeDistributedFile(const filesystem::path& filename) const 
     const MPI_Offset completeFileSize = static_cast<MPI_Offset>(stateCount) * static_cast<MPI_Offset>(globalGridSize) * static_cast<MPI_Offset>(sizeof(complex<double>));
     MPI_File_set_size(file, completeFileSize);
 
-    for (size_t state = 0; state < stateCount; ++state) {
+    for (size_t state = 0; state < stateCount; ++state) {     
         const MPI_Offset fileOffset = ( static_cast<MPI_Offset>(state) * static_cast<MPI_Offset>(globalGridSize) + static_cast<MPI_Offset>(globalGridOffset) )
                                       * static_cast<MPI_Offset>(sizeof(complex<double>));
         MPI_File_write_at_all(file, fileOffset, const_cast<complex<double>*>(getStatePointer(state)), static_cast<int>(localByteCount), MPI_BYTE, MPI_STATUS_IGNORE);
@@ -112,6 +112,10 @@ SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, con
         
         case RemainderHistory:
             _vData.resize(stateStorageSize * ( _params.getNumericalSteps() % _params.getNumericalStepsPerFile()) );
+            break;
+        
+        case CheckpointRemainder:
+            _vData.resize(stateStorageSize * ( _params.getCheckpointStates() % _params.getNumericalStepsPerFile()) );
             break;
 
         case FinalRemainder:
@@ -355,6 +359,8 @@ void SolutionData::loadData(SolutionDataType storedDataType, double dCurrentT) {
 
         case IntermediateHistory: // fall through  
 
+        case CheckpointRemainder:
+        
         case FinalRemainder:
         
         case RemainderHistory: {
@@ -383,6 +389,8 @@ void SolutionData::saveData(SolutionDataType storedDataType, double dCurrentT) {
         }
 
         case IntermediateHistory: // fall through 
+
+        case CheckpointRemainder:
 
         case FinalRemainder:
 

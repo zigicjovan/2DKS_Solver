@@ -53,7 +53,7 @@ private:
     void setInitialCondition(SolutionData& vTargetState);
     void findContinuationForInitialData(SolutionData& vTargetState);
     void solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vTargetEnd);
-    void saveForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile,  size_t totalSteps,
+    void saveForwardState(double dTimePoint, bool bSaveData, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile,  size_t totalSteps,
                           SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vStateCurrent);
     void loadForwardState(double dTimePoint, size_t forwardIndex, size_t fullSteps, size_t stepsPerFile, 
                           SolutionData& vHistoryIntermediate, SolutionData& vHistoryRemainder, SolutionData& vForwardStateCurrent);

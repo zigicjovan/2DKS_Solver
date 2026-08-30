@@ -40,8 +40,14 @@ private:
     size_t _iGridSize2;
     size_t _iTotalGridSize;
     size_t _iSavedStates;
-    int _iRequiredMemory;
-    int _iFinalMemory;
+    size_t _iActualSteps;
+    size_t _iCheckpointStates;
+    size_t _iCheckpointSteps;
+    double _dRequiredMemory;
+    double _dCheckpointMemory;
+    double _dCheckpointStart;
+    double _dCheckpointEnd;
+    double _dFinalMemory;
 
     double _dTimeStep;
     double _dSpaceStep;
@@ -73,6 +79,7 @@ private:
     // optimization assumptions
     bool _bOptimizeSolution;
     double _dOptimizationTolerance;
+    bool _bAdjointSolution;
     bool _bActiveLineSearch;
 
     // initial assumptions
@@ -81,6 +88,8 @@ private:
     // for extended-time simulations
     double _dOptimalTimeWindow; 
 
+    void displayParameters();
+    void setSolverCoefficients();
     vector<double> setPhysicalSpace1();
     vector<double> setPhysicalSpace2();
     vector<double> setFourierModesNonlinear1();
@@ -96,6 +105,8 @@ public:
     size_t getIndex(size_t i, size_t j, size_t N);
     size_t getNumericalSteps() const;
     size_t getNumericalStepsPerFile() const;
+    size_t getCheckpointNumericalSteps() const;
+    void setCheckpointNumericalSteps(const size_t numberOfSteps);
 
     const vector<double>& getGrid1() const;
     const vector<double>& getGrid2() const;
@@ -107,7 +118,13 @@ public:
     size_t getGridSize2() const;
     size_t getTotalGridSize() const;
     size_t getSavedStates() const;
+    size_t getCheckpointStates() const;
     int getRequiredMemory() const;
+    int getCheckpointMemory() const;
+    double getCheckpointStart() const;
+    double getCheckpointEnd() const;
+    void setCheckpointStart(double timePoint);
+    void setCheckpointEnd(double timePoint);
     int getFinalMemory() const;
 
     double getTimeStep() const;
@@ -139,6 +156,8 @@ public:
 
     bool getOptimizeSolution() const;
     void setOptimizeSolution(bool optimizeSolution);
+    bool getAdjointSolution() const;
+    void setAdjointSolution(bool adjointSolution);
     bool getActiveLineSearch() const;
     void setActiveLineSearch(bool optimizeSolution);
     double getOptimizationTolerance() const;
