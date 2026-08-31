@@ -1,12 +1,43 @@
-CXX = mpic++
-CXXFLAGS = -std=c++17 -O3 -march=native -Wall
-LDFLAGS =
+# -----------------------------------------------------------------------------
+# Select exactly one cluster. Keep this consistent with CLUSTER in
+# param_driver.py. It may also be overridden on the command line, for example:
+#     make CLUSTER=anvil
+# -----------------------------------------------------------------------------
+CLUSTER = nibi
+# CLUSTER = anvil
+# CLUSTER = bridges2
+# CLUSTER = stampede3
+
+# mpicxx is available on all four systems; mpic++ is absent on Stampede3.
+CXX = mpicxx
+
+ARCHFLAGS =
+FFTW_INCLUDES =
+FFTW_LDFLAGS =
+
+ifeq ($(CLUSTER),nibi)
+    ARCHFLAGS = -march=native
+else ifeq ($(CLUSTER),anvil)
+    ARCHFLAGS = -march=znver3
+else ifeq ($(CLUSTER),bridges2)
+    ARCHFLAGS = -march=znver2
+else ifeq ($(CLUSTER),stampede3)
+    ARCHFLAGS = $(TACC_VEC_FLAGS)
+    FFTW_INCLUDES = -I$(TACC_FFTW3_INC)
+    FFTW_LDFLAGS = -L$(TACC_FFTW3_LIB) -Wl,-rpath,$(TACC_FFTW3_LIB)
+else
+    $(error Unsupported CLUSTER '$(CLUSTER)'; use nibi, anvil, bridges2, or stampede3)
+endif
+
+CXXFLAGS = -std=c++17 -O3 $(ARCHFLAGS) -Wall
+LDFLAGS = $(FFTW_LDFLAGS)
 LDLIBS = -lfftw3_mpi -lfftw3 -lm
 
 SRC_DIR := src
 BUILD_DIR := $(SRC_DIR)/build
 
-INCLUDES = -I$(SRC_DIR)/dataProcessing \
+INCLUDES = $(FFTW_INCLUDES) \
+           -I$(SRC_DIR)/dataProcessing \
            -I$(SRC_DIR)/problemSolver \
            -I$(SRC_DIR)/utilities
 

@@ -1,9 +1,18 @@
 #!/bin/bash
 # run_task_array.sh  -- invoked by run_array.sh sbatch
-# Uses PARAM_FILE environment variable passed by sbatch --export
+# Receives the cluster name and parameter file as positional arguments.
 # Launches one C++/MPI solver run for the selected parameter row.
 
 set -euo pipefail
+
+# Manual default used only when this script is invoked directly. The generated
+# array driver passes its selected cluster explicitly.
+DEFAULT_CLUSTER="nibi"
+# DEFAULT_CLUSTER="anvil"
+# DEFAULT_CLUSTER="bridges2"
+# DEFAULT_CLUSTER="stampede3"
+
+CLUSTER=${1:-$DEFAULT_CLUSTER}
 
 # SLURM array task id
 TASK_ID=${SLURM_ARRAY_TASK_ID:-0}
@@ -11,8 +20,8 @@ TASK_ID=${SLURM_ARRAY_TASK_ID:-0}
 # --- Stagger start of each array task (3 sec per task, modulo 60 sec) ---
 sleep $(( (TASK_ID * 3) % 60 ))
 
-# PARAM_FILE should be exported by the sbatch command (see run_array.sh)
-PARAM_FILE=${PARAM_FILE:-"./runscripts/task_params_32G.txt"}
+# Passing this as an argument avoids sbatch --export portability problems.
+PARAM_FILE=${2:-"./runscripts/task_params_32G.txt"}
 if [[ ! -f "$PARAM_FILE" ]]; then
     echo "ERROR: parameter file not found: $PARAM_FILE"
     exit 1
@@ -29,9 +38,42 @@ if [[ -z "$LINE" ]]; then
     exit 1
 fi
 
-# expected line: idx K ell1 ell2 T dt N MPI_ranks mem
+# expected line: idx K ell1 ell2 T dt N MPI_ranks mem IC optimize tol continuation optT savestates
 read -r IDX K ell1 ell2 T dt N MPI_RANKS mem \
     IC_str optimize tol continuation optT savestates <<< "$LINE"
+
+case "$CLUSTER" in
+    nibi)
+        module --force purge
+        module load StdEnv/2023 gcc/12.3 openmpi/4.1.5 fftw-mpi/3.3.10
+        LAUNCH=(srun --ntasks="$MPI_RANKS")
+        ;;
+    anvil)
+        module --force purge
+        module load gcc/14.2.0 openmpi/4.1.6 fftw/3.3.10
+        LAUNCH=(mpirun --mca pml ucx --mca btl '^openib' -np "$MPI_RANKS")
+        ;;
+    bridges2)
+        module purge
+        module load gcc/13.3.1-p20240614 openmpi/5.0.8-gcc13.3.1 fftw/3.3.8
+        hash -r
+        MPI_LAUNCHER=$(type -P mpirun)
+        if [[ -z "$MPI_LAUNCHER" ]]; then
+            echo "ERROR: Bridges-2 mpirun executable not found." >&2
+            exit 1
+        fi
+        LAUNCH=("$MPI_LAUNCHER" -np "$MPI_RANKS")
+        ;;
+    stampede3)
+        module reset
+        module load intel/24.0 impi/21.11 fftw3/3.3.10
+        LAUNCH=(ibrun)
+        ;;
+    *)
+        echo "ERROR: unsupported cluster '$CLUSTER'." >&2
+        exit 2
+        ;;
+esac
 
 LOG_DIR="./output"
 mkdir -p "$LOG_DIR"
@@ -45,6 +87,7 @@ LOG_FILE="${LOG_DIR}/run_${IC_str}_${K}_${ell1_str}_${ell2_str}_${T_str}_${dt_st
 echo -e "\n=============================" >> "$LOG_FILE"
 echo "SLURM_JOB_ID: ${SLURM_JOB_ID:-N/A}" >> "$LOG_FILE"
 echo "SLURM_ARRAY_JOB_ID: ${SLURM_ARRAY_JOB_ID:-N/A}  SLURM_ARRAY_TASK_ID: ${SLURM_ARRAY_TASK_ID:-N/A}" >> "$LOG_FILE"
+echo "CLUSTER: $CLUSTER" >> "$LOG_FILE"
 echo "=============================" >> "$LOG_FILE"
 
 # --- Retry once if the solver returns a nonzero exit code ---
@@ -52,12 +95,10 @@ attempt=0
 max_attempts=2
 rc=1
 
-module load fftw-mpi/3.3.10
-
 while [[ $attempt -lt $max_attempts ]]; do
     echo "[$(date)] Running C++ attempt $((attempt+1))/$max_attempts for TASK_ID=${TASK_ID} (IDX=${IDX})" >> "$LOG_FILE"
     rc=0
-    srun --ntasks="$MPI_RANKS" ./solver "$IC_str" "$N" "$N" "$dt" "$K" "$ell1" "$ell2" "$T" \
+    "${LAUNCH[@]}" ./solver "$IC_str" "$N" "$N" "$dt" "$K" "$ell1" "$ell2" "$T" \
         "$optimize" "$tol" "$continuation" "$optT" "$savestates" >> "$LOG_FILE" 2>&1 || rc=$?
 
     if [[ $rc -eq 0 ]]; then
