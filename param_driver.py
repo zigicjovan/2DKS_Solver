@@ -74,6 +74,8 @@ CLUSTER_PROFILES = {
             "module purge",
             "module load gcc/13.3.1-p20240614 openmpi/5.0.8-gcc13.3.1 fftw/3.3.8",
             "hash -r",
+            'if [[ -z "${LOCAL:-}" ]]; then echo "ERROR: Bridges-2 LOCAL directory is unavailable." >&2; exit 1; fi',
+            'export SLURM_TMPDIR="$LOCAL"',
         ),
         "launcher": '"$(type -P mpirun)" -np "{ranks}"',
     },
@@ -91,6 +93,8 @@ CLUSTER_PROFILES = {
         "modules": (
             "module reset",
             "module load intel/24.0 impi/21.11 fftw3/3.3.10",
+            'export SLURM_TMPDIR="/tmp/$USER/job_${SLURM_JOB_ID}"',
+            'mkdir -p "$SLURM_TMPDIR"',
         ),
         "launcher": "ibrun",
     },
@@ -162,7 +166,7 @@ ell2_range =        10**(np.round(np.arange(ell2_start + 0.01, ell2_end + ell2_s
 
 # User-editable global settings
 SBATCH_TIME = PROFILE["time"]  # requested time limit (D-HH:MM)
-RUN_ARRAY_NAME = f"{CLUSTER}-long-{K_start}-{ell1_start:.2f}_{K_end}-{ell1_end:.2f}.sh"
+RUN_ARRAY_NAME = f"opt-{K_start}-{ell1_start:.2f}_{K_end}-{ell1_end:.2f}.sh"
 SEQUENTIAL_TASKS = False
 
 # Solver settings shared by all generated production runs

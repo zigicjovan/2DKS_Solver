@@ -55,18 +55,35 @@ case "$CLUSTER" in
         ;;
     bridges2)
         module purge
-        module load gcc/13.3.1-p20240614 openmpi/5.0.8-gcc13.3.1 fftw/3.3.8
+        module load gcc/13.3.1-p20240614
+        module load openmpi/5.0.8-gcc13.3.1
+        module load fftw/3.3.8
         hash -r
+
+        if [[ -z "${LOCAL:-}" ]]; then
+            echo "ERROR: Bridges-2 LOCAL directory is unavailable." >&2
+            exit 1
+        fi
+
+        export SLURM_TMPDIR="$LOCAL"
+
         MPI_LAUNCHER=$(type -P mpirun)
         if [[ -z "$MPI_LAUNCHER" ]]; then
             echo "ERROR: Bridges-2 mpirun executable not found." >&2
             exit 1
         fi
+
         LAUNCH=("$MPI_LAUNCHER" -np "$MPI_RANKS")
         ;;
     stampede3)
         module reset
-        module load intel/24.0 impi/21.11 fftw3/3.3.10
+        module load intel/24.0
+        module load impi/21.11
+        module load fftw3/3.3.10
+
+        export SLURM_TMPDIR="/tmp/$USER/job_${SLURM_JOB_ID}"
+        mkdir -p "$SLURM_TMPDIR"
+
         LAUNCH=(ibrun)
         ;;
     *)
