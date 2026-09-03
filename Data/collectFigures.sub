@@ -1,0 +1,35 @@
+# Submit from a directory containing collectFigures.sh and osg/.
+# osg/ must contain all input data, compiled programs, and runtime files.
+# In collectFigures.sh, use these paths before changing directory:
+#   project_data_dir="$PWD"
+#   scratch_data_dir="$PWD"
+# The script's software/container commands must be available on the worker.
+
+universe = vanilla
+executable = collectFigures.sh
+
+# Example resources: adjust to your actual peak memory and total disk usage.
+request_cpus = 1
+request_memory = 8GB
+request_disk = 100GB
+
++JobDurationCategory = "Medium"
+# Five hours of execution per attempt; exceeding this places the job on hold.
+# File transfer time is excluded. Held jobs do not normally return outputs.
+allowed_execute_duration = 18000
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = ./
+# Return the complete Data directory, including generated figures.
+# Save separately so source data is not overwritten.
+transfer_output_files = ./
+
+log = $ENV(HOME)/condor_logs/collectFigures.$(Cluster).$(Process).log
+output = $ENV(HOME)/condor_logs/collectFigures.$(Cluster).$(Process).out
+error = $ENV(HOME)/condor_logs/collectFigures.$(Cluster).$(Process).err
+
+notification = Complete
+notify_user = jovan.zigic@duny.edu
+
+queue 1
