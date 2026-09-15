@@ -2,10 +2,9 @@
 
 ## Install and run
 
-Extract the archive. Keep all its Python modules together in `ksPostprocess`.
+Extract the archive from main project directory.
 
 ```bash
-cd ksPostprocess
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install numpy>=1.24,<3 scipy>=1.10,<2 matplotlib>=3.7,<4 Pillow>=10,<14
