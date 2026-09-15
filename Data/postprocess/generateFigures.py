@@ -373,30 +373,23 @@ def generate_figures(testcase, args):
         forward_count = sum(
             1 for _ in iter_fourier_states(files, shape, args.byte_order, args.zero_states)
         )
-        forward_extra_initial = forward_count - states
-
-        if forward_extra_initial < 0:
+        if forward_count < states:
             raise ValueError(
                 f'Found only {forward_count} usable forward states; spectrum expects {states}.'
             )
-        if forward_extra_initial > args.extra_initial_steps:
-            raise ValueError(
-                f'Found {forward_count} usable forward states; spectrum expects {states}. '
-                f'Cannot interpret {forward_extra_initial} extra initial states.'
+        if forward_count > states:
+            LOG.warning(
+                'Using the first %d of %d forward states; later states are '
+                'checkpoint-recomputation output.',
+                states, forward_count,
             )
 
-        LOG.info(
-            'Skipping %d extra initial forward state(s) for spectrum alignment.',
-            forward_extra_initial,
-        )
+        for i, hat in enumerate(
+            iter_fourier_states(files, shape, args.byte_order, args.zero_states)
+        ):
+            if i == states:
+                break
 
-        forward_states = iter_fourier_states(files, shape, args.byte_order, args.zero_states)
-        for _ in range(forward_extra_initial):
-            next(forward_states)
-
-        for i, hat in enumerate(forward_states):
-            if i >= states:
-                raise ValueError(f'More than {states} usable forward states; spectrum/state alignment is ambiguous.')
             u = np.roll(ifft2(hat, workers=args.fft_workers).real, shift, axis=(0, 1))
             amp = projector.coefficients(u)
             amplitudes[:, i] = amp
@@ -404,17 +397,25 @@ def generate_figures(testcase, args):
             if weights.sum() > 0:
                 weights /= weights.sum()
             mode_weights[:, i] = weights
-            radial_weights[:, i] = np.bincount(mode_groups, weights=weights, minlength=len(group_radii))
+            radial_weights[:, i] = np.bincount(
+                mode_groups, weights=weights, minlength=len(group_radii)
+            )
             if need_movie:
                 cache[i] = u[::stride, ::stride]
             frame_limits[i] = float(u.min()), float(u.max())
-            limits[0], limits[1] = min(limits[0], float(u.min())), max(limits[1], float(u.max()))
+            limits[0], limits[1] = (
+                min(limits[0], float(u.min())),
+                max(limits[1], float(u.max())),
+            )
             seen += 1
             if seen == 1 or seen % 10 == 0 or seen == states:
                 LOG.info('Analyzed %d/%d states', seen, states)
+
         if seen != states:
-            raise ValueError(f'Found {seen} usable forward states, spectrum expects {states}. '
-                             'Check --zero-states and --extra-initial-steps.')
+            raise ValueError(
+                f'Selected {seen} forward states, spectrum expects {states}.'
+            )
+
         np.savez_compressed(data_output / 'diagnostics.npz', parameters=json.dumps(params),
             energy=energy, sampled_energy=sampled, radii=radii, spectrum=spectra,
             strip_fits=fits, spectrum_fits=fit_curves, modes=projector.modes,
