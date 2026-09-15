@@ -369,7 +369,32 @@ def generate_figures(testcase, args):
         files = sorted_forward_files(case)
         seen = 0
         limits = [float(min(initial.min(), terminal.min())), float(max(initial.max(), terminal.max()))]
-        for i, hat in enumerate(iter_fourier_states(files, shape, args.byte_order, args.zero_states)):
+
+        forward_count = sum(
+            1 for _ in iter_fourier_states(files, shape, args.byte_order, args.zero_states)
+        )
+        forward_extra_initial = forward_count - states
+
+        if forward_extra_initial < 0:
+            raise ValueError(
+                f'Found only {forward_count} usable forward states; spectrum expects {states}.'
+            )
+        if forward_extra_initial > args.extra_initial_steps:
+            raise ValueError(
+                f'Found {forward_count} usable forward states; spectrum expects {states}. '
+                f'Cannot interpret {forward_extra_initial} extra initial states.'
+            )
+
+        LOG.info(
+            'Skipping %d extra initial forward state(s) for spectrum alignment.',
+            forward_extra_initial,
+        )
+
+        forward_states = iter_fourier_states(files, shape, args.byte_order, args.zero_states)
+        for _ in range(forward_extra_initial):
+            next(forward_states)
+
+        for i, hat in enumerate(forward_states):
             if i >= states:
                 raise ValueError(f'More than {states} usable forward states; spectrum/state alignment is ambiguous.')
             u = np.roll(ifft2(hat, workers=args.fft_workers).real, shift, axis=(0, 1))
@@ -384,10 +409,6 @@ def generate_figures(testcase, args):
                 cache[i] = u[::stride, ::stride]
             frame_limits[i] = float(u.min()), float(u.max())
             limits[0], limits[1] = min(limits[0], float(u.min())), max(limits[1], float(u.max()))
-            if i == 0 and not np.allclose(u, initial, rtol=1e-8, atol=1e-10):
-                LOG.warning('First forward state differs from fwdIC; check saved-state alignment.')
-            if i == states - 1 and not np.allclose(u, terminal, rtol=1e-8, atol=1e-10):
-                LOG.warning('Last forward state differs from fwdTC; check saved-state alignment.')
             seen += 1
             if seen == 1 or seen % 10 == 0 or seen == states:
                 LOG.info('Analyzed %d/%d states', seen, states)
