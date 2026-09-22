@@ -136,7 +136,7 @@ def center_shift(u):
     return tuple(shifts)
 
 
-def load_diagnostics(case, args):
+def load_diagnostics(case, params, args):
     energy_path = exactly_one(case, 'EnergyEvolution', 'energy*.dat')
     energy = np.loadtxt(energy_path, ndmin=2)
     if energy.shape[1] != 4 or energy.shape[0] < 1 or not np.isfinite(energy).all():
@@ -178,11 +178,15 @@ def load_diagnostics(case, args):
             LOG.warning('State %d: strip fit unavailable: %s', i + 1, exc)
     with np.errstate(over='ignore', invalid='ignore'):
         curves = fits[:, 0][None, :] * np.exp(-2*radii[:, None]*fits[:, 1][None, :])
+    length = params['ell1']  # square cases
+    radii *= length
+    fits[:, 1] /= length
+    fit_curves = fits[:, 0][None, :] * np.exp(-2 * radii[:, None] * fits[:, 1][None, :])
     return energy, sampled, nonzero, radii, spectra, fits, curves
 
 
-def radial_groups(modes, length):
-    radii = np.hypot(modes[:, 0], modes[:, 1]) / length
+def radial_groups(modes):
+    radii = np.hypot(modes[:, 0], modes[:, 1])
     order = np.argsort(radii, kind='stable')
     group = np.empty(len(modes), dtype=int)
     unique, representative = [], []
@@ -347,7 +351,7 @@ def generate_figures(testcase, args):
         raise ValueError('Figure/CSV output must be outside the input pythonPostprocessing directory.')
     data_output.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
-    energy, sampled, initial_spectra, radii, spectra, fits, fit_curves = load_diagnostics(case, args)
+    energy, sampled, initial_spectra, radii, spectra, fits, fit_curves = load_diagnostics(case, params, args)
     states = spectra.shape[1]
     LOG.info('%s: %d states, %d x %d grid', case.name, states, *shape)
     initial = first_field(exactly_one(case, 'InitialData', 'fwdIC*.dat'), shape, args)
@@ -355,7 +359,7 @@ def generate_figures(testcase, args):
     shift = center_shift(initial)
     initial, terminal = [np.roll(u, shift, axis=(0, 1)) for u in (initial, terminal)]
     projector = CosineProjector(params['ell1'], params['N1'], workers=args.fft_workers)
-    group_radii, mode_groups, labels = radial_groups(projector.modes, params['ell1'])
+    group_radii, mode_groups, labels = radial_groups(projector.modes)
     mode_weights = np.zeros((len(projector.modes), states))
     radial_weights = np.zeros((len(group_radii), states))
     amplitudes = np.zeros_like(mode_weights)
@@ -433,10 +437,10 @@ def generate_figures(testcase, args):
         if args.plots != 'none':
             from plotting import render_static, render_movie
             render_static(output, case.name, params, initial, terminal, radii,
-                          initial_spectra, spectra, energy, sampled, fits, radial_weights, labels, args)
+                          initial_spectra, spectra, energy, sampled, fits, radial_weights, group_radii, labels, args)
             if need_movie:
                 render_movie(output, case.name, params, cache, stride, energy, sampled,
-                             radii, spectra, fits, fit_curves, radial_weights, labels, limits, frame_limits, args)
+                             radii, spectra, fits, fit_curves, radial_weights, group_radii, labels, limits, frame_limits, args)
         metadata = dict(testcase=str(case), parameters=params, states=states,
                         data_output=str(data_output), figure_csv_output=str(output),
                         options=vars(args), center_shift=shift, display_stride=stride,
