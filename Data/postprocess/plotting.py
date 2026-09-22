@@ -230,8 +230,9 @@ def remove_surface(obj):
 
 
 def render_static(output, name, params, initial, terminal, radii, initial_spectra,
-                  spectra, energy, sampled, fits, radial_weights, labels, args):
+                  spectra, energy, sampled, fits, radial_weights, group_radii, labels, args):
     length = params['ell1']
+    radial_labels = [f'{k:g}' for k in group_radii]
     for suffix, field, directory, timepoint in [('IC',initial,'initialData',sampled[0,0]),
                                                ('TC',terminal,'terminalData',sampled[-1,0])]:
         fig, ax = plt.subplots(figsize=(8,7), layout='constrained')
@@ -276,7 +277,8 @@ def render_static(output, name, params, initial, terminal, radii, initial_spectr
 
 
 def render_movie(output, name, params, cache, stride, energy, sampled, radii, spectra,
-                 fits, fit_curves, radial_weights, labels, limits, frame_limits, args):
+                 fits, fit_curves, radial_weights, group_radii, labels, limits, frame_limits, args):
+    radial_labels = [f'{k:g}' for k in group_radii]
     need_mp4 = args.movie in ('mp4', 'both')
     if need_mp4 and not writers.is_available('ffmpeg'):
         raise ValueError('MP4 requires FFmpeg on PATH. Install FFmpeg or use --movie gif.')
@@ -319,8 +321,11 @@ def render_movie(output, name, params, cache, stride, energy, sampled, radii, sp
     bars = axes[5].bar(np.arange(len(labels)), radial_weights[:,0])
     axes[5].set(title='Projection coefficient weights',xlabel=r'$(k_1,k_2)$',
                 ylabel='Normalized weight',ylim=(0,1.1*weights_max))
-    axes[5].set_xticks(np.arange(len(labels)), [str(label) for label in labels], rotation=60)
-    axes[5].tick_params(axis='x',labelsize=8)
+    if len(labels) <= 20:
+        axes[5].set_xticks(np.arange(len(labels)), [str(label) for label in labels], rotation=60)
+        axes[5].tick_params(axis='x',labelsize=8)
+    else:
+        axes[5].tick_params(axis='x',labelbottom=False)
     for i,label in enumerate(labels):
         axes[6].plot(sampled[:,0],radial_weights[i],label=str(label))
     mode_markers, = axes[6].plot([],[],'ko',ms=4)
@@ -329,9 +334,13 @@ def render_movie(output, name, params, cache, stride, energy, sampled, radii, sp
     axes[7].axis('off')
     if labels:
         handles, names = axes[6].get_legend_handles_labels()
-        axes[6].legend(handles,names,title='Radial groups',loc='upper left',
-                       bbox_to_anchor=(1.02,1),borderaxespad=0,frameon=False,
-                       fontsize=8,ncols=max(1,int(np.ceil(len(labels)/14))))
+        axes[7].legend( handles, names, title='Radial groups', loc='upper left',
+        	bbox_to_anchor=(0, 1),
+        	borderaxespad=0,
+        	frameon=False,
+        	fontsize=8,
+        	ncols=max(1, int(np.ceil(len(labels) / 14))),
+	)
     else:
         axes[5].text(.5,.5,'No unstable modes',transform=axes[5].transAxes,ha='center')
     heading = fig.suptitle('',fontsize=16,y=.97)
