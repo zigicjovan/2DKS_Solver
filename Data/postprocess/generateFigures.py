@@ -180,8 +180,6 @@ def load_diagnostics(case, params, args):
         curves = fits[:, 0][None, :] * np.exp(-2*radii[:, None]*fits[:, 1][None, :])
     length = params['ell1']  # square cases
     radii *= length
-    fits[:, 1] /= length
-    fit_curves = fits[:, 0][None, :] * np.exp(-2 * radii[:, None] * fits[:, 1][None, :])
     return energy, sampled, nonzero, radii, spectra, fits, curves
 
 
