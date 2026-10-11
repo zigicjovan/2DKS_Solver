@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --account=mth260100
 #SBATCH --partition=shared
+#SBATCH --mail-user=jovan.zigic@duny.edu
+#SBATCH --mail-type=ALL
 #SBATCH --job-name=postprocess
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=00-01:59
+#SBATCH --mem=16G
+#SBATCH --time=00-00:05
 #SBATCH --output=slurm_logs/postprocess_%j.out
 #SBATCH --error=output/postprocess_%j.err
 
