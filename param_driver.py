@@ -14,8 +14,8 @@ import time
 # -----------------------------------------------------------------------------
 # Select exactly one cluster. Keep this consistent with CLUSTER in the Makefile.
 # -----------------------------------------------------------------------------
-CLUSTER = "nibi"
-# CLUSTER = "anvil"
+# CLUSTER = "nibi"
+CLUSTER = "anvil"
 # CLUSTER = "bridges2"
 # CLUSTER = "stampede3"
 
@@ -47,12 +47,12 @@ CLUSTER_PROFILES = {
         "mail_user": "jovan.zigic@duny.edu",
         "partition": "wholenode",
         "shared_partition": "shared",
-        "shared_rank_limit": 128,
+        "shared_rank_limit": 127,
         "ranks_per_node": 128,
         "shared_cpus_per_task": 1,
         "shared_memory_gib_per_core": 2,
         "node_memory_gib": 257,
-        "time": "02-23:59",
+        "time": "00-00:15",
         "modules": (
             "module --force purge",
             "module load gcc/14.2.0 openmpi/4.1.6 fftw/3.3.10",
@@ -147,43 +147,43 @@ def memory_gib(mem):
     return int(mem[:-1] if mem.endswith("G") else mem)
 
 # User-editable parameter ranges
-K_start =           4.0
-K_end =             K_start
+K_start =           3.0
+K_end =             3.0
 K_step =            0.5
-num_modes_start =   1
+num_modes_start =   10
 num_modes_end =     num_modes_start
-ell1_start =        0.00
-ell1_end =          0.00
-ell1_step =         0.5
+ell1_start =        0.01 + num_modes_start
+ell1_end =          0.01 + num_modes_end
+ell1_step =         0.49
 ell2_start =        ell1_start
 ell2_end =          ell1_end 
 ell2_step =         0.1
 K_range =           np.round(np.arange(K_start, K_end + K_step/2, K_step), 1)
-ell1_range =        10**(np.round(np.arange(ell1_start + 0.01, ell1_end + ell1_step/2, ell1_step), 2))
+# ell1_range =        10**(np.round(np.arange(ell1_start + 0.01, ell1_end + ell1_step/2, ell1_step), 2))
+ell1_range =        (np.round(np.arange(ell1_start, ell1_end + ell1_step/2, ell1_step), 2))
 # ell1_range = [round(x, 2) for x in [np.sqrt(13),np.sqrt(16),np.sqrt(18),np.sqrt(20)]]
-ell2_range =        10**(np.round(np.arange(ell2_start + 0.01, ell2_end + ell2_step/2, ell2_step), 2))
-# ell2_range = ell1_range
+ell2_range = ell1_range
+
+# Solver settings shared by all generated production runs
+IC = "randfour"
+OPTIMIZE = 0
+TOL = "1e-6"
+CONTINUATION = 1
+OPT_T = 1.20
+SAVE_STATES = 100
 
 # User-editable global settings
 SBATCH_TIME = PROFILE["time"]  # requested time limit (D-HH:MM)
-RUN_ARRAY_NAME = f"opt-{K_start}-{ell1_start:.2f}_{K_end}-{ell1_end:.2f}.sh"
+RUN_ARRAY_NAME = f"o{OPTIMIZE}c{CONTINUATION}{IC[:2]}-{K_start}-{ell1_start:.2f}_{K_end}-{ell1_end:.2f}.sh"
 SEQUENTIAL_TASKS = False
-
-# Solver settings shared by all generated production runs
-IC = "s1"
-OPTIMIZE = 1
-TOL = "1e-10"
-CONTINUATION = 1
-OPT_T = -3.10
-SAVE_STATES = 100
 
 def generate_tasks():
     # Parameter choice formulas for 2DKS problem
     N_choice =  [ 64,   128,  192,  256,  384,  512,  640,  768,  896,  1024, 1536, 2048, 3072, 4096, 5120, 6144, 8192 ] 
-    dt_choice = [ 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 3e-7, 2e-7, 9e-8, 3e-8, 2e-8, 1e-8, 7e-9, 5e-9, 3e-9, 2e-9, 1e-9 ]
+    dt_choice = [ 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 3e-7, 2e-7, 9e-8, 3e-8, 2e-8, 1e-8, 7e-9, 5e-9, 3e-9, 2e-9, 1e-9 ] # for ell = 1
     rk_choice = [ 2,    4,    6,    8,    16,   64,   80,   96,   112,  128,  128,  128,  128,  256,  320,  384,  512  ]
     K_ref = 3.5
-    T_width = round(0.10, 2)
+    T_width = round(0.00, 2)
     T_step = round(0.05, 2)
 
     # generate parameter tuples
@@ -195,7 +195,7 @@ def generate_tasks():
             # for ell2 in ell2_range:
                 ell2 = ell1
                 # elltemp = ell1
-                T_target = np.log10( 10**(2.5 - K) * (ell1*ell2)**(0.85) ) 
+                T_target = np.log10( 10**(2.5 - K - 0.00 + 0.00) * (ell1*ell2)**(0.85))
                 # targettemp = 1.02*np.sqrt(1)
                 # T_target = 0.5*targettemp + 2.1
                 # T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
@@ -207,13 +207,15 @@ def generate_tasks():
 
                 base_index = 3
                 K_increment = int(np.floor((K - 4.0) / 0.5 + 1e-10))
-                ell_increment = int(np.floor((ell1 - 1.0) / 2.5 + 1e-10))
+                ell_increment = int(np.floor( np.log10(ell1) / 0.5 + 1e-10))
                 choice_index = base_index + 2*K_increment + ell_increment
                 N_index = max(0, min(choice_index, len(N_choice) - 1))
                 dt_index = max(0, min(choice_index, len(dt_choice) - 1))
-                N = N_choice[N_index-0]
-                dt = dt_choice[dt_index]
-                MPIrank = rk_choice[N_index-0]
+                N_index = N_index + 0
+                dt_index = dt_index + 0
+                N = 256 #N_choice[N_index]
+                dt = 1e-4 #20*dt_choice[dt_index]
+                MPIrank = 8 #rk_choice[N_index]
                 # tempidx = 8
                 # N = 384 #N_choice[tempidx]
                 # dt = 7e-9 #dt_choice[tempidx]
@@ -271,7 +273,7 @@ def write_runscripts(tasks, out_dir='runscripts'):
         memory_line = f"#SBATCH --mem-per-cpu={mem_per_cpu_mib}M\n" if request_mem_per_cpu else ""
         module_block = "\n".join(PROFILE["modules"])
         launcher = PROFILE["launcher"].format(ranks=mpi_ranks)
-        fname = run_dir / f"run_{K}_{ell1:.2f}_{ell2:.2f}_{T:.2f}_{dt:.0e}_{N}_{mpi_ranks}r.sh"
+        fname = run_dir / f"opt{OPTIMIZE}cont{CONTINUATION}_{K}_{ell1:.2f}_{ell2:.2f}_{T:.2f}_{dt:.0e}_{N}_{mpi_ranks}r.sh"
         with fname.open('w') as fh:
             fh.write(f"""#!/bin/bash
 #SBATCH --account={PROFILE["account"]}
@@ -288,7 +290,7 @@ set -euo pipefail
 mkdir -p output
 {launcher} ./solver "{IC}" "{N}" "{N}" "{dt:.0e}" "{K}" "{ell1:.2f}" "{ell2:.2f}" "{T:.2f}" \\
     "{OPTIMIZE}" "{TOL}" "{CONTINUATION}" "{OPT_T}" "{SAVE_STATES}" \\
-    > "output/run_{idx}_{mpi_ranks}r.log" 2>&1
+    > "output/opt{OPTIMIZE}cont{CONTINUATION}_{idx}_{mpi_ranks}r.log" 2>&1
 """)
         os.chmod(fname, 0o755)
     return groups, tag
@@ -362,8 +364,8 @@ def main():
     write_run_array_sh(groups, tag, out_fname=RUN_ARRAY_NAME, max_concurrent=0)
     print(f"Experiment directory: runscripts/{tag}")
     print(f"Execution script: bash {RUN_ARRAY_NAME}")
-    if CLUSTER == "nibi":
-        print("Priority check: sshare -l -A def-bprotas_cpu,rrg-bprotas_cpu -u fu6,zigicj,noahb")
+    if CLUSTER == "anvil":
+        print("Priority check: sshare -l -A mth260100")
     else:
         print("Queue check: squeue -u $USER")
 
