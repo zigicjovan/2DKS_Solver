@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <complex>
 #include <cstddef>
 #include <random>
@@ -398,8 +399,19 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         }
         
         const string testcaseName = testcaseEntry.path().filename().string();
-        if (testcaseName.find(testcaseGenericTime) == string::npos) {
-            continue;
+        const bool sameTimeStep = (testcaseName.find(testcaseGenericTime) != string::npos);
+        if (!sameTimeStep) {
+            const size_t dtBegin = testcaseGenericTime.find("_dt_");
+            const size_t kBegin = testcaseGenericTime.find("_K_", dtBegin);
+
+            const size_t candidateDtBegin = testcaseName.find("_dt_");
+            const size_t candidateKBegin = testcaseName.find("_K_", candidateDtBegin);
+
+            if (dtBegin == string::npos || kBegin == string::npos || candidateDtBegin == string::npos || candidateKBegin == string::npos ||
+                candidateDtBegin != dtBegin || testcaseName.compare(0, dtBegin, testcaseGenericTime, 0, dtBegin) != 0 ||
+                testcaseName.compare(candidateKBegin, testcaseGenericTime.size() - kBegin, testcaseGenericTime, kBegin, testcaseGenericTime.size() - kBegin) != 0) {
+                continue;
+            }
         }
 
         const size_t contBegin = testcaseName.find("_cont_");
@@ -436,6 +448,10 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         }
         else {
             priority = 3;
+        }
+
+        if (!sameTimeStep) {
+            priority += 4;
         }
         
         const size_t timeBegin = testcaseName.find("_T_");
@@ -500,6 +516,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     bool optimizeSolution = _params.getOptimizeSolution();
     bool activeLineSearch = _params.getActiveLineSearch();
     bool bSaveData = true;
+    double energyL2output;
     
     if (adjointSolution) {
         dTimePoint = _params.getCheckpointStart(); 
@@ -566,6 +583,11 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
 
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
+        energyL2output = vStateCurrent.getEnergyL2();
+        _timer.printIterationInterval();
+        if (_mpi.isRoot()) {
+            cout << ", T = " << dTimePoint << ", L2 Energy = " << energyL2output << ", Saved state = " << savedStateIndex << '\n' << flush;
+        }
     }
     else if (optimizeSolution && !adjointSolution) {
         _params.setCheckpointStart(dTimePoint);
@@ -644,6 +666,11 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
 
             vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
+            energyL2output = vStateCurrent.getEnergyL2();
+            _timer.printIterationInterval();
+            if (_mpi.isRoot()) {
+                cout << ", T = " << dTimePoint << ", L2 Energy = " << energyL2output << ", Saved state = " << savedStateIndex << '\n' << flush;
+            }
         }
         else if (!optimizeSolution && i < (nExtraInitialSteps + 1) ) {
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
@@ -838,6 +865,8 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
 void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& vObjectiveGradient, SolutionData& vTargetStart, SolutionData& vHistoryIntermediate, 
                                      SolutionData& vHistoryRemainder, SolutionData& vTargetEnd) {
     
+    dObjectiveValue = vTargetEnd.getEnergyL2(); 
+
     // Finds the maximum L2 energy via Riemmanian Conjugate Gradient with Polak-Ribiere Momentum
     if (_params.getOptimizeSolution()) {
         
@@ -848,9 +877,8 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         }
 
         size_t iter = 1;
-        size_t iMaxIter = 1000;
+        size_t iMaxIter = 200;
 
-        dObjectiveValue = vTargetEnd.getEnergyL2(); 
         double dObjectiveDelta = 0.0; 
         double dStepSize = 0.0; 
         double dManifoldSize = vTargetStart.getEnergyL2(); 
@@ -864,7 +892,8 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
 
         if (_mpi.isRoot()) {
             cout << left << setw(5)  << "Iter" << setw(18) << "Objective (J)" << setw(10) << "Adjoint" << setw(10) 
-                 << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(10) << "Objective Delta" << '\n' << string(75, '-') << '\n';
+                 << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(17) << "Objective Delta"
+                 << setw(17) << "Objective Grad." << setw(17) << "Raw Update Size" << '\n' << string(110, '-') << '\n';
         }
 
         size_t iMomentumCounter = 0;
@@ -961,7 +990,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);                                                                                                                                                     
 
             if (_mpi.isRoot()) {
-                cout << setw(10) << dObjectiveDelta << flush << '\n';
+                cout << setw(17) << dObjectiveDelta << setw(17) << dObjectiveGradientSize << setw(17) << dRawUpdateSize << flush << '\n';
             }        
             
             vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
@@ -979,7 +1008,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         saveSolutionBranchAndPowerLaws(vOptimalEnergySolution);
 
         if (_mpi.isRoot()) {
-            cout << string(75, '-') << '\n';
+            cout << string(110, '-') << '\n';
         }
         
         _timer.printInterval("Energy maximization problem solved at ");
@@ -992,7 +1021,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         if (_mpi.isRoot()) {
             cout << '\n' << "Terminal spectral tail-energy ratio = " << scientific ;
         }    
-        checkSpectralResolution(vTargetEnd);
+        checkSpectralResolution(vTargetEnd);  
     }
 }
 
@@ -1010,7 +1039,7 @@ void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& Direct
     const double initialEnergy = _params.getInitialEnergy();
 
     size_t iteration = 0;
-    constexpr size_t maximumIterations = 1000;
+    constexpr size_t maximumIterations = 200;
 
     vector<double> vLineSearchHistory;
     vLineSearchHistory.reserve(maximumIterations);
