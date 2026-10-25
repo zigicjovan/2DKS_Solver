@@ -250,6 +250,9 @@ void Solver::checkCFL(SolutionData& vData1, SolutionData& vData2) {
 
     const double cflValue = _params.getTimeStep() * globalMaxGradientMagnitude / _params.getSpaceStep();
 
+    if (_mpi.isRoot()) {
+        cout << setw(18) << globalMaxGradientMagnitude << setw(18) << cflValue << '\n' << flush;
+    }
     if (cflValue > CFL_LIMIT) {
         if (_mpi.isRoot()) {
             cerr << "ERROR: CFL condition violated." << " Maximum gradient magnitude = " << globalMaxGradientMagnitude 
@@ -371,6 +374,22 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
             vTempState[i] = complex<double>(vTempState[i].real(), 0.0);
         }
         _fftwPlan.fft2InPlace(vTempState);
+    }
+    else if (_params.getInitialGuessName() == "L1001") {
+        size_t stateNumber = 0;
+
+        for (size_t i = 0; i < localGridSize2; ++i) {
+            for (size_t j = 0; j < gridSize1; ++j) {
+                const size_t k = _params.getIndex(i, j, gridSize1);
+                const double x = grid1[k];
+                const double y = grid2[k];
+                vTargetState(j, i, stateNumber) = complex<double>( 4.0 * ( cos(5.0 * x / domainFactor1 ) * cos(5.0 * y / domainFactor2)
+                    + cos(7.0 * x / domainFactor1 ) * cos(1.0 * y / domainFactor2)
+                    + cos(1.0 * x / domainFactor1 ) * cos(7.0 * y / domainFactor2) )
+                    , 0.0);
+            }
+        }
+        _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
     }
     else {
         if (_mpi.isRoot()) {
@@ -575,6 +594,11 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
 
     SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
     if (!optimizeSolution && savedStateCount > 1) {
+        if (_mpi.isRoot()) {
+            cout << left << setw(6) << "Saved" << setw(18) << "Time" << setw(18) << "L2 Energy" << setw(10) << "Runtime" << setw(18) 
+                 << "Max Gradient" << setw(18) << "CFL Value" << '\n' << string(88, '-') << '\n' << flush;
+        }
+
         ++savedStateIndex;
         saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
         if (savedStateIndex < savedStateCount) {
@@ -584,9 +608,12 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         energyL2output = vStateCurrent.getEnergyL2();
+        if (_mpi.isRoot()) {
+            cout << left << setw(6) << savedStateIndex << setw(18) << dTimePoint << setw(18) << energyL2output << flush;
+        }
         _timer.printIterationInterval();
         if (_mpi.isRoot()) {
-            cout << ", T = " << dTimePoint << ", L2 Energy = " << energyL2output << ", Saved state = " << savedStateIndex << '\n' << flush;
+            cout << '\n' << flush;
         }
     }
     else if (optimizeSolution && !adjointSolution) {
@@ -637,8 +664,10 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vNonlinearTermPrevious.swapDataFrom(vNonlinearTermCurrent);
         }
 
-        checkCFL(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
-        
+        if (optimizeSolution) {
+            checkCFL(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
+        }
+
         // mean-zero correction
         if (localGridStart2 == 0 && localGridSize2 > 0) {
             vStateCurrent[0] = complex<double>{0.0, 0.0};
@@ -667,10 +696,11 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
             energyL2output = vStateCurrent.getEnergyL2();
-            _timer.printIterationInterval();
             if (_mpi.isRoot()) {
-                cout << ", T = " << dTimePoint << ", L2 Energy = " << energyL2output << ", Saved state = " << savedStateIndex << '\n' << flush;
+                cout << left << setw(6) << savedStateIndex << setw(18) << dTimePoint << setw(18) << energyL2output << flush;
             }
+            _timer.printIterationInterval();
+            checkCFL(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
         }
         else if (!optimizeSolution && i < (nExtraInitialSteps + 1) ) {
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
