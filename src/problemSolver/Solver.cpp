@@ -512,6 +512,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         const filesystem::path originalInitialDataFile = _paths.getInitialDataFile();
         _paths.setInitialDataFile(continuedFile);
         vTargetState.loadData(InitialState);
+        vTargetState.setInitialEnergyL2();
         _paths.setInitialDataFile(originalInitialDataFile);
 
         if (_mpi.isRoot()) {
