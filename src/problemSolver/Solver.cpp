@@ -26,7 +26,7 @@
 using namespace std;
 
 // Private functions
-void Solver::saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics) {
+void Solver::saveSolutionDiagnostics(const vector<array<double, 5>>& vDiagnostics) {
     if (!_mpi.isRoot()) {
         return;
     }
@@ -35,7 +35,7 @@ void Solver::saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostic
     file << setprecision(16) << scientific;
 
     for (const auto& row : vDiagnostics) {
-        file << row[0] << ' ' << row[1] << ' ' << row[2] << ' ' << row[3] << '\n';
+        file << row[0] << ' ' << row[1] << ' ' << row[2] << ' ' << row[3] << ' ' << row[4] << '\n';
     }
 }
 
@@ -235,23 +235,27 @@ EnergyData Solver::getMaxEnergyL2InTimeWindow() {
     return result;
 }
 
-void Solver::checkCFL(SolutionData& vData1, SolutionData& vData2) {
-    constexpr double CFL_LIMIT = 0.9;
+double Solver::getMaxGradientMagnitude(SolutionData& vData1, SolutionData& vData2) {
     double localMaxGradientMagnitude = 0.0;
     const size_t localGridSize = _mpi.getLocalGridSize();
 
     for (size_t i = 0; i < localGridSize; ++i) {
-        const double velocity = hypot(vData1[i].real(), vData2[i].real()); // sqrt(ux * ux + uy * uy)
+        const double velocity = hypot(vData1[i].real(), vData2[i].real());
         localMaxGradientMagnitude = max(localMaxGradientMagnitude, velocity);
     }
 
     double globalMaxGradientMagnitude = 0.0;
     MPI_Allreduce(&localMaxGradientMagnitude, &globalMaxGradientMagnitude, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
+    return globalMaxGradientMagnitude;
+}
+
+void Solver::checkCFL(double& globalMaxGradientMagnitude) {
+    constexpr double CFL_LIMIT = 0.9;
     const double cflValue = _params.getTimeStep() * globalMaxGradientMagnitude / _params.getSpaceStep();
 
     if (_mpi.isRoot()) {
-        cout << setw(18) << globalMaxGradientMagnitude << setw(18) << cflValue << '\n' << flush;
+        cout << setw(15) << globalMaxGradientMagnitude << setw(15) << cflValue << '\n' << flush;
     }
     if (cflValue > CFL_LIMIT) {
         if (_mpi.isRoot()) {
@@ -391,12 +395,36 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
         }
         _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
     }
+    else if (_params.getInitialGuessName() == "L301") {
+        size_t stateNumber = 0;
+
+        for (size_t i = 0; i < localGridSize2; ++i) {
+            for (size_t j = 0; j < gridSize1; ++j) {
+                const size_t k = _params.getIndex(i, j, gridSize1);
+                const double x = grid1[k];
+                const double y = grid2[k];
+                vTargetState(j, i, stateNumber) = complex<double>( 4.0 * ( cos(1.0 * x / domainFactor1 ) * cos(2.0 * y / domainFactor2)
+                    + cos(2.0 * x / domainFactor1 ) * cos(1.0 * y / domainFactor2)
+                    + cos(2.0 * x / domainFactor1 ) * cos(0.0 * y / domainFactor2)
+                    + cos(0.0 * x / domainFactor1 ) * cos(2.0 * y / domainFactor2) )
+                    , 0.0);
+            }
+        }
+        _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
+    }
     else {
         if (_mpi.isRoot()) {
             cerr << "ERROR: Unknown initial condition: " << _params.getInitialGuessName() << endl;
         }
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
+
+    // Project onto real-valued physical field
+    _fftwPlan.ifft2InPlace(_params, vTargetState.getDataPointer());
+    for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
+        vTargetState[k].imag(0.0);
+    }
+    _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
 
     vTargetState.setInitialEnergyL2();
 }
@@ -512,6 +540,14 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         const filesystem::path originalInitialDataFile = _paths.getInitialDataFile();
         _paths.setInitialDataFile(continuedFile);
         vTargetState.loadData(InitialState);
+
+        // Project onto real-valued physical field
+        _fftwPlan.ifft2InPlace(_params, vTargetState.getDataPointer());
+        for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
+            vTargetState[k].imag(0.0);
+        }
+        _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
+
         vTargetState.setInitialEnergyL2();
         _paths.setInitialDataFile(originalInitialDataFile);
 
@@ -537,6 +573,9 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     bool activeLineSearch = _params.getActiveLineSearch();
     bool bSaveData = true;
     double energyL2output;
+    double energyL2real;
+
+    double globalMaxGradientMagnitude = 0.0;
     
     if (adjointSolution) {
         dTimePoint = _params.getCheckpointStart(); 
@@ -577,7 +616,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     const array<double, 4>& coeffAlphaE = _params.getCoeffAlphaE();
     const array<double, 4>& coeffBetaE = _params.getCoeffBetaE();
 
-    vector<array<double, 4>> vDiagnostics;
+    vector<array<double, 5>> vDiagnostics;
     vDiagnostics.reserve(_params.getNumericalSteps() + 1);
     vector<vector<double>> vSpectrumHistory;
     size_t nExtraInitialSteps = 4;
@@ -596,21 +635,44 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
     if (!optimizeSolution && savedStateCount > 1) {
         if (_mpi.isRoot()) {
-            cout << left << setw(6) << "Saved" << setw(18) << "Time" << setw(18) << "L2 Energy" << setw(10) << "Runtime" << setw(18) 
-                 << "Max Gradient" << setw(18) << "CFL Value" << '\n' << string(88, '-') << '\n' << flush;
+            cout << left << setw(6) << "Saved" << setw(10) << "Time" << setw(16) << "L2 Energy" << setw(16) << "Real Energy" << setw(10) << "Runtime" << setw(15) 
+                 << "Max Gradient" << setw(15) << "CFL Value" << '\n' << string(85, '-') << '\n' << flush;
         }
 
         ++savedStateIndex;
+
+        // Run on ALL MPI ranks.
+        {
+            SolutionData physicalCopy = vStateCurrent;
+            _fftwPlan.ifft2InPlace(_params, physicalCopy.getDataPointer());
+
+            double localEnergy[2] = {0.0, 0.0};
+            for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
+                const double re = physicalCopy[k].real();
+                const double im = physicalCopy[k].imag();
+                localEnergy[0] += re * re;
+                localEnergy[1] += im * im;
+            }
+
+            double globalEnergy[2] = {0.0, 0.0};
+            MPI_Allreduce(
+                localEnergy, globalEnergy, 2,
+                MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD
+            );
+
+            const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
+            energyL2real = cellArea * globalEnergy[0];
+        }
         saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
         if (savedStateIndex < savedStateCount) {
             nextSavedStep = static_cast<size_t>( std::llround( static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1) ) );
         }
 
-        vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2() });
+        vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2(), globalMaxGradientMagnitude });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         energyL2output = vStateCurrent.getEnergyL2();
         if (_mpi.isRoot()) {
-            cout << left << setw(6) << savedStateIndex << setw(18) << dTimePoint << setw(18) << energyL2output << flush;
+            cout << left << setw(6) << savedStateIndex << setw(10) << dTimePoint << setw(16) << energyL2output << setw(16) << energyL2real << flush;
         }
         _timer.printIterationInterval();
         if (_mpi.isRoot()) {
@@ -665,8 +727,16 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vNonlinearTermPrevious.swapDataFrom(vNonlinearTermCurrent);
         }
 
+        // Project onto real-valued physical field
+        _fftwPlan.ifft2InPlace(_params, vStateCurrent.getDataPointer());
+        for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
+            vStateCurrent[k].imag(0.0);
+        }
+        _fftwPlan.fft2InPlace(vStateCurrent.getDataPointer());
+
+        globalMaxGradientMagnitude = getMaxGradientMagnitude(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
         if (optimizeSolution) {
-            checkCFL(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
+            checkCFL(globalMaxGradientMagnitude);
         }
 
         // mean-zero correction
@@ -688,26 +758,49 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
         else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep && savedStateCount > 1) {
             ++savedStateIndex;
+            
+            // Run on ALL MPI ranks.
+            {
+                SolutionData physicalCopy = vStateCurrent;
+                _fftwPlan.ifft2InPlace(_params, physicalCopy.getDataPointer());
+
+                double localEnergy[2] = {0.0, 0.0};
+                for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
+                    const double re = physicalCopy[k].real();
+                    const double im = physicalCopy[k].imag();
+                    localEnergy[0] += re * re;
+                    localEnergy[1] += im * im;
+                }
+
+                double globalEnergy[2] = {0.0, 0.0};
+                MPI_Allreduce(
+                    localEnergy, globalEnergy, 2,
+                    MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD
+                );
+
+                const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
+                energyL2real = cellArea * globalEnergy[0];
+            }
             saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
             
             if (savedStateIndex < savedStateCount) {
                 nextSavedStep = static_cast<size_t>(llround(static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1)));
             }
 
-            vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
+            vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2(), globalMaxGradientMagnitude});
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
             energyL2output = vStateCurrent.getEnergyL2();
             if (_mpi.isRoot()) {
-                cout << left << setw(6) << savedStateIndex << setw(18) << dTimePoint << setw(18) << energyL2output << flush;
+                cout << left << setw(6) << savedStateIndex << setw(10) << dTimePoint << setw(16) << energyL2output << setw(16) << energyL2real << flush;
             }
             _timer.printIterationInterval();
-            checkCFL(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
+            checkCFL(globalMaxGradientMagnitude);
         }
         else if (!optimizeSolution && i < (nExtraInitialSteps + 1) ) {
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         }
         else if (!optimizeSolution) {
-            vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2()});
+            vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2(), globalMaxGradientMagnitude});
         }
     }
 
