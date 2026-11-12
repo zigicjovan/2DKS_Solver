@@ -42,12 +42,12 @@ int main(int argc, char* argv[]) {
         timer.start(); 
 
         // Step 4: allocate storage for states and time-dependent solutions
-        SolutionData vStateInitial(params, paths, mpi, InitialState);      
+        SolutionData vStateInitial(params, paths, fftwPlan, mpi, InitialState);      
         vStateInitial.validateMPIConfiguration();
-        SolutionData vStateTerminal(params, paths, mpi, TerminalState); 
-        SolutionData vObjectiveGradient(params, paths, mpi, BackwardInitialState); 
-        SolutionData vHistoryIntermediate(params, paths, mpi, IntermediateHistory);
-        SolutionData vHistoryRemainder(params, paths, mpi, CheckpointRemainder);
+        SolutionData vStateTerminal(params, paths, fftwPlan, mpi, TerminalState); 
+        SolutionData vObjectiveGradient(params, paths, fftwPlan, mpi, BackwardInitialState); 
+        SolutionData vHistoryIntermediate(params, paths, fftwPlan, mpi, IntermediateHistory);
+        SolutionData vHistoryRemainder(params, paths, fftwPlan, mpi, CheckpointRemainder);
 
         // Step 5: solve computational problem in Fourier domain using pseudo-spectral time-stepping method
         Solver solver(params, paths, fftwPlan, timer, mpi);

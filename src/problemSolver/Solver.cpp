@@ -250,11 +250,11 @@ double Solver::getMaxGradientMagnitude(SolutionData& vData1, SolutionData& vData
     return globalMaxGradientMagnitude;
 }
 
-void Solver::checkCFL(double& globalMaxGradientMagnitude) {
+void Solver::checkCFL(double& globalMaxGradientMagnitude, bool& optimizeSolution) {
     constexpr double CFL_LIMIT = 0.9;
     const double cflValue = _params.getTimeStep() * globalMaxGradientMagnitude / _params.getSpaceStep();
 
-    if (_mpi.isRoot()) {
+    if (_mpi.isRoot() and !optimizeSolution) {
         cout << setw(15) << globalMaxGradientMagnitude << setw(15) << cflValue << '\n' << flush;
     }
     if (cflValue > CFL_LIMIT) {
@@ -420,11 +420,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
     }
 
     // Project onto real-valued physical field
-    _fftwPlan.ifft2InPlace(_params, vTargetState.getDataPointer());
-    for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
-        vTargetState[k].imag(0.0);
-    }
-    _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
+    // vTargetState.setRealPhysicalSolution();
 
     vTargetState.setInitialEnergyL2();
 }
@@ -542,11 +538,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         vTargetState.loadData(InitialState);
 
         // Project onto real-valued physical field
-        _fftwPlan.ifft2InPlace(_params, vTargetState.getDataPointer());
-        for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
-            vTargetState[k].imag(0.0);
-        }
-        _fftwPlan.fft2InPlace(vTargetState.getDataPointer());
+        // vTargetState.setRealPhysicalSolution();
 
         vTargetState.setInitialEnergyL2();
         _paths.setInitialDataFile(originalInitialDataFile);
@@ -623,16 +615,16 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
     vSpectrumHistory.reserve(savedStateCount + 1 + nExtraInitialSteps);
 
     SolutionData vStateCurrent = vTargetStart; // set phi_{i} = phi(0)
-    SolutionData vStateNext(_params, _paths, _mpi, InitialState); // phi_{i+1}
-    SolutionData vNonlinearTermCurrent(_params, _paths, _mpi, InitialState); // N(phi_{i})
-    SolutionData vForwardSpatialDerivative1(_params, _paths, _mpi, InitialState); // (phi_{i})_{x_1}
-    SolutionData vForwardSpatialDerivative2(_params, _paths, _mpi, InitialState); // (phi_{i})_{x_2}
-    SolutionData vNonlinearTermPrevious(_params, _paths, _mpi, InitialState); // N(phi_{i-1})
+    SolutionData vStateNext(_params, _paths, _fftwPlan, _mpi, InitialState); // phi_{i+1}
+    SolutionData vNonlinearTermCurrent(_params, _paths, _fftwPlan, _mpi, InitialState); // N(phi_{i})
+    SolutionData vForwardSpatialDerivative1(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi_{i})_{x_1}
+    SolutionData vForwardSpatialDerivative2(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi_{i})_{x_2}
+    SolutionData vNonlinearTermPrevious(_params, _paths, _fftwPlan, _mpi, InitialState); // N(phi_{i-1})
     for (size_t i = 0; i < localGridSize; ++i) {
         vNonlinearTermPrevious[i] = complex<double>{0.0, 0.0};
     }
 
-    SolutionData vFinalRemainder(_params, _paths, _mpi, FinalRemainder);
+    SolutionData vFinalRemainder(_params, _paths, _fftwPlan, _mpi, FinalRemainder);
     if (!optimizeSolution && savedStateCount > 1) {
         if (_mpi.isRoot()) {
             cout << left << setw(6) << "Saved" << setw(10) << "Time" << setw(16) << "L2 Energy" << setw(16) << "Real Energy" << setw(10) << "Runtime" << setw(15) 
@@ -640,29 +632,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
 
         ++savedStateIndex;
-
-        // Run on ALL MPI ranks.
-        {
-            SolutionData physicalCopy = vStateCurrent;
-            _fftwPlan.ifft2InPlace(_params, physicalCopy.getDataPointer());
-
-            double localEnergy[2] = {0.0, 0.0};
-            for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
-                const double re = physicalCopy[k].real();
-                const double im = physicalCopy[k].imag();
-                localEnergy[0] += re * re;
-                localEnergy[1] += im * im;
-            }
-
-            double globalEnergy[2] = {0.0, 0.0};
-            MPI_Allreduce(
-                localEnergy, globalEnergy, 2,
-                MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD
-            );
-
-            const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
-            energyL2real = cellArea * globalEnergy[0];
-        }
         saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
         if (savedStateIndex < savedStateCount) {
             nextSavedStep = static_cast<size_t>( std::llround( static_cast<double>(savedStateIndex) * totalSteps / (savedStateCount - 1) ) );
@@ -671,6 +640,7 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         vDiagnostics.push_back({ dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2(), globalMaxGradientMagnitude });
         vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
         energyL2output = vStateCurrent.getEnergyL2();
+        energyL2real = vStateCurrent.getEnergyL2Re();
         if (_mpi.isRoot()) {
             cout << left << setw(6) << savedStateIndex << setw(10) << dTimePoint << setw(16) << energyL2output << setw(16) << energyL2real << flush;
         }
@@ -728,15 +698,11 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
 
         // Project onto real-valued physical field
-        _fftwPlan.ifft2InPlace(_params, vStateCurrent.getDataPointer());
-        for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
-            vStateCurrent[k].imag(0.0);
-        }
-        _fftwPlan.fft2InPlace(vStateCurrent.getDataPointer());
+        // vStateCurrent.setRealPhysicalSolution();
 
         globalMaxGradientMagnitude = getMaxGradientMagnitude(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
         if (optimizeSolution) {
-            checkCFL(globalMaxGradientMagnitude);
+            checkCFL(globalMaxGradientMagnitude,optimizeSolution);
         }
 
         // mean-zero correction
@@ -758,29 +724,6 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
         }
         else if (!optimizeSolution && savedStateIndex < savedStateCount && i == nextSavedStep && savedStateCount > 1) {
             ++savedStateIndex;
-            
-            // Run on ALL MPI ranks.
-            {
-                SolutionData physicalCopy = vStateCurrent;
-                _fftwPlan.ifft2InPlace(_params, physicalCopy.getDataPointer());
-
-                double localEnergy[2] = {0.0, 0.0};
-                for (size_t k = 0; k < _mpi.getLocalGridSize(); ++k) {
-                    const double re = physicalCopy[k].real();
-                    const double im = physicalCopy[k].imag();
-                    localEnergy[0] += re * re;
-                    localEnergy[1] += im * im;
-                }
-
-                double globalEnergy[2] = {0.0, 0.0};
-                MPI_Allreduce(
-                    localEnergy, globalEnergy, 2,
-                    MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD
-                );
-
-                const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
-                energyL2real = cellArea * globalEnergy[0];
-            }
             saveForwardState(dTimePoint, bSaveData, savedStateIndex, savedFullSteps, savedStepsPerFile, savedStateCount, vHistoryIntermediate, vFinalRemainder, vStateCurrent);
             
             if (savedStateIndex < savedStateCount) {
@@ -790,11 +733,12 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vDiagnostics.push_back({dTimePoint, vStateCurrent.getEnergyL2(), vStateCurrent.getEnergyH1(), vStateCurrent.getEnergyH2(), globalMaxGradientMagnitude});
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
             energyL2output = vStateCurrent.getEnergyL2();
+            energyL2real = vStateCurrent.getEnergyL2Re();
             if (_mpi.isRoot()) {
                 cout << left << setw(6) << savedStateIndex << setw(10) << dTimePoint << setw(16) << energyL2output << setw(16) << energyL2real << flush;
             }
             _timer.printIterationInterval();
-            checkCFL(globalMaxGradientMagnitude);
+            checkCFL(globalMaxGradientMagnitude,optimizeSolution);
         }
         else if (!optimizeSolution && i < (nExtraInitialSteps + 1) ) {
             vSpectrumHistory.push_back(vStateCurrent.getRadialSpectrum());
@@ -887,16 +831,16 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
 
     SolutionData vForwardStateCurrent = vTargetEnd; // phi_{i}
     SolutionData vForwardStateCheckpoint = vTargetEnd; // phi_{i}
-    SolutionData vHistoryIntermediateFull(_params, _paths, _mpi, IntermediateHistory);
+    SolutionData vHistoryIntermediateFull(_params, _paths, _fftwPlan, _mpi, IntermediateHistory);
     
-    SolutionData vStateNext(_params, _paths, _mpi, InitialState); // phi^*_{i-1}
-    SolutionData vNonlinearTermCurrent(_params, _paths, _mpi, InitialState); // N(phi^*_{i})
-    SolutionData vForwardSpatialDerivative1(_params, _paths, _mpi, InitialState); // (phi_{i})_{x_1}
-    SolutionData vForwardSpatialDerivative2(_params, _paths, _mpi, InitialState); // (phi_{i})_{x_2}
-    SolutionData vForwardLaplacian(_params, _paths, _mpi, InitialState); // Lap(phi_{i})
-    SolutionData vBackwardSpatialDerivative1(_params, _paths, _mpi, InitialState); // (phi^*_{i})_{x_1}
-    SolutionData vBackwardSpatialDerivative2(_params, _paths, _mpi, InitialState); // (phi^*_{i})_{x_2}
-    SolutionData vNonlinearTermPrevious(_params, _paths, _mpi, InitialState); // N(phi^*_{i+1})
+    SolutionData vStateNext(_params, _paths, _fftwPlan, _mpi, InitialState); // phi^*_{i-1}
+    SolutionData vNonlinearTermCurrent(_params, _paths, _fftwPlan, _mpi, InitialState); // N(phi^*_{i})
+    SolutionData vForwardSpatialDerivative1(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi_{i})_{x_1}
+    SolutionData vForwardSpatialDerivative2(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi_{i})_{x_2}
+    SolutionData vForwardLaplacian(_params, _paths, _fftwPlan, _mpi, InitialState); // Lap(phi_{i})
+    SolutionData vBackwardSpatialDerivative1(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi^*_{i})_{x_1}
+    SolutionData vBackwardSpatialDerivative2(_params, _paths, _fftwPlan, _mpi, InitialState); // (phi^*_{i})_{x_2}
+    SolutionData vNonlinearTermPrevious(_params, _paths, _fftwPlan, _mpi, InitialState); // N(phi^*_{i+1})
     for (size_t i = 0; i < localGridSize; ++i) {
         vNonlinearTermPrevious[i] = complex<double>{0.0, 0.0};
     }
@@ -976,6 +920,9 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
             vStateCurrent.swapDataFrom(vStateNext);
             vNonlinearTermPrevious.swapDataFrom(vNonlinearTermCurrent);
         }
+
+        // Project onto real-valued physical field
+        // vStateCurrent.setRealPhysicalSolution();
         
         // mean-zero correction
         if (localGridStart2 == 0 && localGridSize2 > 0) {
@@ -1017,18 +964,23 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         if (_mpi.isRoot()) {
             cout << left << setw(5)  << "Iter" << setw(18) << "Objective (J)" << setw(10) << "Adjoint" << setw(10) 
                  << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(17) << "Objective Delta"
-                 << setw(17) << "Objective Grad." << setw(17) << "Raw Update Size" << '\n' << string(110, '-') << '\n';
+                 << setw(17) << "Objective Grad." << setw(17) << "Raw Update Size"
+                 << setw(17) << "DirectionCurr" << setw(17) << "VectorTransport"
+                 << setw(17) << "ProjectedObjGradCurr" << setw(17) 
+                 << setw(17) << "Im(IC)" << setw(17) << "Im(J)" << setw(17) << "Im(J Grad)" << setw(17) << "Im(Raw Update)"
+                 << setw(17) << "Im(DirCurr)" << setw(17) << "Im(VecTrans)"
+                 << setw(17) << "Im(POGCurr)" << '\n' << string(110, '-') << '\n';
         }
 
         size_t iMomentumCounter = 0;
-        SolutionData RawUpdate(_params, _paths, _mpi, InitialState); 
-        SolutionData DirectionCurr(_params, _paths, _mpi, InitialState); 
-        SolutionData DirectionPrev(_params, _paths, _mpi, InitialState); 
-        SolutionData VectorTransport(_params, _paths, _mpi, InitialState);
-        SolutionData ProjectedObjGradPrev(_params, _paths, _mpi, InitialState); 
-        SolutionData ProjectedObjGradCurr(_params, _paths, _mpi, InitialState); 
-        SolutionData TransportedProjectedObjGradPrev(_params, _paths, _mpi, InitialState); 
-        SolutionData DeltaProjectedObjGrad(_params, _paths, _mpi, InitialState); 
+        SolutionData RawUpdate(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData DirectionCurr(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData DirectionPrev(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData VectorTransport(_params, _paths, _fftwPlan, _mpi, InitialState);
+        SolutionData ProjectedObjGradPrev(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData ProjectedObjGradCurr(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData TransportedProjectedObjGradPrev(_params, _paths, _fftwPlan, _mpi, InitialState); 
+        SolutionData DeltaProjectedObjGrad(_params, _paths, _fftwPlan, _mpi, InitialState); 
         double dAngleFwdICAndGradJ = vTargetStart.getInnerProductL2With(vObjectiveGradient);
         double dRawUpdateSize = 0.0;
         double dAngleRawUpdateAndDirectionPrev = 0.0; 
@@ -1040,6 +992,17 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         double dAscentSize = 0.0;
         double dRetractionSize = 0.0;
         double dObjectiveValuePrev = 0.0;
+
+        double dDirectionCurrEnergy = 0.0;
+        double dVectorTransportEnergy = 0.0;
+        double dProjectedObjGradCurrEnergy = 0.0;
+        double dImICEnergy = 0.0;
+        double dImJEnergy = 0.0;
+        double dImJGradEnergy = 0.0;
+        double dImRawUpdateEnergy = 0.0;
+        double dImDirCurrEnergy = 0.0;
+        double dImVecTransEnergy = 0.0;
+        double dImProjGradCurrEnergy = 0.0;
 
         dObjectiveDelta = 1.0;
         while ( abs(dObjectiveDelta) > _params.getOptimizationTolerance() && iter <= iMaxIter ) {
@@ -1093,7 +1056,11 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
                 dStepSize = dAngleFwdICAndGradJ / dObjectiveGradientSize; 
             }
                                      
-            RawUpdate = vTargetStart + ( dStepSize * DirectionCurr );                                   
+            RawUpdate = vTargetStart + ( dStepSize * DirectionCurr );      
+            
+            // Project onto real-valued physical field
+            // RawUpdate.setRealPhysicalSolution();
+
             dRetractionSize =  sqrt(_params.getInitialEnergy()) / RawUpdate.getNormL2();                                                
             vTargetStart = dRetractionSize * RawUpdate;                                                            
             dManifoldSize = vTargetStart.getEnergyL2();                                   
@@ -1111,10 +1078,30 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             ProjectedObjGradPrev = ProjectedObjGradCurr;                                                                  
             DirectionPrev = DirectionCurr;                                                                            
                                               
-            dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);                                                                                                                                                     
+            dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);    
+            
+            dRawUpdateSize = RawUpdate.getEnergyL2();
+            dDirectionCurrEnergy = DirectionCurr.getEnergyL2();
+            dVectorTransportEnergy = VectorTransport.getEnergyL2();
+            dProjectedObjGradCurrEnergy = ProjectedObjGradCurr.getEnergyL2();
+            dImICEnergy = vTargetStart.getEnergyL2Im();
+            dImJEnergy = vTargetEnd.getEnergyL2Im();
+            dImJGradEnergy = vObjectiveGradient.getEnergyL2Im();
+            dImRawUpdateEnergy = RawUpdate.getEnergyL2Im();
+            dImDirCurrEnergy = DirectionCurr.getEnergyL2Im();
+            if (iter > 2) {
+                dImVecTransEnergy = VectorTransport.getEnergyL2Im();
+            }
+            dImProjGradCurrEnergy = ProjectedObjGradCurr.getEnergyL2Im();
 
             if (_mpi.isRoot()) {
-                cout << setw(17) << dObjectiveDelta << setw(17) << dObjectiveGradientSize << setw(17) << dRawUpdateSize << flush << '\n';
+                cout << setw(17) << dObjectiveDelta << setw(17) << dObjectiveGradientSize << setw(17) << dRawUpdateSize <<
+                setw(17) << dDirectionCurrEnergy << setw(17) << dVectorTransportEnergy
+                << setw(17) << dProjectedObjGradCurrEnergy << setw(17) 
+                << setw(17) << dImICEnergy << setw(17) << dImJEnergy 
+                << setw(17) << dImJGradEnergy << setw(17) << dImRawUpdateEnergy
+                << setw(17) << dImDirCurrEnergy << setw(17) << dImVecTransEnergy
+                << setw(17) << dImProjGradCurrEnergy << flush << '\n';
             }        
             
             vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
@@ -1125,6 +1112,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         vHistoryIntermediate.deleteData();
         
         _paths.setTempDir(false);
+
         setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
         EnergyData maxEnergyResult = getMaxEnergyL2InTimeWindow();
         vOptimalEnergySolution = { _params.getInitialEnergy(), _params.getDomainFactor1(), _params.getDomainFactor2(), _params.getTimeWindow(), dObjectiveValue, 
@@ -1168,8 +1156,8 @@ void Solver::solveLineSearchOptimization(double& dStepSize, SolutionData& Direct
     vector<double> vLineSearchHistory;
     vLineSearchHistory.reserve(maximumIterations);
 
-    SolutionData RawUpdate(_params, _paths, _mpi, InitialState);
-    SolutionData RetractedState(_params, _paths, _mpi, InitialState);
+    SolutionData RawUpdate(_params, _paths, _fftwPlan, _mpi, InitialState);
+    SolutionData RetractedState(_params, _paths, _fftwPlan, _mpi, InitialState);
     
     // Evaluate f(step) = -J(step), where J is the terminal L2 energy. Therefore, minimizing f maximizes J.
     auto evaluateStep = [&](double step) {

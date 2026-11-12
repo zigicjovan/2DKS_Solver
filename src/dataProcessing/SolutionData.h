@@ -30,6 +30,7 @@ private:
     vector<complex<double>> _vData;
     const Parameters& _params;
     const Pathnames& _paths;
+    FFTWPlanner& _fftwPlan;
     const MPIContext& _mpi;
 
     void writeDistributedFile(const filesystem::path& filename) const;
@@ -37,7 +38,7 @@ private:
     filesystem::path appendTimeStep(const filesystem::path& path, double dCurrentT);
 
 public:
-    SolutionData(const Parameters& params, const Pathnames& paths, const MPIContext& mpi, SolutionDataType storedDataType);
+    SolutionData(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, const MPIContext& mpi, SolutionDataType storedDataType);
     
     void validateMPIConfiguration();
     size_t getSize() const;
@@ -63,10 +64,13 @@ public:
     void swapDataFrom(SolutionData& otherData) noexcept;
     void moveDataFrom(SolutionData& otherData) noexcept;
 
+    void setRealPhysicalSolution();
     void setInitialEnergyL2();
     double getInnerProductL2With(SolutionData& otherData) const;
     double getNormL2() const;
     double getEnergyL2() const;
+    double getEnergyL2Re();
+    double getEnergyL2Im();
     double getEnergyH1() const;
     double getEnergyH2() const;
     vector<double> getRadialSpectrum() const;

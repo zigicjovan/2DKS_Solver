@@ -41,14 +41,15 @@ private:
     Timer& _timer;
     const MPIContext& _mpi;
 
-    void saveSolutionDiagnostics(const vector<array<double, 4>>& vDiagnostics);
+    void saveSolutionDiagnostics(const vector<array<double, 5>>& vDiagnostics);
     void saveSolutionSpectrum(const vector<vector<double>>& vSpectrumHistory);
     void saveOptimizationDiagnostics(const array<double, 7>& vDiagnostics);
     void saveSolutionBranchAndPowerLaws(const array<double, 7>& vOptimalEnergySolution);
     void saveLineSearch(vector<double>& vLineSearchHistory);
     EnergyData getMaxEnergyL2InTimeWindow();
 
-    void checkCFL(SolutionData& vData1, SolutionData& vData2);
+    double getMaxGradientMagnitude(SolutionData& vData1, SolutionData& vData2);
+    void checkCFL(double& globalMaxGradientMagnitude, bool& optimizeSolution);
     void checkSpectralResolution(const SolutionData& state);
     void setInitialCondition(SolutionData& vTargetState);
     void findContinuationForInitialData(SolutionData& vTargetState);

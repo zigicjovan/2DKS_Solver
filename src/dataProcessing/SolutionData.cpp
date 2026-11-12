@@ -92,8 +92,8 @@ filesystem::path SolutionData::appendTimeStep(const filesystem::path& path, doub
 }
 
 // public functions
-SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, const MPIContext& mpi, SolutionDataType storedDataType) 
-                           : _params(params), _paths(paths), _mpi(mpi) {
+SolutionData::SolutionData(const Parameters& params, const Pathnames& paths, FFTWPlanner& fftwPlan, const MPIContext& mpi, SolutionDataType storedDataType) 
+                           : _params(params), _paths(paths), _fftwPlan(fftwPlan), _mpi(mpi) {
     const size_t stateStorageSize = _mpi.getLocalAllocationSize();
 
     switch (storedDataType) {
@@ -248,6 +248,18 @@ void SolutionData::moveDataFrom(SolutionData& otherData) noexcept {
     _vData = move(otherData._vData);
 }
 
+void SolutionData::setRealPhysicalSolution() {
+    _fftwPlan.ifft2InPlace(_params, getDataPointer());
+        
+    const size_t localGridSize = _mpi.getLocalGridSize();
+
+    for (size_t i = 0; i < localGridSize; ++i) {
+        _vData[i].imag(0.0);
+    }
+
+    _fftwPlan.fft2InPlace(getDataPointer());
+}
+
 void SolutionData::setInitialEnergyL2() {
     double energyL2 = getEnergyL2();
     double normL2 = sqrt(energyL2);
@@ -289,6 +301,44 @@ double SolutionData::getEnergyL2() const {
     MPI_Allreduce(&localEnergy, &globalEnergy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     return globalEnergy * _params.getEnergyFactor();
+}
+
+double SolutionData::getEnergyL2Re() {
+    _fftwPlan.ifft2InPlace(_params, getDataPointer());
+    double localEnergy = 0.0;
+    const size_t localGridSize = _mpi.getLocalGridSize();
+
+    for (size_t i = 0; i < localGridSize; ++i) {
+        const double re = _vData[i].real();
+        localEnergy += re * re;
+    }
+
+    _fftwPlan.fft2InPlace(getDataPointer());
+
+    double globalEnergy = 0.0;
+    MPI_Allreduce(&localEnergy, &globalEnergy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
+    return globalEnergy * cellArea;
+}
+
+double SolutionData::getEnergyL2Im() {
+    _fftwPlan.ifft2InPlace(_params, getDataPointer());
+    double localEnergy = 0.0;
+    const size_t localGridSize = _mpi.getLocalGridSize();
+
+    for (size_t i = 0; i < localGridSize; ++i) {
+        const double im = _vData[i].imag();
+        localEnergy += im * im;
+    }
+
+    _fftwPlan.fft2InPlace(getDataPointer());
+
+    double globalEnergy = 0.0;
+    MPI_Allreduce(&localEnergy, &globalEnergy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    const double cellArea = _params.getDomainSize1() * _params.getDomainSize2() / static_cast<double>(_params.getTotalGridSize());
+    return globalEnergy * cellArea;
 }
 
 double SolutionData::getEnergyH1() const {
