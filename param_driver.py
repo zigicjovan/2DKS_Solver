@@ -52,7 +52,7 @@ CLUSTER_PROFILES = {
         "shared_cpus_per_task": 1,
         "shared_memory_gib_per_core": 2,
         "node_memory_gib": 257,
-        "time": "00-00:15",
+        "time": "01-23:29",
         "modules": (
             "module --force purge",
             "module load gcc/14.2.0 openmpi/4.1.6 fftw/3.3.10",
@@ -147,14 +147,14 @@ def memory_gib(mem):
     return int(mem[:-1] if mem.endswith("G") else mem)
 
 # User-editable parameter ranges
-K_start =           3.0
-K_end =             3.0
+K_start =           4.0
+K_end =             4.0
 K_step =            0.5
-num_modes_start =   10
+num_modes_start =   32.00
 num_modes_end =     num_modes_start
 ell1_start =        0.01 + num_modes_start
 ell1_end =          0.01 + num_modes_end
-ell1_step =         0.49
+ell1_step =         0.1
 ell2_start =        ell1_start
 ell2_end =          ell1_end 
 ell2_step =         0.1
@@ -166,10 +166,10 @@ ell2_range = ell1_range
 
 # Solver settings shared by all generated production runs
 IC = "randfour"
-OPTIMIZE = 0
+OPTIMIZE = 1
 TOL = "1e-6"
-CONTINUATION = 1
-OPT_T = 1.20
+CONTINUATION = 0
+OPT_T = 0.69
 SAVE_STATES = 100
 
 # User-editable global settings
@@ -195,7 +195,7 @@ def generate_tasks():
             # for ell2 in ell2_range:
                 ell2 = ell1
                 # elltemp = ell1
-                T_target = np.log10( 10**(2.5 - K - 0.00 + 0.00) * (ell1*ell2)**(0.85))
+                T_target = 0.0 #np.log10( 10**(2.5 - K - 0.00 + 0.00) * (ell1*ell2)**(0.85))
                 # targettemp = 1.02*np.sqrt(1)
                 # T_target = 0.5*targettemp + 2.1
                 # T_range = np.round(np.array([(2*T_target / 3) - K ]), 2) # init
@@ -213,9 +213,9 @@ def generate_tasks():
                 dt_index = max(0, min(choice_index, len(dt_choice) - 1))
                 N_index = N_index + 0
                 dt_index = dt_index + 0
-                N = 256 #N_choice[N_index]
+                N = 512 #N_choice[N_index]
                 dt = 1e-4 #20*dt_choice[dt_index]
-                MPIrank = 8 #rk_choice[N_index]
+                MPIrank = 64 #rk_choice[N_index]
                 # tempidx = 8
                 # N = 384 #N_choice[tempidx]
                 # dt = 7e-9 #dt_choice[tempidx]
@@ -225,7 +225,7 @@ def generate_tasks():
                 for T in T_range:
                     # mem_est = 0.9 * 8 * np.ceil((1.1 * np.exp( -4.789714989 + 0.83721882 * np.log10((N**2) * (10.0**T) / dt) - 1.70503490 * elltemp
                     #                             + 0.23432402 * K + 0.18691756 * elltemp * np.log10((N**2) * (10.0**T) / dt) )) / 8.0 )
-                    mem_req = allocated_memory_gib(MPIrank)
+                    mem_req = 1*allocated_memory_gib(MPIrank)
                     mem = f"{mem_req}G" 
                     addmemcount = mem_req
                     addfilecount = ( N**2 / 5e7 ) * 1e-3 * np.power(10.0,T) / dt
@@ -270,7 +270,10 @@ def write_runscripts(tasks, out_dir='runscripts'):
         mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
         ntasks_per_node = min(mpi_ranks, PROFILE["ranks_per_node"])
         partition_line = f"#SBATCH --partition={partition}\n" if partition else ""
-        memory_line = f"#SBATCH --mem-per-cpu={mem_per_cpu_mib}M\n" if request_mem_per_cpu else ""
+        if request_mem_per_cpu:
+            memory_line = f"#SBATCH --mem-per-cpu={mem_per_cpu_mib}M\n"
+        else:
+            memory_line = f"#SBATCH --mem={mem_per_cpu_mib}M\n"
         module_block = "\n".join(PROFILE["modules"])
         launcher = PROFILE["launcher"].format(ranks=mpi_ranks)
         fname = run_dir / f"opt{OPTIMIZE}cont{CONTINUATION}_{K}_{ell1:.2f}_{ell2:.2f}_{T:.2f}_{dt:.0e}_{N}_{mpi_ranks}r.sh"
@@ -310,7 +313,10 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
         ntasks_per_node = min(mpi_ranks, PROFILE["ranks_per_node"])
         partition_arg = f"--partition={partition}" if partition else ""
-        memory_arg = f"--mem-per-cpu={mem_per_cpu_mib}M" if request_mem_per_cpu else ""
+        if request_mem_per_cpu:
+            memory_arg = f"--mem-per-cpu={mem_per_cpu_mib}M"
+        else:
+            memory_arg = f"--mem={mem_per_cpu_mib}M"
         param_file = f"runscripts/{tag}/task_params_{mem}_{mpi_ranks}r.txt"
         count = len(items)
         if SEQUENTIAL_TASKS:
