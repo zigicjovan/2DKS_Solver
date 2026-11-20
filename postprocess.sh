@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=16G
-#SBATCH --time=00-00:05
+#SBATCH --time=00-00:10
 #SBATCH --output=slurm_logs/postprocess_%j.out
 #SBATCH --error=output/postprocess_%j.err
 
