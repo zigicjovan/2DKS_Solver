@@ -420,7 +420,7 @@ void Solver::setInitialCondition(SolutionData& vTargetState) {
     }
 
     // Project onto real-valued physical field
-    // vTargetState.setRealPhysicalSolution();
+    vTargetState.setRealPhysicalSolution();
 
     vTargetState.setInitialEnergyL2();
 }
@@ -538,7 +538,7 @@ void Solver::findContinuationForInitialData(SolutionData& vTargetState) {
         vTargetState.loadData(InitialState);
 
         // Project onto real-valued physical field
-        // vTargetState.setRealPhysicalSolution();
+        vTargetState.setRealPhysicalSolution();
 
         vTargetState.setInitialEnergyL2();
         _paths.setInitialDataFile(originalInitialDataFile);
@@ -697,8 +697,8 @@ void Solver::solveForwardInTime(SolutionData& vTargetStart, SolutionData& vHisto
             vNonlinearTermPrevious.swapDataFrom(vNonlinearTermCurrent);
         }
 
-        // Project onto real-valued physical field
-        // vStateCurrent.setRealPhysicalSolution();
+        // real correction
+        vStateCurrent.setRealPhysicalSolution();
 
         globalMaxGradientMagnitude = getMaxGradientMagnitude(vForwardSpatialDerivative1, vForwardSpatialDerivative2);
         if (optimizeSolution) {
@@ -921,8 +921,8 @@ void Solver::solveBackwardInTime(SolutionData& vObjectiveGradient, SolutionData&
             vNonlinearTermPrevious.swapDataFrom(vNonlinearTermCurrent);
         }
 
-        // Project onto real-valued physical field
-        // vStateCurrent.setRealPhysicalSolution();
+        // real correction
+        vStateCurrent.setRealPhysicalSolution();
         
         // mean-zero correction
         if (localGridStart2 == 0 && localGridSize2 > 0) {
@@ -963,13 +963,11 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
 
         if (_mpi.isRoot()) {
             cout << left << setw(5)  << "Iter" << setw(18) << "Objective (J)" << setw(10) << "Adjoint" << setw(10) 
-                 << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(17) << "Objective Delta"
-                 << setw(17) << "Objective Grad." << setw(17) << "Raw Update Size"
-                 << setw(17) << "DirectionCurr" << setw(17) << "VectorTransport"
-                 << setw(17) << "ProjectedObjGradCurr" << setw(17) 
-                 << setw(17) << "Im(IC)" << setw(17) << "Im(J)" << setw(17) << "Im(J Grad)" << setw(17) << "Im(Raw Update)"
-                 << setw(17) << "Im(DirCurr)" << setw(17) << "Im(VecTrans)"
-                 << setw(17) << "Im(POGCurr)" << '\n' << string(110, '-') << '\n';
+                 << "Stepsize" << setw(6) << "Brent" << setw(10) << "Forward" << setw(17) << "Delta J"
+                 << setw(17) << "Grad J" << setw(17) << "Raw Update"
+                 << setw(17) << "Direction" << setw(17) << "Vec Transport"
+                 << setw(17) << "Proj(Grad J)" << setw(17) 
+                 << setw(17) << "Momentum" << setw(17) << "Optimal Step" << '\n' << string(150, '-') << '\n';
         }
 
         size_t iMomentumCounter = 0;
@@ -996,13 +994,6 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         double dDirectionCurrEnergy = 0.0;
         double dVectorTransportEnergy = 0.0;
         double dProjectedObjGradCurrEnergy = 0.0;
-        double dImICEnergy = 0.0;
-        double dImJEnergy = 0.0;
-        double dImJGradEnergy = 0.0;
-        double dImRawUpdateEnergy = 0.0;
-        double dImDirCurrEnergy = 0.0;
-        double dImVecTransEnergy = 0.0;
-        double dImProjGradCurrEnergy = 0.0;
 
         dObjectiveDelta = 1.0;
         while ( abs(dObjectiveDelta) > _params.getOptimizationTolerance() && iter <= iMaxIter ) {
@@ -1038,6 +1029,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
                     dMomentumSize = 0.0;
                 }
                 DirectionCurr = ProjectedObjGradCurr + (dMomentumSize * VectorTransport); 
+                DirectionCurr.setRealPhysicalSolution();
             }
             else {
                 dStepSize = 1e5;
@@ -1055,15 +1047,16 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
             if (dStepSize == 0) {
                 dStepSize = dAngleFwdICAndGradJ / dObjectiveGradientSize; 
             }
-                                     
-            RawUpdate = vTargetStart + ( dStepSize * DirectionCurr );      
             
-            // Project onto real-valued physical field
-            // RawUpdate.setRealPhysicalSolution();
+            RawUpdate = vTargetStart + ( dStepSize * DirectionCurr );     
+            RawUpdate.setRealPhysicalSolution(); 
+
+            dDirectionCurrEnergy = DirectionCurr.getEnergyL2();
+            dRawUpdateSize = RawUpdate.getEnergyL2(); 
 
             dRetractionSize =  sqrt(_params.getInitialEnergy()) / RawUpdate.getNormL2();                                                
             vTargetStart = dRetractionSize * RawUpdate;                                                            
-            dManifoldSize = vTargetStart.getEnergyL2();                                   
+            dManifoldSize = vTargetStart.getEnergyL2();                            
             
             // Solve updated forward problem
             setSolutionInTime(SolveForwardInTime, vTargetStart, vHistoryIntermediate, vHistoryRemainder, vTargetEnd);
@@ -1080,28 +1073,14 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
                                               
             dObjectiveDelta = (dObjectiveValue - dObjectiveValuePrev)/(dObjectiveValuePrev);    
             
-            dRawUpdateSize = RawUpdate.getEnergyL2();
-            dDirectionCurrEnergy = DirectionCurr.getEnergyL2();
             dVectorTransportEnergy = VectorTransport.getEnergyL2();
             dProjectedObjGradCurrEnergy = ProjectedObjGradCurr.getEnergyL2();
-            dImICEnergy = vTargetStart.getEnergyL2Im();
-            dImJEnergy = vTargetEnd.getEnergyL2Im();
-            dImJGradEnergy = vObjectiveGradient.getEnergyL2Im();
-            dImRawUpdateEnergy = RawUpdate.getEnergyL2Im();
-            dImDirCurrEnergy = DirectionCurr.getEnergyL2Im();
-            if (iter > 2) {
-                dImVecTransEnergy = VectorTransport.getEnergyL2Im();
-            }
-            dImProjGradCurrEnergy = ProjectedObjGradCurr.getEnergyL2Im();
 
             if (_mpi.isRoot()) {
                 cout << setw(17) << dObjectiveDelta << setw(17) << dObjectiveGradientSize << setw(17) << dRawUpdateSize <<
                 setw(17) << dDirectionCurrEnergy << setw(17) << dVectorTransportEnergy
-                << setw(17) << dProjectedObjGradCurrEnergy << setw(17) 
-                << setw(17) << dImICEnergy << setw(17) << dImJEnergy 
-                << setw(17) << dImJGradEnergy << setw(17) << dImRawUpdateEnergy
-                << setw(17) << dImDirCurrEnergy << setw(17) << dImVecTransEnergy
-                << setw(17) << dImProjGradCurrEnergy << flush << '\n';
+                << setw(17) << dProjectedObjGradCurrEnergy 
+                << setw(17) << dMomentumSize << setw(17) << dStepSize << flush << '\n';
             }        
             
             vDiagnostics = {dObjectiveValue, dObjectiveDelta, dStepSize, dManifoldSize, _timer.elapsedSeconds(), dObjectiveGradientSize, dMomentumSize};
@@ -1120,7 +1099,7 @@ void Solver::solveRiemmanianOptimization(double& dObjectiveValue, SolutionData& 
         saveSolutionBranchAndPowerLaws(vOptimalEnergySolution);
 
         if (_mpi.isRoot()) {
-            cout << string(110, '-') << '\n';
+            cout << string(150, '-') << '\n';
         }
         
         _timer.printInterval("Energy maximization problem solved at ");
