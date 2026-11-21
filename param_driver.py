@@ -52,7 +52,7 @@ CLUSTER_PROFILES = {
         "shared_cpus_per_task": 1,
         "shared_memory_gib_per_core": 2,
         "node_memory_gib": 257,
-        "time": "01-23:29",
+        "time": "01-23:59",
         "modules": (
             "module --force purge",
             "module load gcc/14.2.0 openmpi/4.1.6 fftw/3.3.10",
@@ -150,7 +150,7 @@ def memory_gib(mem):
 K_start =           4.0
 K_end =             4.0
 K_step =            0.5
-num_modes_start =   32.00
+num_modes_start =   100.00
 num_modes_end =     num_modes_start
 ell1_start =        0.01 + num_modes_start
 ell1_end =          0.01 + num_modes_end
@@ -270,10 +270,7 @@ def write_runscripts(tasks, out_dir='runscripts'):
         mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
         ntasks_per_node = min(mpi_ranks, PROFILE["ranks_per_node"])
         partition_line = f"#SBATCH --partition={partition}\n" if partition else ""
-        if request_mem_per_cpu:
-            memory_line = f"#SBATCH --mem-per-cpu={mem_per_cpu_mib}M\n"
-        else:
-            memory_line = f"#SBATCH --mem={mem_per_cpu_mib}M\n"
+        memory_line = f"#SBATCH --mem-per-cpu={mem_per_cpu_mib}M\n" if request_mem_per_cpu else ""
         module_block = "\n".join(PROFILE["modules"])
         launcher = PROFILE["launcher"].format(ranks=mpi_ranks)
         fname = run_dir / f"opt{OPTIMIZE}cont{CONTINUATION}_{K}_{ell1:.2f}_{ell2:.2f}_{T:.2f}_{dt:.0e}_{N}_{mpi_ranks}r.sh"
@@ -313,10 +310,7 @@ def write_run_array_sh(groups, tag, out_fname='run_array.sh', max_concurrent=0):
         mem_per_cpu_mib = math.ceil(mem_gib * 1024 / mpi_ranks)
         ntasks_per_node = min(mpi_ranks, PROFILE["ranks_per_node"])
         partition_arg = f"--partition={partition}" if partition else ""
-        if request_mem_per_cpu:
-            memory_arg = f"--mem-per-cpu={mem_per_cpu_mib}M"
-        else:
-            memory_arg = f"--mem={mem_per_cpu_mib}M"
+        memory_arg = f"--mem-per-cpu={mem_per_cpu_mib}M" if request_mem_per_cpu else ""
         param_file = f"runscripts/{tag}/task_params_{mem}_{mpi_ranks}r.txt"
         count = len(items)
         if SEQUENTIAL_TASKS:
